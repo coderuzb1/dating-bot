@@ -1,5 +1,3 @@
-mkdir -p app/handlers
-cat > app/handlers/start.py <<'EOF'
 from aiogram import Router
 from aiogram.filters import CommandStart
 from aiogram.types import Message
@@ -14,4 +12,3 @@ async def start_handler(message: Message) -> None:
         "SaraMatchBot ga xush kelibsiz.\n\n"
         "Davom etish uchun tilni tanlang."
     )
-EOF
