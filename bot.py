@@ -6,11 +6,16 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from app.config import settings
+from app.handlers.router import router
 
 
 def setup_logging() -> None:
     logging.basicConfig(
-        level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
+        level=getattr(
+            logging,
+            settings.LOG_LEVEL.upper(),
+            logging.INFO
+        ),
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
 
@@ -19,13 +24,16 @@ async def main() -> None:
     setup_logging()
 
     bot = Bot(
-        token=settings.BOT_TOKEN,
+        token=settings.8891233106:AAHi0yWcBFxDqY6FuOIWqXq3JwkzsCNtgn4,
         default=DefaultBotProperties(
             parse_mode=ParseMode.HTML
         ),
     )
 
     dp = Dispatcher()
+
+    # Barcha handlerlarni ulash
+    dp.include_router(router)
 
     try:
         logging.info("SaraMatchBot ishga tushdi.")
@@ -34,5 +42,5 @@ async def main() -> None:
         await bot.session.close()
 
 
-if __name__ == "__main__":
+if name == "main":
     asyncio.run(main())

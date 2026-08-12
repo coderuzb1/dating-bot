@@ -44,3 +44,7 @@ dist/
 # Temporary Files
 *.tmp
 *.bak
+.env
+.venv/
+__pycache__/
+*.pyc
