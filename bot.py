@@ -18,7 +18,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     print("Bot ishga tushdi...")
-    app.run_polling(drop_pending_updates=True, timeout=60, read_timeout=60, write_timeout=60, connect_timeout=60)
+    app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
