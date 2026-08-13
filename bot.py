@@ -1,5 +1,12 @@
 import os
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from flask import Flask
+
+app_flask = Flask(__name__)
+
+@app_flask.route('/')
+def home():
+    return "Bot ishlayapti!"
 
 async def start(update, context):
     await update.message.reply_text("Salom!")
