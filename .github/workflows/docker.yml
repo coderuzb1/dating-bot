@@ -29,4 +29,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/coderuzb1/dating-bot:latest
+          tags: |
+            ghcr.io/coderuzb1/dating-bot:latest
+            ghcr.io/coderuzb1/dating-bot:d6299ec
