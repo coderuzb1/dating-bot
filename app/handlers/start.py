@@ -1,10 +1,9 @@
 from aiogram import Router
 from aiogram.types import Message
 
-router = Router(name="start_router")
+router = Router()
 
 
 @router.message()
-async def start_handler(message: Message):
-    print("🔥 HANDLER ISHLADI:", message.text)
+async def message_handler(message: Message):
     await message.answer("✅ SaraMatchBot ishlayapti!")
