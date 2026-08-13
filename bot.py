@@ -1,31 +1,24 @@
-import asyncio
-import logging
+import os
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
-from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
+async def start(update, context):
+    await update.message.reply_text("Salom!")
 
-from app.config import settings
-from app.handlers.router import router
+async def handle_message(update, context):
+    await update.message.reply_text(f"Siz yozdingiz: {update.message.text}")
 
-
-async def main():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    )
-
-    bot = Bot(
-        token=settings.BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-    )
-
-    dp = Dispatcher()
-    dp.include_router(router)
-
-    logging.info("SaraMatchBot ishga tushdi")
-    await dp.start_polling(bot)
-
+def main():
+    TOKEN = os.environ.get("BOT_TOKEN")
+    if not TOKEN:
+        print("XATO: BOT_TOKEN topilmadi!")
+        return
+    
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    
+    print("Bot ishga tushdi...")
+    app.run_polling(drop_pending_updates=True, timeout=60, read_timeout=60, write_timeout=60, connect_timeout=60)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
