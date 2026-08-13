@@ -30,8 +30,3 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/coderuzb1/dating-bot:latest
-
-
-
-
-cat .github/workflows/docker.yml
