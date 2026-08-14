@@ -29,34 +29,25 @@ async def notify_new_user(bot, new_user_name, new_user_id):
 async def notify_like(bot, to_user_id, from_user_id, from_user_name, from_user_photo):
     from telegram import InlineKeyboardMarkup, InlineKeyboardButton
     
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT first_name, age, photo FROM users WHERE user_id = %s", (from_user_id,))
-    user_info = cur.fetchone()
-    cur.close()
-    conn.close()
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("👤 Profilni ko'rish", callback_data=f"view_profile_{from_user_id}")]
+    ])
     
-    if user_info:
-        name, age, photo = user_info
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("👤 Profilni ko'rish", callback_data=f"view_profile_{from_user_id}")]
-        ])
-        
+    try:
+        await bot.send_photo(
+            chat_id=to_user_id,
+            photo=from_user_photo,
+            caption=f"❤️ Sizni {from_user_name} yoqtirdi!\n\nJavob qaytaring!",
+            reply_markup=keyboard
+        )
+    except:
         try:
-            await bot.send_photo(
+            await bot.send_message(
                 chat_id=to_user_id,
-                photo=photo,
-                caption=f"❤️ Sizni {name} yoqtirdi!\n\n👤 {name}, {age}\n\nJavob qaytaring!",
-                reply_markup=keyboard
+                text=f"❤️ Sizni {from_user_name} yoqtirdi!"
             )
         except:
-            try:
-                await bot.send_message(
-                    chat_id=to_user_id,
-                    text=f"❤️ Sizni {name} yoqtirdi!\n\nJavob qaytaring!"
-                )
-            except:
-                pass
+            pass
 
 async def notify_new_match(bot, user1_id, user1_name, user1_photo, user2_id, user2_name, user2_photo):
     from telegram import InlineKeyboardMarkup, InlineKeyboardButton
@@ -73,15 +64,12 @@ async def notify_new_match(bot, user1_id, user1_name, user1_photo, user2_id, use
         await bot.send_photo(
             chat_id=user1_id,
             photo=user2_photo,
-            caption=f"🎉 MATCH!\n\nSiz {user2_name} bilan mos keldingiz!\n\n💞 Matchlarim bo'limidan ko'rishingiz mumkin.",
+            caption=f"🎉 MATCH!\n\nSiz {user2_name} bilan mos keldingiz!",
             reply_markup=keyboard1
         )
     except:
         try:
-            await bot.send_message(
-                chat_id=user1_id,
-                text=f"🎉 MATCH!\n\nSiz {user2_name} bilan mos keldingiz!"
-            )
+            await bot.send_message(chat_id=user1_id, text=f"🎉 MATCH!\n\nSiz {user2_name} bilan mos keldingiz!")
         except:
             pass
     
@@ -89,15 +77,12 @@ async def notify_new_match(bot, user1_id, user1_name, user1_photo, user2_id, use
         await bot.send_photo(
             chat_id=user2_id,
             photo=user1_photo,
-            caption=f"🎉 MATCH!\n\nSiz {user1_name} bilan mos keldingiz!\n\n💞 Matchlarim bo'limidan ko'rishingiz mumkin.",
+            caption=f"🎉 MATCH!\n\nSiz {user1_name} bilan mos keldingiz!",
             reply_markup=keyboard2
         )
     except:
         try:
-            await bot.send_message(
-                chat_id=user2_id,
-                text=f"🎉 MATCH!\n\nSiz {user1_name} bilan mos keldingiz!"
-            )
+            await bot.send_message(chat_id=user2_id, text=f"🎉 MATCH!\n\nSiz {user1_name} bilan mos keldingiz!")
         except:
             pass
 

@@ -17,6 +17,7 @@ def init_db():
             gender TEXT,
             bio TEXT,
             photo TEXT,
+            premium_until TIMESTAMP,
             created_at TIMESTAMP DEFAULT NOW()
         )
     """)
@@ -33,6 +34,23 @@ def init_db():
             id SERIAL PRIMARY KEY,
             user1 BIGINT,
             user2 BIGINT,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS reports (
+            id SERIAL PRIMARY KEY,
+            from_user BIGINT,
+            to_user BIGINT,
+            reason TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS blocks (
+            id SERIAL PRIMARY KEY,
+            from_user BIGINT,
+            to_user BIGINT,
             created_at TIMESTAMP DEFAULT NOW()
         )
     """)
