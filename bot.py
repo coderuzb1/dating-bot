@@ -116,12 +116,40 @@ async def find(update, context):
     
     await update.message.reply_photo(photo=photo, caption=f"{first_name}, {age}\n{bio}", reply_markup=keyboard)
 
+async def view_profile(update, context):
+    query = update.callback_query
+    await query.answer()
+    
+    target_id = int(query.data.split("_")[2])
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE user_id = %s", (target_id,))
+    user_data = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if user_data:
+        user_id, username, first_name, age, gender, bio, photo, created_at, premium_until = user_data
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")]
+        ])
+        await query.message.reply_photo(
+            photo=photo,
+            caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}",
+            reply_markup=keyboard
+        )
+
 async def handle_callback(update, context):
     query = update.callback_query
     await query.answer()
     
     user = query.from_user
     data = query.data
+    
+    if data.startswith("view_profile_"):
+        await view_profile(update, context)
+        return
     
     if data.startswith("like_"):
         target_id = int(data.split("_")[1])
