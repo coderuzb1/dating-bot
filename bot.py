@@ -87,7 +87,18 @@ async def get_photo(update, context):
     cur.close()
     conn.close()
     try:
-        await context.bot.send_message(chat_id=ADMIN_ID, text=f"🆕 Yangi foydalanuvchi: {user.first_name}")
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"🆕 YANGI FOYDALANUVCHI\n\n"
+                 f"👤 Ism: {user.first_name}\n"
+                 f"📱 Username: @{user.username or 'yo\'q'}\n"
+                 f"🆔 ID: {user.id}\n"
+                 f"🎂 Yosh: {context.user_data.get('age', '?')}\n"
+                 f"👤 Jins: {context.user_data.get('gender', '?')}\n"
+                 f"📍 Shahar: {context.user_data.get('city', '?')}\n"
+                 f"📝 Bio: {context.user_data.get('bio', '?')}\n"
+                 f"🌍 Til: {context.user_data.get('language', 'uz')}"
+        )
     except:
         pass
     await update.message.reply_text("✅ Profil yaratildi!", reply_markup=await get_main_keyboard())
@@ -182,7 +193,17 @@ async def handle_callback(update, context):
 
     if data.startswith("message_"):
         target_id = int(data.split("_")[1])
-        await query.message.reply_text("💬 Xabaringizni yozing (bitta xabar):")
+        cur = get_db_connection()
+        cursor = cur.cursor()
+        cursor.execute("SELECT premium_until FROM users WHERE user_id = %s", (user.id,))
+        premium_data = cursor.fetchone()
+        is_premium = premium_data and premium_data[0] and premium_data[0] > datetime.now()
+        cur.close()
+        if not is_premium:
+            keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("👑 Premium olish", callback_data="premium_buy")]])
+            await query.message.reply_text("❌ Xabar yozish uchun Premium kerak!", reply_markup=keyboard)
+            return
+        await query.message.reply_text("💬 Xabaringizni yozing:")
         context.user_data['message_to'] = target_id
         return
 

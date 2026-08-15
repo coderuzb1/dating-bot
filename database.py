@@ -79,6 +79,14 @@ def init_db():
             created_at TIMESTAMP DEFAULT NOW()
         )
     """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS profile_views (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT,
+            viewed_user_id BIGINT,
+            viewed_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
     conn.commit()
     cur.close()
     conn.close()
