@@ -178,6 +178,47 @@ async def handle_callback(update, context):
             conn.close()
             await query.message.reply_text(f"✅ Premium faollashtirildi!\n📅 Muddat: {days} kun")
         return
+    if data.startswith("sl_"):
+        amount = int(data.split("_")[1])
+        price_map = {1: "1 000", 5: "4 000", 10: "7 000"}
+        price = price_map[amount]
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO payments (user_id, amount, days, status) VALUES (%s, %s, 0, 'pending')", (user.id, price))
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ To'lov qildim", callback_data=f"confirm_sl_{amount}")],
+            [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
+        ])
+        await query.message.reply_text(
+            f"💳 TO'LOV\n\n"
+            f"⭐ {amount} ta Superlike\n"
+            f"💰 Summa: {price} so'm\n\n"
+            f"💳 Karta: KARTA_RAQAMI\n\n"
+            f"To'lov qilgach '✅ To'lov qildim' ni bosing.",
+            reply_markup=keyboard
+        )
+        return
+    
+    if data.startswith("confirm_sl_"):
+        amount = int(data.split("_")[2])
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET superlike_balance = COALESCE(superlike_balance, 0) + %s WHERE user_id = %s", (amount, user.id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        await query.message.reply_text(f"✅ {amount} ta Superlike hisobingizga qo'shildi!")
+        return
+    
+    if data == "buy_superlikes":
+        await buy_superlikes(update, context)
+        return
+
     if data == "cancel_premium":
         await query.message.reply_text("❌ Bekor qilindi.")
         return
