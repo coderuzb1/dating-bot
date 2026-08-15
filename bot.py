@@ -118,7 +118,7 @@ async def find(update, context):
     if not target:
         await message.reply_text(f"😔 Hozircha {target_gender} profillar yo'q.")
         return
-    target_id, username, first_name, age, gender, bio, photo, created_at, premium_until = target
+    target_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at = target
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("❌", callback_data=f"skip_{target_id}"),
@@ -142,7 +142,7 @@ async def view_profile(update, context):
     cur.close()
     conn.close()
     if user_data:
-        user_id, username, first_name, age, gender, bio, photo, created_at, premium_until = user_data
+        user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at = user_data
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")]])
         await query.message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}", reply_markup=keyboard)
 
@@ -275,7 +275,7 @@ async def profile(update, context):
     if not user_data:
         await update.message.reply_text("❌ Profil topilmadi.")
         return
-    user_id, username, first_name, age, gender, bio, photo, created_at, premium_until = user_data
+    user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at = user_data
     premium_status = "✅" if premium_until and premium_until > datetime.now() else "❌"
     await update.message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}\n\n❤️ {likes_count} like\n💞 {matches_count} match\n👑 Premium: {premium_status}")
 
