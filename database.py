@@ -26,6 +26,7 @@ def init_db():
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS city TEXT")
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE")
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_until TIMESTAMP")
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'uz'")
     cur.execute("""
         CREATE TABLE IF NOT EXISTS likes (
             id SERIAL PRIMARY KEY,
