@@ -172,7 +172,7 @@ async def find(update, context):
         ],
         [
             InlineKeyboardButton("➡️ O'tkazib yuborish", callback_data=f"skip_{target_id}")
-        ]
+    ]
     ])
     await message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}", reply_markup=keyboard)
 
