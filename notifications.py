@@ -41,13 +41,7 @@ async def notify_like(bot, to_user_id, from_user_id, from_user_name, from_user_p
             reply_markup=keyboard
         )
     except:
-        try:
-            await bot.send_message(
-                chat_id=to_user_id,
-                text=f"❤️ Sizni {from_user_name} yoqtirdi!"
-            )
-        except:
-            pass
+        pass
 
 async def notify_new_match(bot, user1_id, user1_name, user1_photo, user2_id, user2_name, user2_photo):
     from telegram import InlineKeyboardMarkup, InlineKeyboardButton
@@ -68,10 +62,7 @@ async def notify_new_match(bot, user1_id, user1_name, user1_photo, user2_id, use
             reply_markup=keyboard1
         )
     except:
-        try:
-            await bot.send_message(chat_id=user1_id, text=f"🎉 MATCH!\n\nSiz {user2_name} bilan mos keldingiz!")
-        except:
-            pass
+        pass
     
     try:
         await bot.send_photo(
@@ -81,10 +72,7 @@ async def notify_new_match(bot, user1_id, user1_name, user1_photo, user2_id, use
             reply_markup=keyboard2
         )
     except:
-        try:
-            await bot.send_message(chat_id=user2_id, text=f"🎉 MATCH!\n\nSiz {user1_name} bilan mos keldingiz!")
-        except:
-            pass
+        pass
 
 async def notify_news(bot, text):
     await send_notification_to_all(bot, f"📢 Yangilik:\n\n{text}")

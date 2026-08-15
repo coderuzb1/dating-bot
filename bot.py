@@ -213,7 +213,9 @@ async def handle_callback(update, context):
     if data.startswith("like_"):
         target_id = int(data.split("_")[1])
         
-        conn = get_db_connection()user_data = cur.fetchone()
+        conn = get_db_connection()
+    cur = conn.cursor()
+    user_data = cur.fetchone()
     
     cur.execute("SELECT COUNT(*) FROM likes WHERE to_user = %s", (user.id,))
     likes_count = cur.fetchone()[0]
