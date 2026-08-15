@@ -217,7 +217,7 @@ async def handle_callback(update, context):
             f"💳 TO'LOV\n\n"
             f"⭐ {amount} ta Superlike\n"
             f"💰 Summa: {price} so'm\n\n"
-            f"💳 Karta: KARTA_RAQAMI\n\n"
+            f"💳 Karta: 9860 0866 0148 0972\n\n"
             f"To'lov qilgach '✅ To'lov qildim' ni bosing.",
             reply_markup=keyboard
         )
