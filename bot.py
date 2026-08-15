@@ -636,6 +636,12 @@ async def save_profile(query, context):
     return ConversationHandler.END
 
 def main():
+    try:
+        import keepalive
+        keepalive.keep_alive()
+    except:
+        pass
+    
     TOKEN = os.environ.get("BOT_TOKEN")
     if not TOKEN:
         print("XATO: BOT_TOKEN topilmadi!")
