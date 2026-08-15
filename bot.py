@@ -138,10 +138,6 @@ async def find(update, context):
         [
             InlineKeyboardButton("❌", callback_data=f"skip_{target_id}"),
             InlineKeyboardButton("❤️", callback_data=f"like_{target_id}")
-        ],
-        [
-            InlineKeyboardButton("🚫 Bloklash", callback_data=f"block_{target_id}"),
-            InlineKeyboardButton("⚠️ Report", callback_data=f"report_{target_id}")
         ]
     ])
     await message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}", reply_markup=keyboard)
