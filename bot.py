@@ -5,7 +5,7 @@ from database import init_db, get_db_connection
 from notifications import notify_new_user, notify_new_match, notify_like, notify_news
 from datetime import datetime, timedelta
 
-AGE, GENDER, BIO, PHOTO = range(4)
+AGE, GENDER, BIO, PHOTO, CITY, EDIT_PHOTO = range(6)
 ADMIN_ID = 6310532367
 BAD_WORDS = ["ahmoq", "jinni", "sotqin", "firibgar", "scam", "aldamoq", "pul", "karta", "parol"]
 
