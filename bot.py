@@ -170,11 +170,18 @@ async def handle_callback(update, context):
     if data.startswith("view_profile_"):
         await view_profile(update, context)
         return
+    if data.startswith("message_"):
+        target_id = int(data.split("_")[1])
+        await query.message.reply_text("💬 Xabaringizni yozing (bitta xabar):")
+        context.user_data['message_to'] = target_id
+        return
+
     if data.startswith("like_"):
         target_id = int(data.split("_")[1])
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("INSERT INTO likes (from_user, to_user) VALUES (%s, %s)", (user.id, target_id))
+        cur.execute("UPDATE users SET views_today = views_today + 1 WHERE user_id = %s", (user.id,))
         cur.execute("SELECT * FROM likes WHERE from_user = %s AND to_user = %s", (target_id, user.id))
         mutual_like = cur.fetchone()
         cur.execute("SELECT first_name, photo FROM users WHERE user_id = %s", (user.id,))
@@ -323,6 +330,52 @@ async def settings(update, context):
 
 async def handle_message(update, context):
     text = update.message.text
+    
+    if await check_bad_words(text):
+        await update.message.reply_text("⚠️ Xabaringizda taqiqlangan so'z bor!")
+        return
+    
+    if 'message_to' in context.user_data:
+        target_id = context.user_data['message_to']
+        user = update.effective_user
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT premium_until FROM users WHERE user_id = %s", (user.id,))
+        premium_data = cur.fetchone()
+        is_premium = premium_data and premium_data[0] and premium_data[0] > datetime.now()
+        
+        if not is_premium:
+            await update.message.reply_text("❌ Xabar yozish uchun Premium kerak.")
+            cur.close()
+            conn.close()
+            del context.user_data['message_to']
+            return
+        
+        cur.execute("SELECT first_name FROM users WHERE user_id = %s", (user.id,))
+        from_name = cur.fetchone()[0]
+        
+        today = datetime.now().date()
+        cur.execute("SELECT COUNT(*) FROM messages WHERE from_user = %s AND created_at::date = %s", (user.id, today))
+        msg_count = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+        
+        if msg_count >= 10:
+            await update.message.reply_text("⚠️ Kunlik xabar limiti tugadi!")
+            del context.user_data['message_to']
+            return
+        
+        try:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=f"💬 {from_name} dan xabar:\n\n{text}"
+            )
+            await update.message.reply_text("✅ Xabar yuborildi!")
+        except:
+            await update.message.reply_text("❌ Xabar yuborilmadi.")
+        
+        del context.user_data['message_to']
+        return
     if text == "🔍 Qidirish":
         await find(update, context)
     elif text == "👤 Profil":
