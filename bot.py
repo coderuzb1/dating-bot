@@ -288,6 +288,44 @@ async def handle_callback(update, context):
         await query.message.reply_text("Yangi rasm yuboring:")
         return PHOTO
 
+    if data == "edit_menu":
+        await edit_menu(update, context)
+        return
+
+    if data == "edit_name":
+        context.user_data['edit_field'] = 'name'
+        await query.message.reply_text("Yangi ismingizni yozing:")
+        return AGE
+    
+    if data == "edit_age":
+        context.user_data['edit_field'] = 'age'
+        await query.message.reply_text("Yangi yoshingizni kiriting (16-60):")
+        return AGE
+    
+    if data == "edit_bio":
+        context.user_data['edit_field'] = 'bio'
+        await query.message.reply_text("Yangi bio yozing:")
+        return BIO
+    
+    if data == "edit_city":
+        context.user_data['edit_field'] = 'city'
+        keyboard = ReplyKeyboardMarkup([
+            [KeyboardButton("Toshkent"), KeyboardButton("Samarqand")],
+            [KeyboardButton("Buxoro"), KeyboardButton("Andijon")],
+            [KeyboardButton("Farg'ona"), KeyboardButton("Namangan")],
+            [KeyboardButton("Qarshi"), KeyboardButton("Nukus")],
+            [KeyboardButton("Xiva"), KeyboardButton("Jizzax")],
+            [KeyboardButton("Guliston"), KeyboardButton("Termiz")],
+            [KeyboardButton("Navoiy"), KeyboardButton("Boshqa")]
+        ], resize_keyboard=True, one_time_keyboard=True)
+        await query.message.reply_text("Yangi shahringizni tanlang:", reply_markup=keyboard)
+        return CITY
+    
+    if data == "edit_photo":
+        context.user_data['edit_field'] = 'photo'
+        await query.message.reply_text("Yangi rasm yuboring:")
+        return PHOTO
+
     if data == "cancel_premium":
         await query.message.reply_text("❌ Bekor qilindi.")
         return
