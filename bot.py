@@ -174,6 +174,12 @@ async def handle_callback(update, context):
     if data.startswith("view_profile_"):
         await view_profile(update, context)
         return
+    if data.startswith("chat_"):
+        target_id = int(data.split("_")[1])
+        context.user_data['chat_with'] = target_id
+        await query.message.reply_text("💬 Xabaringizni yozing:")
+        return
+
     if data.startswith("message_"):
         target_id = int(data.split("_")[1])
         await query.message.reply_text("💬 Xabaringizni yozing (bitta xabar):")
@@ -295,6 +301,7 @@ async def likes(update, context):
     likes_list = cur.fetchall()
     cur.close()
     conn.close()
+    
     if not likes_list:
         await update.message.reply_text("❤️ Hozircha yoqtirganlaringiz yo'q.")
         return
@@ -308,7 +315,7 @@ async def matches(update, context):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT u.first_name, u.age, u.username FROM users u
+        SELECT u.user_id, u.first_name, u.age, u.username FROM users u
         JOIN matches m ON u.user_id = CASE WHEN m.user1 = %s THEN m.user2 ELSE m.user1 END
         WHERE m.user1 = %s OR m.user2 = %s
     """, (user.id, user.id, user.id))
@@ -318,13 +325,12 @@ async def matches(update, context):
     if not matches_list:
         await update.message.reply_text("💞 Hozircha matchlar yo'q.")
         return
-    text = "💞 Matchlaringiz:\n\n"
-    for match in matches_list:
-        text += f"• {match[0]}, {match[1]}"
-        if match[2]:
-            text += f" (@{match[2]})"
-        text += "\n"
-    await update.message.reply_text(text)
+    keyboard = InlineKeyboardMarkup([])
+    for match in matches_list[:10]:
+        keyboard.inline_keyboard.append([
+            InlineKeyboardButton(f"💬 {match[1]}, {match[2]}", callback_data=f"chat_{match[0]}")
+        ])
+    await update.message.reply_text("💞 Matchlaringiz:\n\nXabar yozish uchun bosing:", reply_markup=keyboard)
 
 async def settings(update, context):
     keyboard = InlineKeyboardMarkup([
@@ -339,6 +345,25 @@ async def handle_message(update, context):
         await update.message.reply_text("⚠️ Xabaringizda taqiqlangan so'z bor!")
         return
     
+    if 'chat_with' in context.user_data:
+        target_id = context.user_data['chat_with']
+        user = update.effective_user
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT first_name FROM users WHERE user_id = %s", (user.id,))
+        from_name = cur.fetchone()[0]
+        cur.execute("INSERT INTO messages (from_user, to_user, text) VALUES (%s, %s, %s)", (user.id, target_id, text))
+        conn.commit()
+        cur.close()
+        conn.close()
+        try:
+            await context.bot.send_message(chat_id=target_id, text=f"💬 {from_name} dan:\n\n{text}")
+            await update.message.reply_text("✅ Xabar yuborildi!")
+        except:
+            await update.message.reply_text("❌ Xabar yuborilmadi.")
+        del context.user_data['chat_with']
+        return
+
     if 'message_to' in context.user_data:
         target_id = context.user_data['message_to']
         user = update.effective_user
