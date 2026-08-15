@@ -17,10 +17,15 @@ def init_db():
             gender TEXT,
             bio TEXT,
             photo TEXT,
+            city TEXT,
+            is_active BOOLEAN DEFAULT TRUE,
             premium_until TIMESTAMP,
             created_at TIMESTAMP DEFAULT NOW()
         )
     """)
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS city TEXT")
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE")
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_until TIMESTAMP")
     cur.execute("""
         CREATE TABLE IF NOT EXISTS likes (
             id SERIAL PRIMARY KEY,
