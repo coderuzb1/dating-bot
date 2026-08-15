@@ -338,8 +338,55 @@ async def settings(update, context):
     ])
     await update.message.reply_text("⚙️ Sozlamalar:", reply_markup=keyboard)
 
+async def save_edit(update, context):
+    user = update.effective_user
+    field = context.user_data.get('edit_field')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    if field == 'age':
+        value = update.message.text
+        if not value.isdigit() or int(value) < 16 or int(value) > 60:
+            await update.message.reply_text("❌ Yoshi 16-60 oralig'ida bo'lishi kerak:")
+            return AGE
+        cur.execute("UPDATE users SET age = %s WHERE user_id = %s", (int(value), user.id))
+    elif field == 'bio':
+        value = update.message.text
+        cur.execute("UPDATE users SET bio = %s WHERE user_id = %s", (value, user.id))
+    elif field == 'gender':
+        value = update.message.text
+        gender = "Erkak" if "👨" in value else "Ayol" if "👩" in value else value
+        cur.execute("UPDATE users SET gender = %s WHERE user_id = %s", (gender, user.id))
+    elif field == 'city':
+        value = update.message.text
+        cur.execute("UPDATE users SET city = %s WHERE user_id = %s", (value, user.id))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    del context.user_data['edit_field']
+    await update.message.reply_text("✅ Profil yangilandi!", reply_markup=await get_main_keyboard())
+    return ConversationHandler.END
+
+async def save_edit_photo(update, context):
+    user = update.effective_user
+    photo = update.message.photo[-1].file_id
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET photo = %s WHERE user_id = %s", (photo, user.id))
+    conn.commit()
+    cur.close()
+    conn.close()
+    del context.user_data['edit_field']
+    await update.message.reply_text("✅ Rasm yangilandi!", reply_markup=await get_main_keyboard())
+    return ConversationHandler.END
+
 async def handle_message(update, context):
     text = update.message.text
+    
+    if 'edit_field' in context.user_data:
+        return await save_edit(update, context)
     
     if await check_bad_words(text):
         await update.message.reply_text("⚠️ Xabaringizda taqiqlangan so'z bor!")
@@ -466,6 +513,7 @@ def main():
             GENDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_gender)],
             BIO: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_bio)],
             PHOTO: [MessageHandler(filters.PHOTO, get_photo)],
+        EDIT_PHOTO: [MessageHandler(filters.PHOTO, save_edit_photo)],
         },
         fallbacks=[],
     )
