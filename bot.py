@@ -86,7 +86,7 @@ async def get_photo(update, context):
     [InlineKeyboardButton("🔍 Boshqa profillar", callback_data="browse_profiles")],
     [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
 ])
-            [InlineKeyboardButton("➕ Yana rasm qo'shish", callback_data="add_more_photo")],
+    [InlineKeyboardButton("➕ Yana rasm qo'shish", callback_data="add_more_photo")],
             [InlineKeyboardButton("✅ Tugatish", callback_data="finish_photos")]
         ])
         await update.message.reply_text(
