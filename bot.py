@@ -87,7 +87,7 @@ async def get_photo(update, context):
     [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
 ])
     [InlineKeyboardButton("➕ Yana rasm qo'shish", callback_data="add_more_photo")],
-            [InlineKeyboardButton("✅ Tugatish", callback_data="finish_photos")]
+    [InlineKeyboardButton("✅ Tugatish", callback_data="finish_photos")]
         ])
         await update.message.reply_text(
             f"📸 {context.user_data['photo_count']}/3 rasm qo'shildi.\n"
