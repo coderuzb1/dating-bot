@@ -91,7 +91,7 @@ async def get_photo(update, context):
             chat_id=ADMIN_ID,
             text=f"🆕 YANGI FOYDALANUVCHI\n\n"
                  f"👤 Ism: {user.first_name}\n"
-                 f"📱 Username: @{user.username or 'yo\'q'}\n"
+                 f"📱 Username: @{user.username or 'yoq'}\n"
                  f"🆔 ID: {user.id}\n"
                  f"🎂 Yosh: {context.user_data.get('age', '?')}\n"
                  f"👤 Jins: {context.user_data.get('gender', '?')}\n"
