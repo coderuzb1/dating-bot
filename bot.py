@@ -124,8 +124,12 @@ async def get_photo(update, context):
     return ConversationHandler.END
 
 async def find(update, context):
-    message = update.message if update.message else update.callback_query.message
-    user = update.effective_user
+    if update.callback_query:
+        message = update.callback_query.message
+        user = update.callback_query.from_user
+    else:
+        message = update.message
+        user = update.effective_user
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("SELECT gender FROM users WHERE user_id = %s", (user.id,))
