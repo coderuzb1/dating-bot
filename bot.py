@@ -239,12 +239,11 @@ async def buy_premium(query, context):
         "📈 Doim yuqorida ko'rinish\n"
         "💕 2-3× ko'proq tanishuv\n"
         "❤️ Cheksiz layklar\n"
-        "👀 Kim yoqtirganini darhol bilib oling\n"
-        "⭐️ Har kuni 5 ta Superlike\n"
-        "💛 Oltin profil ramkasi\n"
-        "💬 Oltin chat xabarlari\n"
-        "🚀 Kunlik bepul Boost\n\n"
-        "To'lov: 1234 5678 9012 3456",
+        "👀 Kim yoqtirganini darhol bilib oling\n\n"
+        "💳 To'lov usullari:\n"
+        "1. Click\n"
+        "2. Payme\n"
+        "3. Karta",
         reply_markup=keyboard
     )
 
