@@ -82,7 +82,10 @@ async def get_photo(update, context):
     conn.commit()
     cur.close()
     conn.close()
-    await notify_new_user(context.bot, user.first_name, user.id)
+    try:
+        await context.bot.send_message(chat_id=ADMIN_ID, text=f"🆕 Yangi foydalanuvchi: {user.first_name}")
+    except:
+        pass
     await update.message.reply_text("✅ Profil yaratildi!", reply_markup=await get_main_keyboard())
     return ConversationHandler.END
 
