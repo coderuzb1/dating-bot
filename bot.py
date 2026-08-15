@@ -335,7 +335,9 @@ async def admin(update, context):
         f"❤️ Likelar: {total_likes}\n"
         f"💞 Matchlar: {total_matches}\n"
         f"👑 Premium: {premium_users}"
-    )async def broadcast(update, context):
+    )
+
+async def broadcast(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
         await update.message.reply_text("⛔ Siz admin emassiz!")
