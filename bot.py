@@ -152,7 +152,7 @@ async def find(update, context):
     if not target:
         await message.reply_text(f"😔 Hozircha {target_gender} profillar yo'q.")
         return
-    target_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = target
+    target_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = (list(target) + [None, None, None])[:14]
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("👎 Yoqmadi", callback_data=f"skip_{target_id}"),
@@ -175,7 +175,7 @@ async def view_profile(update, context):
     cur.close()
     conn.close()
     if user_data:
-        user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = user_data
+        user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = (list(user_data) + [None, None, None])[:14]
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")]])
         await query.message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}", reply_markup=keyboard)
 
@@ -373,7 +373,7 @@ async def profile(update, context):
     if not user_data:
         await update.message.reply_text("❌ Profil topilmadi.")
         return
-    user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = user_data
+    user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = (list(user_data) + [None, None, None])[:14]
     premium_status = "✅" if premium_until and premium_until > datetime.now() else "❌"
     await update.message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}\n\n❤️ {likes_count} like\n💞 {matches_count} match\n👑 Premium: {premium_status}")
 
@@ -636,11 +636,15 @@ async def save_profile(query, context):
     return ConversationHandler.END
 
 def main():
-    try:
-        import keepalive
-        keepalive.keep_alive()
-    except:
-        pass
+    from flask import Flask
+    flask_app = Flask(__name__)
+    
+    @flask_app.route('/')
+    def home():
+        return "Bot ishlayapti!"
+    
+    import threading
+    threading.Thread(target=lambda: flask_app.run(host='0.0.0.0', port=8080), daemon=True).start()
     
     TOKEN = os.environ.get("BOT_TOKEN")
     if not TOKEN:
