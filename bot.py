@@ -6,7 +6,7 @@ from notifications import notify_new_user, notify_new_match, notify_like, notify
 from datetime import datetime, timedelta
 
 AGE, GENDER, BIO, PHOTO = range(4)
-ADMIN_ID = 6310532367
+ADMIN_ID = 123456789
 
 async def get_main_keyboard():
     return ReplyKeyboardMarkup([
@@ -31,7 +31,6 @@ async def start(update, context):
             "👤 Profil - profilingizni ko'rish\n"
             "❤️ Yoqtirganlarim - siz yoqtirganlar\n"
             "💞 Matchlarim - o'zaro matchlar\n"
-            "⚙️ Sozlamalar - profilni tahrirlash\n"
             "👑 Premium - pullik obuna",
             reply_markup=await get_main_keyboard()
         )
@@ -45,22 +44,18 @@ async def get_age(update, context):
         await update.message.reply_text("❌ Iltimos, to'g'ri yosh kiriting (16-60):")
         return AGE
     context.user_data['age'] = int(text)
-    
     keyboard = ReplyKeyboardMarkup([
         [KeyboardButton("👨 Erkak"), KeyboardButton("👩 Ayol")]
     ], resize_keyboard=True, one_time_keyboard=True)
-    
     await update.message.reply_text("Jinsingizni tanlang:", reply_markup=keyboard)
     return GENDER
 
 async def get_gender(update, context):
     text = update.message.text
     gender = "Erkak" if "👨" in text else "Ayol" if "👩" in text else text
-    
     if gender not in ["Erkak", "Ayol"]:
         await update.message.reply_text("❌ Iltimos, tugmalardan birini tanlang:")
         return GENDER
-    
     context.user_data['gender'] = gender
     await update.message.reply_text("📝 O'zingiz haqingizda qisqacha yozing:")
     return BIO
@@ -74,7 +69,6 @@ async def get_bio(update, context):
 async def get_photo(update, context):
     user = update.effective_user
     photo = update.message.photo[-1].file_id
-    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -88,26 +82,24 @@ async def get_photo(update, context):
     conn.commit()
     cur.close()
     conn.close()
-    
     await notify_new_user(context.bot, user.first_name, user.id)
     await update.message.reply_text("✅ Profil yaratildi!", reply_markup=await get_main_keyboard())
     return ConversationHandler.END
 
 async def find(update, context):
-    user = update.effective_userconn = get_db_connection()
+    message = update.message if update.message else update.callback_query.message
+    user = update.effective_user
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("SELECT gender FROM users WHERE user_id = %s", (user.id,))
     user_data = cur.fetchone()
-    
     if not user_data:
-        await update.message.reply_text("❌ Avval profil yarating. /start bosing.")
+        await message.reply_text("❌ Avval profil yarating. /start bosing.")
         cur.close()
         conn.close()
         return
-    
     my_gender = user_data[0]
     target_gender = "Ayol" if my_gender == "Erkak" else "Erkak"
-    
     cur.execute("""
         SELECT * FROM users 
         WHERE user_id != %s 
@@ -120,13 +112,10 @@ async def find(update, context):
     target = cur.fetchone()
     cur.close()
     conn.close()
-    
     if not target:
-        await update.message.reply_text(f"😔 Hozircha {target_gender} profillar yo'q.")
+        await message.reply_text(f"😔 Hozircha {target_gender} profillar yo'q.")
         return
-    
     target_id, username, first_name, age, gender, bio, photo, created_at, premium_until = target
-    
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("❌", callback_data=f"skip_{target_id}"),
@@ -137,109 +126,152 @@ async def find(update, context):
             InlineKeyboardButton("⚠️ Report", callback_data=f"report_{target_id}")
         ]
     ])
-    
-    await update.message.reply_photo(
-        photo=photo,
-        caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}",
-        reply_markup=keyboard
-    )
+    await message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}", reply_markup=keyboard)
 
 async def view_profile(update, context):
     query = update.callback_query
     await query.answer()
     target_id = int(query.data.split("_")[2])
-    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("SELECT * FROM users WHERE user_id = %s", (target_id,))
     user_data = cur.fetchone()
     cur.close()
     conn.close()
-    
     if user_data:
         user_id, username, first_name, age, gender, bio, photo, created_at, premium_until = user_data
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")]
-        ])
-        await query.message.reply_photo(
-            photo=photo,
-            caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}",
-            reply_markup=keyboard
-        )
-
-async def handle_premium_payment(update, context):
-    query = update.callback_query
-    await query.answer()
-    user = query.from_user
-    data = query.data
-    
-    durations = {
-        "premium_1w": 7,
-        "premium_1m": 30,
-        "premium_3m": 90,
-        "premium_1y": 365
-    }
-    
-    if data in durations:
-        days = durations[data]
-        premium_until = datetime.now() + timedelta(days=days)
-        
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET premium_until = %s WHERE user_id = %s", (premium_until, user.id))
-        conn.commit()
-        cur.close()
-        conn.close()
-        
-        await query.message.reply_text(f"✅ Premium faollashtirildi!\n📅 Muddat: {days} kun")
-    elif data == "cancel_premium":
-        await query.message.reply_text("❌ Bekor qilindi.")
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")]])
+        await query.message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}", reply_markup=keyboard)
 
 async def handle_callback(update, context):
     query = update.callback_query
     await query.answer()
-    
     user = query.from_user
     data = query.data
-    
-    if data.startswith("premium_") or data == "cancel_premium":
-        await handle_premium_payment(update, context)
+    if data.startswith("premium_"):
+        durations = {"premium_1w": 7, "premium_1m": 30, "premium_3m": 90, "premium_1y": 365}
+        if data in durations:
+            days = durations[data]
+            premium_until = datetime.now() + timedelta(days=days)
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("UPDATE users SET premium_until = %s WHERE user_id = %s", (premium_until, user.id))
+            conn.commit()
+            cur.close()
+            conn.close()
+            await query.message.reply_text(f"✅ Premium faollashtirildi!\n📅 Muddat: {days} kun")
         return
-    
+    if data == "cancel_premium":
+        await query.message.reply_text("❌ Bekor qilindi.")
+        return
     if data.startswith("view_profile_"):
         await view_profile(update, context)
         return
-    
     if data.startswith("like_"):
         target_id = int(data.split("_")[1])
-        
         conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO likes (from_user, to_user) VALUES (%s, %s)", (user.id, target_id))
+        cur.execute("SELECT * FROM likes WHERE from_user = %s AND to_user = %s", (target_id, user.id))
+        mutual_like = cur.fetchone()
+        cur.execute("SELECT first_name, photo FROM users WHERE user_id = %s", (user.id,))
+        user_info = cur.fetchone()
+        user_name = user_info[0]
+        user_photo = user_info[1]
+        cur.execute("SELECT first_name, photo FROM users WHERE user_id = %s", (target_id,))
+        target_info = cur.fetchone()
+        target_name = target_info[0]
+        target_photo = target_info[1]
+        if mutual_like:
+            cur.execute("INSERT INTO matches (user1, user2) VALUES (%s, %s)", (user.id, target_id))
+            await notify_new_match(context.bot, user.id, user_name, user_photo, target_id, target_name, target_photo)
+            await query.message.reply_text(f"🎉 TABRIKLAYMIZ! MATCH!\n\nSiz {target_name} bilan mos keldingiz!")
+        else:
+            await notify_like(context.bot, target_id, user.id, user_name, user_photo)
+            await query.message.reply_text("❤️ Yoqdi! Agar qarshi tomon ham yoqsa, match bo'ladi.")
+        conn.commit()
+        cur.close()
+        conn.close()
+        await query.message.delete()
+        await find(query, context)
+        return
+    if data.startswith("skip_"):
+        await query.message.delete()
+        await find(query, context)
+        return
+    if data.startswith("block_"):
+        target_id = int(data.split("_")[1])
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO blocks (from_user, to_user) VALUES (%s, %s)", (user.id, target_id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        await query.message.reply_text("🚫 Foydalanuvchi bloklandi.")
+        await query.message.delete()
+        await find(query, context)
+        return
+    if data.startswith("report_"):
+        target_id = int(data.split("_")[1])
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO reports (from_user, to_user, reason) VALUES (%s, %s, %s)", (user.id, target_id, "Report"))
+        conn.commit()
+        cur.close()
+        conn.close()
+        await query.message.reply_text("⚠️ Foydalanuvchi report qilindi.")
+        await query.message.delete()
+        await find(query, context)
+        return
+
+async def buy_premium(query, context):
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("1 hafta - 30 571 so'm", callback_data="premium_1w")],
+        [InlineKeyboardButton("1 oy - 63 429 so'm ⭐️", callback_data="premium_1m")],
+        [InlineKeyboardButton("3 oy - 137 714 so'm", callback_data="premium_3m")],
+        [InlineKeyboardButton("1 yil - 282 000 so'm", callback_data="premium_1y")],
+        [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
+    ])
+    await query.message.reply_text(
+        "👑 PREMIUM\n\n"
+        "⚡️ Imkoniyatlaringizni 5× oshiring\n\n"
+        "🔥 325+ kishi allaqachon Premium'da\n\n"
+        "📈 Doim yuqorida ko'rinish\n"
+        "💕 2-3× ko'proq tanishuv\n"
+        "❤️ Cheksiz layklar\n"
+        "👀 Kim yoqtirganini darhol bilib oling\n"
+        "⭐️ Har kuni 5 ta Superlike\n"
+        "💛 Oltin profil ramkasi\n"
+        "💬 Oltin chat xabarlari\n"
+        "🚀 Kunlik bepul Boost\n\n"
+        "To'lov: 1234 5678 9012 3456",
+        reply_markup=keyboard
+    )
+
+async def premium(update, context):
+    await buy_premium(update, context)
+
+async def profile(update, context):
+    user = update.effective_user
+    conn = get_db_connection()
     cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE user_id = %s", (user.id,))
     user_data = cur.fetchone()
-    
     cur.execute("SELECT COUNT(*) FROM likes WHERE to_user = %s", (user.id,))
     likes_count = cur.fetchone()[0]
-    
     cur.execute("SELECT COUNT(*) FROM matches WHERE user1 = %s OR user2 = %s", (user.id, user.id))
     matches_count = cur.fetchone()[0]
     cur.close()
     conn.close()
-    
     if not user_data:
         await update.message.reply_text("❌ Profil topilmadi.")
         return
-    
     user_id, username, first_name, age, gender, bio, photo, created_at, premium_until = user_data
     premium_status = "✅" if premium_until and premium_until > datetime.now() else "❌"
-    
-    await update.message.reply_photo(
-        photo=photo,
-        caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}\n\n❤️ {likes_count} like\n💞 {matches_count} match\n👑 Premium: {premium_status}"
-    )
+    await update.message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}\n\n❤️ {likes_count} like\n💞 {matches_count} match\n👑 Premium: {premium_status}")
 
 async def likes(update, context):
     user = update.effective_user
-    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -250,20 +282,16 @@ async def likes(update, context):
     likes_list = cur.fetchall()
     cur.close()
     conn.close()
-    
     if not likes_list:
         await update.message.reply_text("❤️ Hozircha yoqtirganlaringiz yo'q.")
         return
-    
     text = "❤️ Siz yoqtirganlar:\n\n"
     for like in likes_list:
         text += f"• {like[0]}, {like[1]}\n"
-    
     await update.message.reply_text(text)
 
 async def matches(update, context):
     user = update.effective_user
-    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -274,29 +302,25 @@ async def matches(update, context):
     matches_list = cur.fetchall()
     cur.close()
     conn.close()
-    
     if not matches_list:
         await update.message.reply_text("💞 Hozircha matchlar yo'q.")
         return
-    
     text = "💞 Matchlaringiz:\n\n"
     for match in matches_list:
         text += f"• {match[0]}, {match[1]}"
         if match[2]:
             text += f" (@{match[2]})"
         text += "\n"
-    
     await update.message.reply_text(text)
 
 async def settings(update, context):
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("👑 Premium sotib olish", callback_data="premium_buy")],
+        [InlineKeyboardButton("👑 Premium sotib olish", callback_data="premium_buy")]
     ])
     await update.message.reply_text("⚙️ Sozlamalar:", reply_markup=keyboard)
 
 async def handle_message(update, context):
     text = update.message.text
-    
     if text == "🔍 Qidirish":
         await find(update, context)
     elif text == "👤 Profil":
@@ -315,7 +339,6 @@ async def admin(update, context):
     if user.id != ADMIN_ID:
         await update.message.reply_text("⛔ Siz admin emassiz!")
         return
-    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("SELECT COUNT(*) FROM users")
@@ -328,7 +351,6 @@ async def admin(update, context):
     premium_users = cur.fetchone()[0]
     cur.close()
     conn.close()
-    
     await update.message.reply_text(
         f"📊 ADMIN PANEL:\n\n"
         f"👥 Foydalanuvchilar: {total_users}\n"
@@ -342,7 +364,6 @@ async def broadcast(update, context):
     if user.id != ADMIN_ID:
         await update.message.reply_text("⛔ Siz admin emassiz!")
         return
-    
     text = update.message.text.replace("/broadcast ", "")
     await notify_news(context.bot, text)
     await update.message.reply_text("✅ Yuborildi!")
@@ -352,11 +373,8 @@ def main():
     if not TOKEN:
         print("XATO: BOT_TOKEN topilmadi!")
         return
-    
     init_db()
-    
     app = Application.builder().token(TOKEN).build()
-    
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
@@ -367,7 +385,6 @@ def main():
         },
         fallbacks=[],
     )
-    
     app.add_handler(conv_handler)
     app.add_handler(CommandHandler("admin", admin))
     app.add_handler(CommandHandler("broadcast", broadcast))
@@ -379,9 +396,8 @@ def main():
     app.add_handler(CommandHandler("premium", premium))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(handle_callback))
-    
     print("Dating bot ishga tushdi...")
     app.run_polling(drop_pending_updates=True)
 
-if name == "main":
+if __name__ == "__main__":
     main()
