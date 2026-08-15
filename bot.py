@@ -136,8 +136,11 @@ async def find(update, context):
     target_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at = target
     keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("❌", callback_data=f"skip_{target_id}"),
-            InlineKeyboardButton("❤️", callback_data=f"like_{target_id}")
+            InlineKeyboardButton("👎 Yoqmadi", callback_data=f"skip_{target_id}"),
+            InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")
+        ],
+        [
+            InlineKeyboardButton("➡️ O'tkazib yuborish", callback_data=f"skip_{target_id}")
         ]
     ])
     await message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}", reply_markup=keyboard)
