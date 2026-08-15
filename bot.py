@@ -82,6 +82,10 @@ async def get_photo(update, context):
     
     if context.user_data['photo_count'] < 3:
         keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("👤 Mening profilim", callback_data="my_profile")],
+    [InlineKeyboardButton("🔍 Boshqa profillar", callback_data="browse_profiles")],
+    [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
+])
             [InlineKeyboardButton("➕ Yana rasm qo'shish", callback_data="add_more_photo")],
             [InlineKeyboardButton("✅ Tugatish", callback_data="finish_photos")]
         ])
@@ -158,6 +162,10 @@ async def find(update, context):
         return
     target_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = (list(target) + [None, None, None])[:14]
     keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("👤 Mening profilim", callback_data="my_profile")],
+    [InlineKeyboardButton("🔍 Boshqa profillar", callback_data="browse_profiles")],
+    [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
+])
         [
             InlineKeyboardButton("👎 Yoqmadi", callback_data=f"skip_{target_id}"),
             InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")
@@ -180,7 +188,11 @@ async def view_profile(update, context):
     conn.close()
     if user_data:
         user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = (list(user_data) + [None, None, None])[:14]
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")]])
+        keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("👤 Mening profilim", callback_data="my_profile")],
+    [InlineKeyboardButton("🔍 Boshqa profillar", callback_data="browse_profiles")],
+    [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
+])[InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")]])
         await query.message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}", reply_markup=keyboard)
 
 async def handle_callback(update, context):
@@ -214,6 +226,10 @@ async def handle_callback(update, context):
         conn.close()
         
         keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("👤 Mening profilim", callback_data="my_profile")],
+    [InlineKeyboardButton("🔍 Boshqa profillar", callback_data="browse_profiles")],
+    [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
+])
             [InlineKeyboardButton("✅ To'lov qildim", callback_data=f"confirm_sl_{amount}")],
             [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
         ])
@@ -347,7 +363,11 @@ async def handle_callback(update, context):
         is_premium = premium_data and premium_data[0] and premium_data[0] > datetime.now()
         cur.close()
         if not is_premium:
-            keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("👑 Premium olish", callback_data="premium_buy")]])
+            keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("👤 Mening profilim", callback_data="my_profile")],
+    [InlineKeyboardButton("🔍 Boshqa profillar", callback_data="browse_profiles")],
+    [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
+])[InlineKeyboardButton("👑 Premium olish", callback_data="premium_buy")]])
             await query.message.reply_text("❌ Xabar yozish uchun Premium kerak!", reply_markup=keyboard)
             return
         await query.message.reply_text("💬 Xabaringizni yozing:")
@@ -414,6 +434,10 @@ async def handle_callback(update, context):
 
 async def buy_premium(query, context):
     keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("👤 Mening profilim", callback_data="my_profile")],
+    [InlineKeyboardButton("🔍 Boshqa profillar", callback_data="browse_profiles")],
+    [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
+])
         [InlineKeyboardButton("1 hafta - 30 571 so'm", callback_data="premium_1w")],
         [InlineKeyboardButton("1 oy - 63 429 so'm ⭐️", callback_data="premium_1m")],
         [InlineKeyboardButton("3 oy - 137 714 so'm", callback_data="premium_3m")],
@@ -493,7 +517,11 @@ async def matches(update, context):
     if not matches_list:
         await update.message.reply_text("💞 Hozircha matchlar yo'q.")
         return
-    keyboard = InlineKeyboardMarkup([])
+    keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("👤 Mening profilim", callback_data="my_profile")],
+    [InlineKeyboardButton("🔍 Boshqa profillar", callback_data="browse_profiles")],
+    [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
+])])
     for match in matches_list[:10]:
         keyboard.inline_keyboard.append([
             InlineKeyboardButton(f"💬 {match[1]}, {match[2]}", callback_data=f"chat_{match[0]}")
@@ -502,6 +530,10 @@ async def matches(update, context):
 
 async def settings(update, context):
     keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("👤 Mening profilim", callback_data="my_profile")],
+    [InlineKeyboardButton("🔍 Boshqa profillar", callback_data="browse_profiles")],
+    [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
+])
         [InlineKeyboardButton("👑 Premium sotib olish", callback_data="premium_buy")]
     ])
     await update.message.reply_text("⚙️ Sozlamalar:", reply_markup=keyboard)
@@ -715,6 +747,61 @@ async def save_profile(query, context):
     await query.message.reply_text("✅ Profil yaratildi!", reply_markup=await get_main_keyboard())
     return ConversationHandler.END
 
+
+async def browse_profiles(update, context):
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT user_id, first_name, age, city, photo FROM users WHERE user_id != ? AND active = true", (user_id,))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    if not rows:
+        await query.edit_message_text("😔 Hozircha boshqa faol profillar yo'q.")
+        return
+    
+    if 'profile_index' not in context.user_data:
+        context.user_data['profile_index'] = 0
+    else:
+        context.user_data['profile_index'] = (context.user_data['profile_index'] + 1) % len(rows)
+    
+    index = context.user_data['profile_index']
+    p = rows[index]
+    text = f"👤 {p[1]}, {p[2]} yosh
+📍 {p[3] or 'Noma'lum'}"
+    keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("👤 Mening profilim", callback_data="my_profile")],
+    [InlineKeyboardButton("🔍 Boshqa profillar", callback_data="browse_profiles")],
+    [InlineKeyboardButton("⚙️ Sozlamalar", callback_data="settings")]
+])
+        [InlineKeyboardButton("❤️ Yoqdi", callback_data="like")],
+        [InlineKeyboardButton("⏭ O‘tkazib yuborish", callback_data="skip_profile")],
+        [InlineKeyboardButton("🔙 Orqaga", callback_data="main_menu")]
+    ])
+    await query.edit_message_text(text, reply_markup=keyboard)
+
+async def skip_profile(update, context):
+    query = update.callback_query
+    await query.answer()
+    await browse_profiles(update, context)
+
+async def like_profile(update, context):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text("❤️ Yoqtirildi! (Bazaga saqlanadi)")
+
+
+
+async def main_menu(update, context):
+    query = update.callback_query
+    await query.answer()
+    await start(update, context)
+
+
 def main():
     from flask import Flask
     flask_app = Flask(__name__)
@@ -732,6 +819,10 @@ def main():
         return
     init_db()
     app = Application.builder().token(TOKEN).build()
+    app.add_handler(CallbackQueryHandler(browse_profiles, pattern="^browse_profiles$"))
+    app.add_handler(CallbackQueryHandler(skip_profile, pattern="^skip_profile$"))
+    app.add_handler(CallbackQueryHandler(like_profile, pattern="^like$"))
+    app.add_handler(CallbackQueryHandler(main_menu, pattern="^main_menu$"))
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
