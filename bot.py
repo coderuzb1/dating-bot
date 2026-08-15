@@ -6,7 +6,11 @@ from notifications import notify_new_user, notify_new_match, notify_like, notify
 from datetime import datetime, timedelta
 
 AGE, GENDER, BIO, PHOTO = range(4)
-ADMIN_ID = 123456789
+ADMIN_ID = 6310532367
+BAD_WORDS = ["ahmoq", "jinni", "sotqin", "firibgar", "scam", "aldamoq", "pul", "karta", "parol"]
+
+async def check_bad_words(text):
+    return any(word in text.lower() for word in BAD_WORDS)
 
 async def get_main_keyboard():
     return ReplyKeyboardMarkup([
