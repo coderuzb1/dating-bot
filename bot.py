@@ -73,6 +73,25 @@ async def get_bio(update, context):
 async def get_photo(update, context):
     user = update.effective_user
     photo = update.message.photo[-1].file_id
+    context.user_data['photo'] = photo
+    
+    if 'photo_count' not in context.user_data:
+        context.user_data['photo_count'] = 1
+    else:
+        context.user_data['photo_count'] += 1
+    
+    if context.user_data['photo_count'] < 3:
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("➕ Yana rasm qo'shish", callback_data="add_more_photo")],
+            [InlineKeyboardButton("✅ Tugatish", callback_data="finish_photos")]
+        ])
+        await update.message.reply_text(
+            f"📸 {context.user_data['photo_count']}/3 rasm qo'shildi.\n"
+            "Yana rasm qo'shish yoki tugatish:",
+            reply_markup=keyboard
+        )
+        return PHOTO
+    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -133,7 +152,7 @@ async def find(update, context):
     if not target:
         await message.reply_text(f"😔 Hozircha {target_gender} profillar yo'q.")
         return
-    target_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at = target
+    target_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = target
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("👎 Yoqmadi", callback_data=f"skip_{target_id}"),
@@ -156,7 +175,7 @@ async def view_profile(update, context):
     cur.close()
     conn.close()
     if user_data:
-        user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at = user_data
+        user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = user_data
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")]])
         await query.message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}", reply_markup=keyboard)
 
@@ -215,6 +234,14 @@ async def handle_callback(update, context):
         await query.message.reply_text(f"✅ {amount} ta Superlike hisobingizga qo'shildi!")
         return
     
+    if data == "finish_photos":
+        await save_profile(query, context)
+        return
+
+    if data == "add_more_photo":
+        await query.message.reply_text("📸 Yana rasm yuboring:")
+        return PHOTO
+
     if data == "buy_superlikes":
         await buy_superlikes(update, context)
         return
@@ -346,7 +373,7 @@ async def profile(update, context):
     if not user_data:
         await update.message.reply_text("❌ Profil topilmadi.")
         return
-    user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at = user_data
+    user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at, referrer_id, superlike_balance, language = user_data
     premium_status = "✅" if premium_until and premium_until > datetime.now() else "❌"
     await update.message.reply_photo(photo=photo, caption=f"👤 {first_name}, {age}\n👤 {gender}\n📝 {bio}\n\n❤️ {likes_count} like\n💞 {matches_count} match\n👑 Premium: {premium_status}")
 
@@ -559,6 +586,54 @@ async def broadcast(update, context):
     text = update.message.text.replace("/broadcast ", "")
     await notify_news(context.bot, text)
     await update.message.reply_text("✅ Yuborildi!")
+
+async def save_profile(query, context):
+    user = query.from_user
+    photo = context.user_data.get('photo', '')
+    lang = context.user_data.get('language', 'uz')
+    referrer_id = context.user_data.get('referrer_id')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO users (user_id, username, first_name, age, gender, bio, photo, city, language, referrer_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (user_id) DO UPDATE SET age = %s, gender = %s, bio = %s, photo = %s, city = %s, language = %s
+    """, (user.id, user.username, user.first_name, context.user_data.get('age'),
+          context.user_data.get('gender'), context.user_data.get('bio'), photo, 
+          context.user_data.get('city'), lang, referrer_id,
+          context.user_data.get('age'), context.user_data.get('gender'),
+          context.user_data.get('bio'), photo, context.user_data.get('city'), lang))
+    
+    if referrer_id:
+        cur.execute("""
+            SELECT COUNT(*) FROM users 
+            WHERE referrer_id = %s 
+            AND age IS NOT NULL AND gender IS NOT NULL 
+            AND bio IS NOT NULL AND photo IS NOT NULL AND city IS NOT NULL
+        """, (referrer_id,))
+        ref_count = cur.fetchone()[0]
+        if ref_count == 3:
+            premium_until = datetime.now() + timedelta(days=7)
+            cur.execute("UPDATE users SET premium_until = %s WHERE user_id = %s", (premium_until, referrer_id))
+            try:
+                await context.bot.send_message(chat_id=referrer_id, text="🎉 3 ta do'stingiz profil to'ldirdi! 1 hafta Premium berildi!")
+            except:
+                pass
+        elif ref_count == 10:
+            premium_until = datetime.now() + timedelta(days=30)
+            cur.execute("UPDATE users SET premium_until = %s WHERE user_id = %s", (premium_until, referrer_id))
+            try:
+                await context.bot.send_message(chat_id=referrer_id, text="🎉 10 ta do'stingiz profil to'ldirdi! 1 oy Premium berildi!")
+            except:
+                pass
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    await query.message.reply_text("✅ Profil yaratildi!", reply_markup=await get_main_keyboard())
+    return ConversationHandler.END
 
 def main():
     TOKEN = os.environ.get("BOT_TOKEN")
