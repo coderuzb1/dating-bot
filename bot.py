@@ -90,7 +90,9 @@ async def get_city(update, context):
         return CITY
     context.user_data['city'] = city
     await update.message.reply_text("📝 O'zingiz haqingizda qisqacha yozing:")
-    return BIOasync def get_bio(update, context):
+    return BIO
+
+async def get_bio(update, context):
     bio = update.message.text
     context.user_data['bio'] = bio
     await update.message.reply_text("📸 Profil rasmingizni yuboring:")
@@ -277,7 +279,9 @@ async def handle_callback(update, context):
     if data == "edit_city":
         context.user_data['edit_field'] = 'city'
         await query.message.reply_text("Yangi shahringizni yozing:")
-        returnif data == "edit_photo":
+        return
+    
+    if data == "edit_photo":
         context.user_data['edit_field'] = 'photo'
         await query.message.reply_text("Yangi rasm yuboring:")
         return
@@ -370,7 +374,8 @@ async def profile(update, context):
     if len(user_data) >= 11:
         user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at = user_data[:11]
     else:
-        user_id, username, first_name, age, gender, bio, photo, city = user_data[:8]is_active = True
+        user_id, username, first_name, age, gender, bio, photo, city = user_data[:8]
+        is_active = True
         premium_until = None
     
     premium_status = "✅" if premium_until and premium_until > datetime.now() else "❌"
@@ -474,7 +479,9 @@ async def admin(update, context):
         f"👥 Foydalanuvchilar: {total_users}\n"
         f"❤️ Likelar: {total_likes}\n"
         f"💞 Matchlar: {total_matches}"
-    )async def approve(update, context):
+    )
+
+async def approve(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
         await update.message.reply_text("⛔ Siz admin emassiz!")
