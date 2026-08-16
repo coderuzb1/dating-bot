@@ -512,7 +512,7 @@ async def broadcast(update, context):
 
 def main():
     from flask import Flask
-    flask_app = Flask(name)
+    flask_app = Flask(__name__)
     
     @flask_app.route('/')
     def home():
