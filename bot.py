@@ -812,17 +812,47 @@ async def handle_callback(update, context):
         days = durations[plan]
         price = prices[plan]
 
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        try:
+            cur.execute(
+                """
+                INSERT INTO payments
+                    (user_id, amount, days, status)
+                VALUES
+                    (%s, %s, %s, 'pending')
+                RETURNING id
+                """,
+                (user.id, price, days)
+            )
+
+            payment_id = cur.fetchone()[0]
+            conn.commit()
+
+        except Exception as e:
+            conn.rollback()
+            print(f"Payment DB error: {e}")
+            await query.message.reply_text(
+                "❌ To'lov so'rovini saqlashda xatolik yuz berdi."
+            )
+            return
+
+        finally:
+            cur.close()
+            conn.close()
+
         keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
                     "✅ TASDIQLASH",
-                    callback_data=f"admin_approve_{user.id}_{days}"
+                    callback_data=f"admin_approve_{payment_id}"
                 )
             ],
             [
                 InlineKeyboardButton(
                     "❌ RAD ETISH",
-                    callback_data=f"admin_reject_{user.id}_{days}"
+                    callback_data=f"admin_reject_{payment_id}"
                 )
             ]
         ])
@@ -832,6 +862,7 @@ async def handle_callback(update, context):
                 chat_id=ADMIN_ID,
                 text=(
                     "💳 YANGI PREMIUM TO'LOVI\n\n"
+                    f"🧾 To'lov ID: #{payment_id}\n"
                     f"👤 Ism: {user.first_name}\n"
                     f"📱 Username: @{user.username or 'yoq'}\n"
                     f"🆔 ID: {user.id}\n\n"
@@ -846,6 +877,7 @@ async def handle_callback(update, context):
 
             await query.message.reply_text(
                 "✅ To'lov so'rovingiz adminga yuborildi!\n\n"
+                f"🧾 To'lov ID: #{payment_id}\n"
                 f"💳 To'lov usuli: {payment_method}\n"
                 f"📅 Muddat: {days} kun\n"
                 f"💰 Summa: {price} so'm\n\n"
@@ -854,7 +886,26 @@ async def handle_callback(update, context):
             )
 
         except Exception as e:
-            print(f"Payment request error: {e}")
+            print(f"Payment notification error: {e}")
+
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            try:
+                cur.execute(
+                    """
+                    DELETE FROM payments
+                    WHERE id = %s AND status = 'pending'
+                    """,
+                    (payment_id,)
+                )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+            finally:
+                cur.close()
+                conn.close()
+
             await query.message.reply_text(
                 "❌ To'lov so'rovini yuborishda xatolik yuz berdi."
             )
@@ -871,60 +922,86 @@ async def handle_callback(update, context):
 
         try:
             parts = data.split("_")
-            user_id = int(parts[2])
-            days = int(parts[3])
+            payment_id = int(parts[2])
 
             conn = get_db_connection()
             cur = conn.cursor()
 
+            # To'lovni tekshirish
             cur.execute(
-                "SELECT first_name, premium_until FROM users WHERE user_id = %s",
-                (user_id,)
+                """
+                SELECT
+                    p.user_id,
+                    p.amount,
+                    p.days,
+                    p.status,
+                    u.first_name,
+                    u.premium_until
+                FROM payments p
+                LEFT JOIN users u ON u.user_id = p.user_id
+                WHERE p.id = %s
+                """,
+                (payment_id,)
             )
-            target_user = cur.fetchone()
 
-            if not target_user:
+            payment = cur.fetchone()
+
+            if not payment:
                 cur.close()
                 conn.close()
-                await query.message.reply_text(
-                    "Foydalanuvchi topilmadi."
+                await query.answer(
+                    "❌ To'lov topilmadi!",
+                    show_alert=True
                 )
                 return
 
-            old_until = target_user[1]
+            target_id, amount, days, payment_status, first_name, old_until = payment
+
+            # Ikkinchi marta tasdiqlashni bloklash
+            if payment_status != "pending":
+                cur.close()
+                conn.close()
+                await query.answer(
+                    f"⚠️ Bu to'lov allaqachon: {payment_status}",
+                    show_alert=True
+                )
+                return
+
+            # Premium muddatini avtomatik uzaytirish
+            if old_until is not None and old_until > datetime.now():
+                premium_until = old_until + timedelta(days=days)
+            else:
+                premium_until = datetime.now() + timedelta(days=days)
 
             cur.execute(
                 """
                 UPDATE users
-                SET premium_until =
-                    CASE
-                        WHEN premium_until IS NOT NULL
-                             AND premium_until > NOW()
-                        THEN premium_until + (%s * INTERVAL '1 day')
-                        ELSE NOW() + (%s * INTERVAL '1 day')
-                    END
+                SET premium_until = %s
                 WHERE user_id = %s
                 """,
-                (days, days, user_id)
+                (premium_until, target_id)
             )
 
-            conn.commit()
-
+            # To'lov holatini approved qilish
             cur.execute(
-                "SELECT premium_until FROM users WHERE user_id = %s",
-                (user_id,)
+                """
+                UPDATE payments
+                SET status = 'approved'
+                WHERE id = %s AND status = 'pending'
+                """,
+                (payment_id,)
             )
-            new_until = cur.fetchone()[0]
 
+            # Premium tarixiga yozish
             save_premium_history(
                 cur,
-                user_id,
+                target_id,
                 action="add",
                 days=days,
                 source="payment",
                 admin_id=user.id,
                 old_premium_until=old_until,
-                new_premium_until=new_until
+                new_premium_until=premium_until
             )
 
             conn.commit()
@@ -932,35 +1009,46 @@ async def handle_callback(update, context):
             cur.close()
             conn.close()
 
+            # Foydalanuvchiga xabar
             try:
                 await context.bot.send_message(
-                    chat_id=user_id,
+                    chat_id=target_id,
                     text=(
-                        "PREMIUM FAOLLASHTIRILDI!\n\n"
-                        f"Premium: {days} kun\n"
-                        f"Amal qilish muddati: "
-                        f"{new_until.strftime('%d.%m.%Y %H:%M')}\n\n"
-                        "Premium imkoniyatlaringiz faollashdi."
+                        "🎉 PREMIUM FAOLLASHTIRILDI!\\n\\n"
+                        f"📅 Muddat: {days} kun\\n"
+                        f"💰 To'lov: {amount} so'm\\n"
+                        f"🧾 To'lov ID: #{payment_id}\\n\\n"
+                        f"📅 Premiumgacha: "
+                        f"{premium_until.strftime('%d.%m.%Y %H:%M')}\\n\\n"
+                        "👑 Premium imkoniyatlaringiz faollashdi!"
                     )
                 )
             except Exception as e:
-                print(f"User notification error: {e}")
+                print(f"Premium notification error: {e}")
 
-            await query.message.edit_text(
-                "PREMIUM TO'LOVI TASDIQLANDI\n\n"
-                f"Foydalanuvchi: {target_user[0]}\n"
-                f"ID: {user_id}\n"
-                f"Berilgan muddat: {days} kun\n"
-                f"Premiumgacha: {new_until.strftime('%d.%m.%Y %H:%M')}"
-            )
+            # Admin xabarini yangilash
+            try:
+                await query.message.edit_text(
+                    "✅ PREMIUM TO'LOVI TASDIQLANDI\\n\\n"
+                    f"🧾 To'lov ID: #{payment_id}\\n"
+                    f"👤 Foydalanuvchi: {first_name or "Noma'lum"}\\n"
+                    f"🆔 ID: {target_id}\\n"
+                    f"📅 Qo'shilgan: {days} kun\\n"
+                    f"💰 Summa: {amount} so'm\\n"
+                    f"📅 Premiumgacha: "
+                    f"{premium_until.strftime('%d.%m.%Y %H:%M')}"
+                )
+            except Exception as e:
+                print(f"Admin message update error: {e}")
 
         except Exception as e:
             print(f"Premium approval error: {e}")
             await query.message.reply_text(
-                "Premiumni faollashtirishda xatolik yuz berdi."
+                "❌ To'lovni tasdiqlashda xatolik yuz berdi."
             )
 
         return
+
 
     if data.startswith("admin_reject_"):
         if user.id != ADMIN_ID:
@@ -972,31 +1060,94 @@ async def handle_callback(update, context):
 
         try:
             parts = data.split("_")
-            user_id = int(parts[2])
-            days = int(parts[3])
+            payment_id = int(parts[2])
 
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            # To'lovni topish
+            cur.execute(
+                """
+                SELECT
+                    p.user_id,
+                    p.amount,
+                    p.days,
+                    p.status,
+                    u.first_name
+                FROM payments p
+                LEFT JOIN users u ON u.user_id = p.user_id
+                WHERE p.id = %s
+                """,
+                (payment_id,)
+            )
+
+            payment = cur.fetchone()
+
+            if not payment:
+                cur.close()
+                conn.close()
+                await query.answer(
+                    "❌ To'lov topilmadi!",
+                    show_alert=True
+                )
+                return
+
+            target_id, amount, days, payment_status, first_name = payment
+
+            # Ikkinchi marta rad/tasdiq qilishni bloklash
+            if payment_status != "pending":
+                cur.close()
+                conn.close()
+                await query.answer(
+                    f"⚠️ Bu to'lov allaqachon: {payment_status}",
+                    show_alert=True
+                )
+                return
+
+            # To'lovni rejected qilish
+            cur.execute(
+                """
+                UPDATE payments
+                SET status = 'rejected'
+                WHERE id = %s AND status = 'pending'
+                """,
+                (payment_id,)
+            )
+
+            conn.commit()
+
+            cur.close()
+            conn.close()
+
+            # Foydalanuvchiga xabar
             try:
                 await context.bot.send_message(
-                    chat_id=user_id,
+                    chat_id=target_id,
                     text=(
-                        "PREMIUM TO'LOVI RAD ETILDI.\n\n"
-                        f"Tarif: {days} kun\n\n"
+                        "❌ PREMIUM TO'LOVI RAD ETILDI!\\n\\n"
+                        f"🧾 To'lov ID: #{payment_id}\\n"
+                        f"📅 Tarif: {days} kun\\n"
+                        f"💰 Summa: {amount} so'm\\n\\n"
                         "To'lovingiz admin tomonidan tasdiqlanmadi."
                     )
                 )
             except Exception as e:
                 print(f"Reject notification error: {e}")
 
+            # Admin xabarini yangilash
             await query.message.edit_text(
-                "PREMIUM TO'LOVI RAD ETILDI\n\n"
-                f"Foydalanuvchi ID: {user_id}\n"
-                f"Tarif: {days} kun"
+                "❌ PREMIUM TO'LOVI RAD ETILDI\\n\\n"
+                f"🧾 To'lov ID: #{payment_id}\\n"
+                f"👤 Foydalanuvchi: {first_name or "Noma'lum"}\\n"
+                f"🆔 ID: {target_id}\\n"
+                f"📅 Tarif: {days} kun\\n"
+                f"💰 Summa: {amount} so'm"
             )
 
         except Exception as e:
             print(f"Premium rejection error: {e}")
             await query.message.reply_text(
-                "To'lovni rad etishda xatolik yuz berdi."
+                "❌ To'lovni rad etishda xatolik yuz berdi."
             )
 
         return
