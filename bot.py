@@ -2,7 +2,16 @@ import os
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from database import init_db, get_db_connection
-from notifications import notify_new_user, notify_new_match, notify_like, notify_news
+from notifications import (
+    notify_new_user,
+    notify_new_match,
+    notify_like,
+    notify_news,
+    notify_inactive_users_3_days,
+    notify_inactive_users_7_days,
+    notify_premium_promotion,
+    notify_new_user_in_city,
+)
 from datetime import datetime, timedelta
 
 LANGUAGE, AGE, GENDER, BIO, PHOTO, CITY = range(6)
@@ -10,6 +19,28 @@ ADMIN_ID = 6310532367
 HUMO_CARD = "9860086601480972"
 VISA_CARD = "4916990302424491"
 BAD_WORDS = ["ahmoq", "jinni", "sotqin", "firibgar", "scam", "aldamoq", "pul", "karta", "parol"]
+
+
+async def scheduled_notifications(context):
+    print("🔔 Notification scheduler tekshiruvi...")
+
+    try:
+        await notify_inactive_users_3_days(context.bot)
+    except Exception as e:
+        print(f"3-day notification error: {e}")
+
+    try:
+        await notify_inactive_users_7_days(context.bot)
+    except Exception as e:
+        print(f"7-day notification error: {e}")
+
+    try:
+        await notify_premium_promotion(context.bot)
+    except Exception as e:
+        print(f"Premium notification error: {e}")
+
+    print("✅ Notification scheduler tugadi")
+
 
 async def check_bad_words(text):
     return any(word in text.lower() for word in BAD_WORDS)
@@ -40,6 +71,27 @@ async def start(update, context):
     conn.close()
     
     if user_status:
+        # Foydalanuvchi botga kirgan vaqtni yangilash
+        try:
+            active_conn = get_db_connection()
+            active_cur = active_conn.cursor()
+
+            active_cur.execute(
+                """
+                UPDATE users
+                SET last_active = NOW()
+                WHERE user_id = %s
+                """,
+                (user.id,)
+            )
+
+            active_conn.commit()
+            active_cur.close()
+            active_conn.close()
+
+        except Exception as e:
+            print(f"Last active update error: {e}")
+
         if not user_status[0]:
             conn = get_db_connection()
             cur = conn.cursor()
@@ -287,6 +339,15 @@ async def get_photo(update, context):
         )
     except:
         pass
+    # Yangi profilning hududiga mos Smart Notification
+    try:
+        await notify_new_user_in_city(
+            context.bot,
+            user.id
+        )
+    except Exception as e:
+        print(f"Smart city notification error: {e}")
+
     await update.message.reply_text("✅ Profil yaratildi!", reply_markup=await get_main_keyboard())
     return ConversationHandler.END
 
@@ -956,119 +1017,190 @@ async def handle_callback(update, context):
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Bir xil like qayta yozilmasin
         cur.execute(
             """
             SELECT EXISTS(
-                SELECT 1 FROM likes
-                WHERE from_user = %s AND to_user = %s
+                SELECT 1
+                FROM likes
+                WHERE from_user = %s
+                  AND to_user = %s
             )
             """,
-            (user.id, target_id),
+            (user.id, target_id)
         )
 
-        already_liked = cur.fetchone()[0]
+        already_liked = bool(cur.fetchone()[0])
 
-        if not already_liked:
-            cur.execute(
-                """
-                INSERT INTO likes (from_user, to_user)
-                VALUES (%s, %s)
-                """,
-                (user.id, target_id),
+        if already_liked:
+            cur.close()
+            conn.close()
+
+            await query.answer(
+                "❤️ Siz allaqachon yoqtirgansiz!",
+                show_alert=True
             )
+            return
 
         cur.execute(
-            "SELECT first_name FROM users WHERE user_id = %s",
-            (user.id,),
+            """
+            INSERT INTO likes
+            (
+                from_user,
+                to_user
+            )
+            VALUES (%s, %s)
+            """,
+            (
+                user.id,
+                target_id
+            )
         )
+
+        cur.execute(
+            """
+            SELECT first_name, photo
+            FROM users
+            WHERE user_id = %s
+            """,
+            (user.id,)
+        )
+
         sender_info = cur.fetchone()
 
         cur.execute(
-            "SELECT first_name FROM users WHERE user_id = %s",
-            (target_id,),
+            """
+            SELECT first_name, photo
+            FROM users
+            WHERE user_id = %s
+            """,
+            (target_id,)
         )
+
         target_info = cur.fetchone()
 
-        # Qarshi like bor-yo'qligini tekshirish
+        if not sender_info or not target_info:
+            conn.commit()
+            cur.close()
+            conn.close()
+
+            await query.message.reply_text(
+                "❌ Foydalanuvchi topilmadi."
+            )
+            return
+
+        sender_name = sender_info[0]
+        sender_photo = sender_info[1]
+
+        target_name = target_info[0]
+        target_photo = target_info[1]
+
         cur.execute(
             """
             SELECT EXISTS(
-                SELECT 1 FROM likes
-                WHERE from_user = %s AND to_user = %s
+                SELECT 1
+                FROM likes
+                WHERE from_user = %s
+                  AND to_user = %s
             )
             """,
-            (target_id, user.id),
+            (
+                target_id,
+                user.id
+            )
         )
 
-        mutual_like = cur.fetchone()[0]
+        mutual_like = bool(cur.fetchone()[0])
 
         is_new_match = False
 
         if mutual_like:
+
             cur.execute(
                 """
                 SELECT EXISTS(
-                    SELECT 1 FROM matches
-                    WHERE (user1 = %s AND user2 = %s)
-                       OR (user1 = %s AND user2 = %s)
+                    SELECT 1
+                    FROM matches
+                    WHERE
+                        (user1 = %s AND user2 = %s)
+                        OR
+                        (user1 = %s AND user2 = %s)
                 )
                 """,
-                (user.id, target_id, target_id, user.id),
+                (
+                    user.id,
+                    target_id,
+                    target_id,
+                    user.id
+                )
             )
 
-            match_exists = cur.fetchone()[0]
+            match_exists = bool(cur.fetchone()[0])
 
             if not match_exists:
+
                 cur.execute(
                     """
-                    INSERT INTO matches (user1, user2)
+                    INSERT INTO matches
+                    (
+                        user1,
+                        user2
+                    )
                     VALUES (%s, %s)
                     """,
-                    (user.id, target_id),
+                    (
+                        user.id,
+                        target_id
+                    )
                 )
+
                 is_new_match = True
 
         conn.commit()
         cur.close()
         conn.close()
 
-        # Like haqida xabar
+        if is_new_match:
+
+            await notify_new_match(
+                context.bot,
+                user.id,
+                sender_name,
+                sender_photo,
+                target_id,
+                target_name,
+                target_photo
+            )
+
+            await query.answer(
+                "🎉 MATCH!",
+                show_alert=False
+            )
+
+        else:
+
+            await notify_like(
+                context.bot,
+                target_id,
+                user.id,
+                sender_name,
+                sender_photo
+            )
+
+            await query.answer(
+                "❤️ Yoqdi!",
+                show_alert=False
+            )
+
         try:
-            if target_info and not mutual_like:
-                await context.bot.send_message(
-                    chat_id=target_id,
-                    text=(
-                        "❤️ Sizni yangi foydalanuvchi yoqtirdi!\n\n"
-                        f"👤 {sender_info[0]}"
-                    ),
-                )
+            await query.message.delete()
         except Exception:
             pass
 
-        # Match xabari ikkala tomonga
-        if is_new_match:
-            try:
-                await context.bot.send_message(
-                    chat_id=target_id,
-                    text=(
-                        "🎉 MATCH!\n\n"
-                        f"❤️ {sender_info[0]} sizni ham yoqtirdi!\n"
-                        "💬 Endi bir-biringizga yozishingiz mumkin."
-                    ),
-                )
-            except Exception:
-                pass
+        await find(
+            update,
+            context
+        )
 
-            await query.message.reply_text(
-                f"🎉 MATCH! {target_info[0]} bilan mos keldingiz!\n\n"
-                "💬 Endi bir-biringizga yozishingiz mumkin."
-            )
-        else:
-            await query.message.reply_text("❤️ Yoqdi!")
-
-        await query.message.delete()
-        await find(update, context)
         return
 
 async def save_edit(update, context):
