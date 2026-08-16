@@ -2876,6 +2876,24 @@ async def unblock_user(update, context):
     except:
         await update.message.reply_text("❌ Format: /unblock USER_ID")
 
+async def remove_premium(update, context):
+    user = update.effective_user
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+    try:
+        parts = update.message.text.split()
+        user_id = int(parts[1])
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET premium_until = NULL WHERE user_id = %s", (user_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        await update.message.reply_text(f"✅ Premium olib tashlandi: {user_id}")
+    except:
+        await update.message.reply_text("❌ Format: /unpremium USER_ID")
+
 async def broadcast(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
