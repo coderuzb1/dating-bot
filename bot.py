@@ -179,16 +179,64 @@ async def get_gender(update, context):
     return CITY
 
 async def get_city(update, context):
-    city = update.message.text
-    if not city or city.strip() == "":
-        await update.message.reply_text("❌ Shahar kiritish majburiy! Iltimos, shahringizni tanlang:")
-        return CITY
+    city = update.message.text.strip()
+
+    cities = {
+        "Toshkent",
+        "Samarqand",
+        "Buxoro",
+        "Andijon",
+        "Farg'ona",
+        "Namangan",
+        "Qarshi",
+        "Nukus",
+        "Xiva",
+        "Jizzax",
+        "Guliston",
+        "Termiz",
+        "Navoiy",
+    }
+
+    # Oddiy tugma orqali tanlangan shahar
+    if city in cities:
+        context.user_data['city'] = city
+        context.user_data.pop('custom_city', None)
+
+        await update.message.reply_text(
+            "📝 O'zingiz haqingizda qisqacha yozing:"
+        )
+        return BIO
+
+    # "Boshqa" tanlansa, keyingi xabar shahar nomi bo'ladi
     if city == "Boshqa":
-        await update.message.reply_text("📍 Shahringizni yozing (majburiy):")
+        context.user_data['custom_city'] = True
+
+        await update.message.reply_text(
+            "📍 Shahringiz nomini yozing:"
+        )
         return CITY
-    context.user_data['city'] = city
-    await update.message.reply_text("📝 O'zingiz haqingizda qisqacha yozing:")
-    return BIO
+
+    # Boshqa matn faqat "Boshqa" oldin tanlangan bo'lsa qabul qilinadi
+    if context.user_data.get('custom_city'):
+        if len(city) < 2 or len(city) > 50:
+            await update.message.reply_text(
+                "❌ Shahar nomi 2-50 ta belgidan iborat bo'lishi kerak."
+            )
+            return CITY
+
+        context.user_data['city'] = city
+        context.user_data.pop('custom_city', None)
+
+        await update.message.reply_text(
+            "📝 O'zingiz haqingizda qisqacha yozing:"
+        )
+        return BIO
+
+    await update.message.reply_text(
+        "❌ Iltimos, shaharni tugmalardan tanlang yoki "
+        "«Boshqa» tugmasini bosing."
+    )
+    return CITY
 
 async def get_bio(update, context):
     bio = update.message.text
@@ -935,7 +983,22 @@ async def handle_callback(update, context):
     
     if data == "edit_city":
         context.user_data['edit_field'] = 'city'
-        await query.message.reply_text("Yangi shahringizni yozing:")
+        context.user_data.pop('custom_edit_city', None)
+
+        keyboard = ReplyKeyboardMarkup([
+            [KeyboardButton("Toshkent"), KeyboardButton("Samarqand")],
+            [KeyboardButton("Buxoro"), KeyboardButton("Andijon")],
+            [KeyboardButton("Farg'ona"), KeyboardButton("Namangan")],
+            [KeyboardButton("Qarshi"), KeyboardButton("Nukus")],
+            [KeyboardButton("Xiva"), KeyboardButton("Jizzax")],
+            [KeyboardButton("Guliston"), KeyboardButton("Termiz")],
+            [KeyboardButton("Navoiy"), KeyboardButton("Boshqa")]
+        ], resize_keyboard=True, one_time_keyboard=True)
+
+        await query.message.reply_text(
+            "📍 Yangi shahringizni tanlang:",
+            reply_markup=keyboard
+        )
         return
     
     if data == "edit_photo":
@@ -1223,8 +1286,66 @@ async def save_edit(update, context):
         cur.execute("UPDATE users SET bio = %s WHERE user_id = %s", (text, user.id))
         await update.message.reply_text("✅ Bio yangilandi!")
     elif field == 'city':
-        cur.execute("UPDATE users SET city = %s WHERE user_id = %s", (text, user.id))
-        await update.message.reply_text("✅ Shahar yangilandi!")
+        cities = {
+            "Toshkent",
+            "Samarqand",
+            "Buxoro",
+            "Andijon",
+            "Farg'ona",
+            "Namangan",
+            "Qarshi",
+            "Nukus",
+            "Xiva",
+            "Jizzax",
+            "Guliston",
+            "Termiz",
+            "Navoiy",
+        }
+
+        if text in cities:
+            cur.execute(
+                "UPDATE users SET city = %s WHERE user_id = %s",
+                (text, user.id)
+            )
+            await update.message.reply_text("✅ Shahar yangilandi!")
+
+        elif text == "Boshqa":
+            context.user_data['custom_edit_city'] = True
+            cur.close()
+            conn.close()
+
+            await update.message.reply_text(
+                "📍 Shahringiz nomini yozing:"
+            )
+            return
+
+        elif context.user_data.get('custom_edit_city'):
+            if len(text.strip()) < 2 or len(text.strip()) > 50:
+                cur.close()
+                conn.close()
+
+                await update.message.reply_text(
+                    "❌ Shahar nomi 2-50 ta belgidan iborat bo'lishi kerak."
+                )
+                return
+
+            cur.execute(
+                "UPDATE users SET city = %s WHERE user_id = %s",
+                (text.strip(), user.id)
+            )
+            context.user_data.pop('custom_edit_city', None)
+
+            await update.message.reply_text("✅ Shahar yangilandi!")
+
+        else:
+            cur.close()
+            conn.close()
+
+            await update.message.reply_text(
+                "❌ Iltimos, shaharni tugmalardan tanlang yoki "
+                "«Boshqa» tugmasini bosing."
+            )
+            return
     
     conn.commit()
     cur.close()
