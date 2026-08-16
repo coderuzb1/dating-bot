@@ -436,29 +436,43 @@ async def handle_callback(update, context):
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # Premium yoki Match ekanini tekshirish
         cur.execute(
-            "SELECT premium_until FROM users WHERE user_id = %s",
-            (user.id,)
+            """
+            SELECT EXISTS(
+                SELECT 1 FROM users
+                WHERE user_id = %s
+                AND premium_until IS NOT NULL
+                AND premium_until > NOW()
+            )
+            """,
+            (user.id,),
         )
-        row = cur.fetchone()
+        is_premium = bool(cur.fetchone()[0])
 
-        is_premium = (
-            row
-            and row[0] is not None
-            and row[0] > datetime.now()
+        cur.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1 FROM matches
+                WHERE (user1 = %s AND user2 = %s)
+                   OR (user1 = %s AND user2 = %s)
+            )
+            """,
+            (user.id, target_id, target_id, user.id),
         )
+        is_match = bool(cur.fetchone()[0])
 
-        if not is_premium:
+        if not is_premium and not is_match:
             cur.close()
             conn.close()
             await query.message.reply_text(
-                "👑 Bu funksiya faqat Premium uchun."
+                "👑 Match bo'lmagan holda yozish faqat Premium uchun."
             )
             return
 
         cur.execute(
             "SELECT first_name FROM users WHERE user_id = %s",
-            (target_id,)
+            (target_id,),
         )
         target = cur.fetchone()
 
@@ -486,21 +500,121 @@ async def handle_callback(update, context):
     
     if data.startswith("like_"):
         target_id = int(data.split("_")[1])
+
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("INSERT INTO likes (from_user, to_user) VALUES (%s, %s)", (user.id, target_id))
-        cur.execute("SELECT * FROM likes WHERE from_user = %s AND to_user = %s", (target_id, user.id))
-        mutual_like = cur.fetchone()
-        cur.execute("SELECT first_name FROM users WHERE user_id = %s", (target_id,))
+
+        # Bir xil like qayta yozilmasin
+        cur.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1 FROM likes
+                WHERE from_user = %s AND to_user = %s
+            )
+            """,
+            (user.id, target_id),
+        )
+
+        already_liked = cur.fetchone()[0]
+
+        if not already_liked:
+            cur.execute(
+                """
+                INSERT INTO likes (from_user, to_user)
+                VALUES (%s, %s)
+                """,
+                (user.id, target_id),
+            )
+
+        cur.execute(
+            "SELECT first_name FROM users WHERE user_id = %s",
+            (user.id,),
+        )
+        sender_info = cur.fetchone()
+
+        cur.execute(
+            "SELECT first_name FROM users WHERE user_id = %s",
+            (target_id,),
+        )
         target_info = cur.fetchone()
+
+        # Qarshi like bor-yo'qligini tekshirish
+        cur.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1 FROM likes
+                WHERE from_user = %s AND to_user = %s
+            )
+            """,
+            (target_id, user.id),
+        )
+
+        mutual_like = cur.fetchone()[0]
+
+        is_new_match = False
+
         if mutual_like:
-            cur.execute("INSERT INTO matches (user1, user2) VALUES (%s, %s)", (user.id, target_id))
-            await query.message.reply_text(f"🎉 MATCH! {target_info[0]} bilan mos keldingiz!")
-        else:
-            await query.message.reply_text("❤️ Yoqdi!")
+            cur.execute(
+                """
+                SELECT EXISTS(
+                    SELECT 1 FROM matches
+                    WHERE (user1 = %s AND user2 = %s)
+                       OR (user1 = %s AND user2 = %s)
+                )
+                """,
+                (user.id, target_id, target_id, user.id),
+            )
+
+            match_exists = cur.fetchone()[0]
+
+            if not match_exists:
+                cur.execute(
+                    """
+                    INSERT INTO matches (user1, user2)
+                    VALUES (%s, %s)
+                    """,
+                    (user.id, target_id),
+                )
+                is_new_match = True
+
         conn.commit()
         cur.close()
         conn.close()
+
+        # Like haqida xabar
+        try:
+            if target_info and not mutual_like:
+                await context.bot.send_message(
+                    chat_id=target_id,
+                    text=(
+                        "❤️ Sizni yangi foydalanuvchi yoqtirdi!\n\n"
+                        f"👤 {sender_info[0]}"
+                    ),
+                )
+        except Exception:
+            pass
+
+        # Match xabari ikkala tomonga
+        if is_new_match:
+            try:
+                await context.bot.send_message(
+                    chat_id=target_id,
+                    text=(
+                        "🎉 MATCH!\n\n"
+                        f"❤️ {sender_info[0]} sizni ham yoqtirdi!\n"
+                        "💬 Endi bir-biringizga yozishingiz mumkin."
+                    ),
+                )
+            except Exception:
+                pass
+
+            await query.message.reply_text(
+                f"🎉 MATCH! {target_info[0]} bilan mos keldingiz!\n\n"
+                "💬 Endi bir-biringizga yozishingiz mumkin."
+            )
+        else:
+            await query.message.reply_text("❤️ Yoqdi!")
+
         await query.message.delete()
         await find(update, context)
         return
