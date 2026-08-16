@@ -1024,23 +1024,21 @@ async def handle_callback(update, context):
                     )
                 )
             except Exception as e:
-                print(f"Premium notification error: {e}")
+                print(f"⚠️ Premium foydalanuvchiga xabar yuborishda xato: {e}")
 
             # Admin xabarini yangilash
             try:
                 await query.message.edit_text(
-                    "✅ PREMIUM TO'LOVI TASDIQLANDI\\n\\n"
-                    f"🧾 To'lov ID: #{payment_id}\\n"
-                    f"👤 Foydalanuvchi: {first_name or 'Noma\'lum'}\n"
-                    f"🆔 ID: {target_id}\\n"
-                    f"📅 Qo'shilgan: {days} kun\\n"
-                    f"💰 Summa: {amount} so'm\\n"
-                    f"📅 Premiumgacha: "
-                    f"{premium_until.strftime('%d.%m.%Y %H:%M')}"
+                    "✅ PREMIUM TO'LOVI TASDIQLANDI\n\n"
+                    f"🧾 To'lov ID: #{payment_id}\n"
+                    f"👤 Foydalanuvchi: {first_name or 'Noma' + chr(39) + 'lum'}\n"
+                    f"🆔 ID: {target_id}\n"
+                    f"📅 Qo'shilgan: {days} kun\n"
+                    f"💰 Summa: {amount} so'm\n"
+                    f"📅 Premiumgacha: {premium_until.strftime('%d.%m.%Y %H:%M')}"
                 )
             except Exception as e:
-                print(f"Admin message update error: {e}")
-
+                print(f"⚠️ Admin xabarini yangilashda xato: {e}")
         except Exception as e:
             print(f"Premium approval error: {e}")
             await query.message.reply_text(
@@ -1138,7 +1136,7 @@ async def handle_callback(update, context):
             await query.message.edit_text(
                 "❌ PREMIUM TO'LOVI RAD ETILDI\\n\\n"
                 f"🧾 To'lov ID: #{payment_id}\\n"
-                f"👤 Foydalanuvchi: {first_name or "Noma'lum"}\\n"
+                  f"👤 Foydalanuvchi: {first_name or "Noma'lum"}\n"
                 f"🆔 ID: {target_id}\\n"
                 f"📅 Tarif: {days} kun\\n"
                 f"💰 Summa: {amount} so'm"
