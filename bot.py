@@ -5,7 +5,7 @@ from database import init_db, get_db_connection
 from notifications import notify_new_user, notify_new_match, notify_like, notify_news
 from datetime import datetime, timedelta
 
-AGE, GENDER, BIO, PHOTO, CITY = range(5)
+LANGUAGE, AGE, GENDER, BIO, PHOTO, CITY = range(6)
 ADMIN_ID = 6310532367
 BAD_WORDS = ["ahmoq", "jinni", "sotqin", "firibgar", "scam", "aldamoq", "pul", "karta", "parol"]
 
@@ -58,8 +58,40 @@ async def start(update, context):
             reply_markup=await get_main_keyboard()
         )
     else:
-        await update.message.reply_text("📝 Profil yaratish uchun yoshingizni kiriting (16-60):")
-        return AGE
+        keyboard = ReplyKeyboardMarkup([
+            [KeyboardButton("🇺🇿 O'zbek tili")],
+            [KeyboardButton("🇷🇺 Русский")],
+            [KeyboardButton("🇺🇿 Узбек (Кирилл)")]
+        ], resize_keyboard=True, one_time_keyboard=True)
+
+        await update.message.reply_text(
+            "🌐 Tilni tanlang / Выберите язык:",
+            reply_markup=keyboard
+        )
+        return LANGUAGE
+
+async def get_language(update, context):
+    text = update.message.text
+
+    languages = {
+        "🇺🇿 O'zbek tili": "uz",
+        "🇷🇺 Русский": "ru",
+        "🇺🇿 Узбек (Кирилл)": "uz_cyr",
+    }
+
+    if text not in languages:
+        await update.message.reply_text(
+            "🌐 Iltimos, tilni tanlang / Пожалуйста, выберите язык:"
+        )
+        return LANGUAGE
+
+    context.user_data["language"] = languages[text]
+
+    await update.message.reply_text(
+        "📝 Profil yaratish uchun yoshingizni kiriting (16-60):"
+    )
+    return AGE
+
 
 async def get_age(update, context):
     text = update.message.text
@@ -116,13 +148,34 @@ async def get_photo(update, context):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-        INSERT INTO users (user_id, username, first_name, age, gender, bio, photo, city)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (user_id) DO UPDATE SET age = %s, gender = %s, bio = %s, photo = %s, city = %s
-    """, (user.id, user.username, user.first_name, context.user_data['age'],
-          context.user_data['gender'], context.user_data['bio'], photo, context.user_data['city'],
-          context.user_data['age'], context.user_data['gender'],
-          context.user_data['bio'], photo, context.user_data['city']))
+        INSERT INTO users (
+            user_id, username, first_name, age, gender, bio, photo, city, language
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (user_id) DO UPDATE SET
+            age = %s,
+            gender = %s,
+            bio = %s,
+            photo = %s,
+            city = %s,
+            language = %s
+    """, (
+        user.id,
+        user.username,
+        user.first_name,
+        context.user_data['age'],
+        context.user_data['gender'],
+        context.user_data['bio'],
+        photo,
+        context.user_data['city'],
+        context.user_data.get('language', 'uz'),
+        context.user_data['age'],
+        context.user_data['gender'],
+        context.user_data['bio'],
+        photo,
+        context.user_data['city'],
+        context.user_data.get('language', 'uz')
+    ))
     # =========================
     # REFERAL TIZIMI
     # =========================
@@ -1121,6 +1174,7 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
+            LANGUAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_language)],
             AGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_age)],
             GENDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_gender)],
             CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_city)],
