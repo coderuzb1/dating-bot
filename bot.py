@@ -2894,6 +2894,30 @@ async def remove_premium(update, context):
     except:
         await update.message.reply_text("❌ Format: /unpremium USER_ID")
 
+async def find_user(update, context):
+    user = update.effective_user
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+    try:
+        parts = update.message.text.split()
+        query = parts[1]
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT user_id, first_name, username, age, city FROM users WHERE first_name ILIKE %s OR username ILIKE %s LIMIT 10", (f'%{query}%', f'%{query}%'))
+        results = cur.fetchall()
+        cur.close()
+        conn.close()
+        if not results:
+            await update.message.reply_text("❌ Foydalanuvchi topilmadi.")
+            return
+        text = "🔍 QIDIRUV NATIJASI:\n\n"
+        for r in results:
+            text += f"• {r[1]} (@{r[2] or 'yoq'}) - {r[4]}\nID: {r[0]}\n\n"
+        await update.message.reply_text(text)
+    except:
+        await update.message.reply_text("❌ Format: /finduser ISM")
+
 async def broadcast(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
