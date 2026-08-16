@@ -992,7 +992,7 @@ async def handle_callback(update, context):
             [KeyboardButton("Qarshi"), KeyboardButton("Nukus")],
             [KeyboardButton("Xiva"), KeyboardButton("Jizzax")],
             [KeyboardButton("Guliston"), KeyboardButton("Termiz")],
-            [KeyboardButton("Navoiy"), KeyboardButton("Boshqa")]
+            [KeyboardButton("Navoiy")]
         ], resize_keyboard=True, one_time_keyboard=True)
 
         await query.message.reply_text(
