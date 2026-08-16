@@ -203,6 +203,28 @@ def init_db():
     """)
 
     # =========================
+    # PREMIUM HISTORY
+    # =========================
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS premium_history (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            action TEXT NOT NULL,
+            days INTEGER DEFAULT 0,
+            source TEXT NOT NULL,
+            admin_id BIGINT,
+            old_premium_until TIMESTAMP,
+            new_premium_until TIMESTAMP,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
+
+    cur.execute("""
+        CREATE INDEX IF NOT EXISTS idx_premium_history_user
+        ON premium_history(user_id, created_at)
+    """)
+
+    # =========================
     # INDEXLAR
     # =========================
     cur.execute("""
