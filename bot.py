@@ -514,13 +514,195 @@ async def handle_callback(update, context):
     
     if data.startswith("confirm_"):
         plan = data.replace("confirm_", "")
-        durations = {"premium_1w": 7, "premium_1m": 30, "premium_3m": 90, "premium_1y": 365}
-        days = durations.get(plan, 0)
+
+        durations = {
+            "premium_1w": 7,
+            "premium_1m": 30,
+            "premium_3m": 90,
+            "premium_1y": 365
+        }
+
+        prices = {
+            "premium_1w": "30 571",
+            "premium_1m": "63 429",
+            "premium_3m": "137 714",
+            "premium_1y": "282 000"
+        }
+
+        if plan not in durations:
+            await query.message.reply_text("Tarif topilmadi.")
+            return
+
+        days = durations[plan]
+        price = prices[plan]
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "TASDIQLASH",
+                    callback_data=f"admin_approve_{user.id}_{days}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "RAD ETISH",
+                    callback_data=f"admin_reject_{user.id}_{days}"
+                )
+            ]
+        ])
+
         try:
-            await context.bot.send_message(chat_id=ADMIN_ID, text=f"💳 To'lov so'rovi!\n👤 {user.first_name}\n🆔 ID: {user.id}\n📅 {days} kun")
-        except:
-            pass
-        await query.message.reply_text("✅ To'lov so'rovi yuborildi! Admin tasdiqlagach Premium faollashadi.")
+            await context.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=(
+                    "PREMIUM TO'LOV SO'ROVI\n\n"
+                    f"Ism: {user.first_name}\n"
+                    f"Username: @{user.username or 'yoq'}\n"
+                    f"ID: {user.id}\n\n"
+                    f"Tarif: {days} kun\n"
+                    f"Summa: {price} som\n\n"
+                    "To'lovni tekshirgandan keyin tugmani bosing."
+                ),
+                reply_markup=keyboard
+            )
+
+            await query.message.reply_text(
+                "To'lov so'rovingiz adminga yuborildi.\n\n"
+                "To'lov tekshirilmoqda. Admin tasdiqlaganidan "
+                "keyin Premium avtomatik faollashadi."
+            )
+
+        except Exception as e:
+            print(f"Payment request error: {e}")
+            await query.message.reply_text(
+                "To'lov so'rovini yuborishda xatolik yuz berdi."
+            )
+
+        return
+
+    if data.startswith("admin_approve_"):
+        if user.id != ADMIN_ID:
+            await query.answer(
+                "Sizda bu amalni bajarish huquqi yo'q!",
+                show_alert=True
+            )
+            return
+
+        try:
+            parts = data.split("_")
+            user_id = int(parts[2])
+            days = int(parts[3])
+
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            cur.execute(
+                "SELECT first_name FROM users WHERE user_id = %s",
+                (user_id,)
+            )
+            target_user = cur.fetchone()
+
+            if not target_user:
+                cur.close()
+                conn.close()
+                await query.message.reply_text(
+                    "Foydalanuvchi topilmadi."
+                )
+                return
+
+            cur.execute(
+                """
+                UPDATE users
+                SET premium_until =
+                    CASE
+                        WHEN premium_until IS NOT NULL
+                             AND premium_until > NOW()
+                        THEN premium_until + (%s * INTERVAL '1 day')
+                        ELSE NOW() + (%s * INTERVAL '1 day')
+                    END
+                WHERE user_id = %s
+                """,
+                (days, days, user_id)
+            )
+
+            conn.commit()
+
+            cur.execute(
+                "SELECT premium_until FROM users WHERE user_id = %s",
+                (user_id,)
+            )
+            new_until = cur.fetchone()[0]
+
+            cur.close()
+            conn.close()
+
+            try:
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text=(
+                        "PREMIUM FAOLLASHTIRILDI!\n\n"
+                        f"Premium: {days} kun\n"
+                        f"Amal qilish muddati: "
+                        f"{new_until.strftime('%d.%m.%Y %H:%M')}\n\n"
+                        "Premium imkoniyatlaringiz faollashdi."
+                    )
+                )
+            except Exception as e:
+                print(f"User notification error: {e}")
+
+            await query.message.edit_text(
+                "PREMIUM TO'LOVI TASDIQLANDI\n\n"
+                f"Foydalanuvchi: {target_user[0]}\n"
+                f"ID: {user_id}\n"
+                f"Berilgan muddat: {days} kun\n"
+                f"Premiumgacha: {new_until.strftime('%d.%m.%Y %H:%M')}"
+            )
+
+        except Exception as e:
+            print(f"Premium approval error: {e}")
+            await query.message.reply_text(
+                "Premiumni faollashtirishda xatolik yuz berdi."
+            )
+
+        return
+
+    if data.startswith("admin_reject_"):
+        if user.id != ADMIN_ID:
+            await query.answer(
+                "Sizda bu amalni bajarish huquqi yo'q!",
+                show_alert=True
+            )
+            return
+
+        try:
+            parts = data.split("_")
+            user_id = int(parts[2])
+            days = int(parts[3])
+
+            try:
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text=(
+                        "PREMIUM TO'LOVI RAD ETILDI.\n\n"
+                        f"Tarif: {days} kun\n\n"
+                        "To'lovingiz admin tomonidan tasdiqlanmadi."
+                    )
+                )
+            except Exception as e:
+                print(f"Reject notification error: {e}")
+
+            await query.message.edit_text(
+                "PREMIUM TO'LOVI RAD ETILDI\n\n"
+                f"Foydalanuvchi ID: {user_id}\n"
+                f"Tarif: {days} kun"
+            )
+
+        except Exception as e:
+            print(f"Premium rejection error: {e}")
+            await query.message.reply_text(
+                "To'lovni rad etishda xatolik yuz berdi."
+            )
+
         return
 
     if data == "user_info":
