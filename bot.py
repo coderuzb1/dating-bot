@@ -1506,7 +1506,26 @@ async def profile(update, context):
         is_active = True
         premium_until = None
     
-    premium_status = "✅" if premium_until and premium_until > datetime.now() else "❌"
+    # PostgreSQL ba'zan premium_until qiymatini string ko'rinishida qaytarishi mumkin
+    if premium_until:
+        try:
+            if isinstance(premium_until, str):
+                premium_until = datetime.fromisoformat(
+                    premium_until.replace("Z", "+00:00")
+                )
+
+            if premium_until.tzinfo is not None:
+                from datetime import timezone
+                now_dt = datetime.now(timezone.utc)
+            else:
+                now_dt = datetime.now()
+
+            premium_status = "✅" if premium_until > now_dt else "❌"
+        except Exception as e:
+            print(f"Premium date parsing error: {e}")
+            premium_status = "❌"
+    else:
+        premium_status = "❌"
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("✏️ Tahrirlash", callback_data="edit_menu")],
         [InlineKeyboardButton("👑 Premium", callback_data="premium_buy")]
