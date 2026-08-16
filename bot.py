@@ -85,8 +85,11 @@ async def get_gender(update, context):
 
 async def get_city(update, context):
     city = update.message.text
+    if not city or city.strip() == "":
+        await update.message.reply_text("❌ Shahar kiritish majburiy! Iltimos, shahringizni tanlang:")
+        return CITY
     if city == "Boshqa":
-        await update.message.reply_text("📍 Shahringizni yozing:")
+        await update.message.reply_text("📍 Shahringizni yozing (majburiy):")
         return CITY
     context.user_data['city'] = city
     await update.message.reply_text("📝 O'zingiz haqingizda qisqacha yozing:")
@@ -117,7 +120,14 @@ async def get_photo(update, context):
     try:
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"🆕 Yangi foydalanuvchi: {user.first_name}"
+            text=f"🆕 YANGI FOYDALANUVCHI\n\n"
+                 f"👤 Ism: {user.first_name}\n"
+                 f"📱 Username: @{user.username or 'yo\'q'}\n"
+                 f"🆔 ID: {user.id}\n"
+                 f"🎂 Yosh: {context.user_data.get('age', '?')}\n"
+                 f"👤 Jins: {context.user_data.get('gender', '?')}\n"
+                 f"📍 Shahar: {context.user_data.get('city', '?')}\n"
+                 f"📝 Bio: {context.user_data.get('bio', '?')}"
         )
     except:
         pass
