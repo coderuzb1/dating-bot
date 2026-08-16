@@ -1031,7 +1031,7 @@ async def handle_callback(update, context):
                 await query.message.edit_text(
                     "✅ PREMIUM TO'LOVI TASDIQLANDI\\n\\n"
                     f"🧾 To'lov ID: #{payment_id}\\n"
-                    f"👤 Foydalanuvchi: {first_name or "Noma'lum"}\\n"
+                    f"👤 Foydalanuvchi: {first_name or 'Noma\'lum'}\n"
                     f"🆔 ID: {target_id}\\n"
                     f"📅 Qo'shilgan: {days} kun\\n"
                     f"💰 Summa: {amount} so'm\\n"
@@ -1893,6 +1893,58 @@ async def referral_panel(update, context):
 
     await update.message.reply_text(text)
 
+
+async def update_last_active(user_id):
+    """
+    Foydalanuvchi bot bilan har qanday faol interaction
+    qilganda last_active yangilanadi.
+    """
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            UPDATE users
+            SET last_active = NOW()
+            WHERE user_id = %s
+            """,
+            (user_id,)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    except Exception as e:
+        print(
+            f"⚠️ last_active yangilash xatosi: {e}"
+        )
+
+
+async def activity_message_handler(update, context):
+    """
+    Har qanday oddiy message kelganda activityni yangilaydi.
+    """
+
+    if update.effective_user:
+        await update_last_active(
+            update.effective_user.id
+        )
+
+
+async def activity_callback_handler(update, context):
+    """
+    Har qanday tugma bosilganda activityni yangilaydi.
+    """
+
+    if update.effective_user:
+        await update_last_active(
+            update.effective_user.id
+        )
+
+
 async def handle_message(update, context):
     text = update.message.text
 
@@ -2737,6 +2789,27 @@ def main():
         fallbacks=[],
     )
     
+    # =========================================================
+    # USER ACTIVITY TRACKING
+    # Retention tizimi uchun last_active yangilanadi.
+    # -1 guruhda ishlaydi, shuning uchun boshqa handlerlardan
+    # oldin bajariladi.
+    # =========================================================
+    app.add_handler(
+        MessageHandler(
+            filters.ALL,
+            activity_message_handler
+        ),
+        group=-1
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            activity_callback_handler
+        ),
+        group=-1
+    )
+
     app.add_handler(conv_handler)
     app.add_handler(CommandHandler("admin", admin))
     app.add_handler(CommandHandler("givepremium", givepremium))
@@ -2756,6 +2829,22 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(handle_callback))
     
+    # =========================================================
+    # RETENTION NOTIFICATION JOB
+    # =========================================================
+    # Har 24 soatda bir marta tekshiradi.
+    # Birinchi ishga tushish bot startidan 60 soniya keyin.
+    if app.job_queue:
+        app.job_queue.run_repeating(
+            retention_job,
+            interval=86400,
+            first=60,
+            name="retention_notifications"
+        )
+        print("✅ Retention notification job yoqildi!")
+    else:
+        print("⚠️ JobQueue mavjud emas!")
+
     print("Dating bot ishga tushdi...")
     app.run_polling(drop_pending_updates=True)
 

@@ -48,3 +48,8 @@ dist/
 .venv/
 __pycache__/
 *.pyc
+
+# Local backups
+*.before-*
+backup_notifications_*/
+*.zip

@@ -719,3 +719,276 @@ async def notify_news(bot, text):
             row[0],
             f"📢 Yangilik:\n\n{text}"
         )
+
+# =========================================================
+
+# =========================================================
+# RETENTION / SMART NOTIFICATIONS
+# =========================================================
+#
+# Maqsad:
+# 1) Yangi foydalanuvchini darhol bezovta qilmaslik
+# 2) 5 kun botga kirmagan foydalanuvchini qayta jalb qilish
+# 3) Keyingi xabarlarni har 3 kunda yuborish
+# 4) Yangi profillar sonini avtomatik hisoblash
+# 5) Botni bloklagan foydalanuvchini avtomatik o'chirish
+# 6) Foydalanuvchi qaytib kirsa notification siklini to'xtatish
+#
+
+RETENTION_FIRST_DAYS = 5
+RETENTION_REPEAT_DAYS = 3
+
+
+def get_inactive_users():
+    """
+    5 kundan ko'proq faol bo'lmagan foydalanuvchilarni qaytaradi.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT
+            user_id,
+            first_name,
+            last_active
+        FROM users
+        WHERE is_active = TRUE
+          AND last_active IS NOT NULL
+          AND last_active <= NOW() - INTERVAL '5 days'
+        ORDER BY last_active ASC
+        """
+    )
+
+    users = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return users
+
+
+def get_new_profiles_count(user_id, last_active):
+    """
+    Foydalanuvchi oxirgi marta botga kirganidan keyin
+    qo'shilgan yangi faol profillar sonini hisoblaydi.
+    """
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT COUNT(*)
+        FROM users
+        WHERE user_id != %s
+          AND is_active = TRUE
+          AND created_at > %s
+        """,
+        (user_id, last_active)
+    )
+
+    count = cur.fetchone()[0]
+
+    cur.close()
+    conn.close()
+
+    return int(count or 0)
+
+
+def get_last_retention_notification(user_id):
+    """
+    Ushbu foydalanuvchiga oxirgi retention xabari qachon
+    yuborilganini qaytaradi.
+    """
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT created_at
+        FROM notification_logs
+        WHERE user_id = %s
+          AND notification_type = 'retention'
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (user_id,)
+    )
+
+    row = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return row[0] if row else None
+
+
+async def notify_retention_user(bot, user_id, first_name, last_active):
+    """
+    Bitta faol bo'lmagan foydalanuvchini qayta jalb qilish.
+    """
+
+    # Oxirgi retention xabarini tekshiramiz
+    last_notification = get_last_retention_notification(user_id)
+
+    now = datetime.now()
+
+    # Birinchi xabar: 5 kundan keyin
+    if last_notification is None:
+        if last_active > now:
+            return False
+
+        inactive_days = (now - last_active).days
+
+        if inactive_days < RETENTION_FIRST_DAYS:
+            return False
+
+    # Keyingi xabarlar: har 3 kunda
+    else:
+        days_since_notification = (now - last_notification).days
+
+        if days_since_notification < RETENTION_REPEAT_DAYS:
+            return False
+
+    # Yangi profillar soni
+    new_profiles_count = get_new_profiles_count(
+        user_id,
+        last_active
+    )
+
+    # Hech qanday yangi profil bo'lmasa, xabar yubormaymiz.
+    if new_profiles_count <= 0:
+        return False
+
+    # Ism bo'lmasa
+    display_name = first_name or "do'stim"
+
+    # Xabar matni
+    text = (
+        f"👋 Salom, {display_name}!\n\n"
+        "Sizni SaraMatch'da ko'rmayapmiz ❤️\n"
+        "Sizni sog'indik!\n\n"
+        f"🔥 Hozir botda {new_profiles_count} ta "
+        "yangi profil sizni kutyapti!\n\n"
+        "💕 Kirib, yangi profillar bilan tanishib chiqing!"
+    )
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "🔥 Yangi profillarni ko'rish",
+                callback_data="find_profiles"
+            )
+        ]
+    ])
+
+    try:
+        await bot.send_message(
+            chat_id=user_id,
+            text=text,
+            reply_markup=keyboard
+        )
+
+        save_notification(
+            user_id,
+            "retention"
+        )
+
+        print(
+            f"✅ Retention yuborildi: "
+            f"user={user_id}, "
+            f"new_profiles={new_profiles_count}"
+        )
+
+        return True
+
+    except Forbidden:
+        print(
+            f"🚫 Retention paytida bot bloklangan: {user_id}"
+        )
+
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            cur.execute(
+                """
+                UPDATE users
+                SET is_active = FALSE
+                WHERE user_id = %s
+                """,
+                (user_id,)
+            )
+
+            conn.commit()
+            cur.close()
+            conn.close()
+
+        except Exception as e:
+            print(
+                f"❌ Blocklangan userni o'chirishda xato: {e}"
+            )
+
+        return False
+
+    except Exception as e:
+        print(
+            f"❌ Retention notification error "
+            f"user={user_id}: {e}"
+        )
+
+        return False
+
+
+async def run_retention_notifications(bot):
+    """
+    Barcha mos foydalanuvchilarni tekshiradi.
+    """
+
+    print("🔔 Retention notification tekshiruvi boshlandi...")
+
+    try:
+        users = get_inactive_users()
+
+        print(
+            f"👥 5+ kun faol bo'lmaganlar: "
+            f"{len(users)} ta"
+        )
+
+        sent_count = 0
+
+        for user_id, first_name, last_active in users:
+
+            sent = await notify_retention_user(
+                bot,
+                user_id,
+                first_name,
+                last_active
+            )
+
+            if sent:
+                sent_count += 1
+
+        print(
+            f"✅ Retention tekshiruvi tugadi. "
+            f"Yuborildi: {sent_count} ta"
+        )
+
+    except Exception as e:
+        print(
+            f"❌ Retention job xatosi: {e}"
+        )
+
+
+async def retention_job(context):
+    """
+    JobQueue uchun wrapper.
+    Har 24 soatda ishga tushadi.
+    Ichida 5 kun + 3 kunlik limit tekshiriladi.
+    """
+
+    await run_retention_notifications(
+        context.bot
+    )
