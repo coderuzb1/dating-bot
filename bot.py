@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 
 LANGUAGE, AGE, GENDER, BIO, PHOTO, CITY = range(6)
 ADMIN_ID = 6310532367
+HUMO_CARD = "9860086601480972"
+VISA_CARD = "4916990302424491"
 BAD_WORDS = ["ahmoq", "jinni", "sotqin", "firibgar", "scam", "aldamoq", "pul", "karta", "parol"]
 
 async def check_bad_words(text):
@@ -575,9 +577,9 @@ async def handle_callback(update, context):
         price = prices[plan]
 
         if payment_method == "HUMO":
-            card = os.environ.get("HUMO_CARD", "")
+            card = HUMO_CARD
         else:
-            card = os.environ.get("VISA_CARD", "")
+            card = VISA_CARD
 
         if not card:
             await query.message.reply_text(
