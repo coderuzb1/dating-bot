@@ -21,6 +21,41 @@ VISA_CARD = "4916990302424491"
 BAD_WORDS = ["ahmoq", "jinni", "sotqin", "firibgar", "scam", "aldamoq", "pul", "karta", "parol"]
 
 
+def save_premium_history(
+    cur,
+    user_id,
+    action,
+    days=0,
+    source="unknown",
+    admin_id=None,
+    old_premium_until=None,
+    new_premium_until=None
+):
+    cur.execute(
+        """
+        INSERT INTO premium_history (
+            user_id,
+            action,
+            days,
+            source,
+            admin_id,
+            old_premium_until,
+            new_premium_until
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            user_id,
+            action,
+            days,
+            source,
+            admin_id,
+            old_premium_until,
+            new_premium_until
+        )
+    )
+
+
 async def scheduled_notifications(context):
     print("🔔 Notification scheduler tekshiruvi...")
 
@@ -341,6 +376,12 @@ async def get_photo(update, context):
 
                     if cur.rowcount > 0:
                         cur.execute(
+                            "SELECT premium_until FROM users WHERE user_id = %s",
+                            (referrer_id,)
+                        )
+                        old_premium_until = cur.fetchone()[0]
+
+                        cur.execute(
                             """
                             UPDATE users
                             SET premium_until =
@@ -353,6 +394,23 @@ async def get_photo(update, context):
                             WHERE user_id = %s
                             """,
                             (premium_days, premium_days, referrer_id)
+                        )
+
+                        cur.execute(
+                            "SELECT premium_until FROM users WHERE user_id = %s",
+                            (referrer_id,)
+                        )
+                        new_premium_until = cur.fetchone()[0]
+
+                        save_premium_history(
+                            cur,
+                            referrer_id,
+                            action="add",
+                            days=premium_days,
+                            source="referral",
+                            admin_id=None,
+                            old_premium_until=old_premium_until,
+                            new_premium_until=new_premium_until
                         )
 
                         try:
@@ -1834,6 +1892,8 @@ async def givepremium(update, context):
             )
             return
 
+        old_until = target[1]
+
         cur.execute(
             """
             UPDATE users
@@ -1849,13 +1909,24 @@ async def givepremium(update, context):
             (days, days, target_id)
         )
 
-        conn.commit()
-
         cur.execute(
             "SELECT premium_until FROM users WHERE user_id = %s",
             (target_id,)
         )
         new_until = cur.fetchone()[0]
+
+        save_premium_history(
+            cur,
+            target_id,
+            action="add",
+            days=days,
+            source="admin",
+            admin_id=user.id,
+            old_premium_until=old_until,
+            new_premium_until=new_until
+        )
+
+        conn.commit()
 
         cur.close()
         conn.close()
@@ -1935,6 +2006,8 @@ async def removepremium(update, context):
             )
             return
 
+        old_until = target[1]
+
         cur.execute(
             """
             UPDATE users
@@ -1942,6 +2015,17 @@ async def removepremium(update, context):
             WHERE user_id = %s
             """,
             (target_id,)
+        )
+
+        save_premium_history(
+            cur,
+            target_id,
+            action="remove",
+            days=0,
+            source="admin",
+            admin_id=user.id,
+            old_premium_until=old_until,
+            new_premium_until=None
         )
 
         conn.commit()
@@ -2186,6 +2270,137 @@ async def checkpremium(update, context):
         f"📅 Premiumgacha: {premium_date}"
     )
 
+async def premiumhistory(update, context):
+    """Admin uchun foydalanuvchining Premium tarixini ko'rsatadi."""
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+
+    if len(context.args) != 1:
+        await update.message.reply_text(
+            "❗ Foydalanish:\n"
+            "/premiumhistory USER_ID\n\n"
+            "Masalan:\n"
+            "/premiumhistory 5634936318"
+        )
+        return
+
+    try:
+        target_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("❌ USER_ID noto'g'ri.")
+        return
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(
+            """
+            SELECT first_name, username
+            FROM users
+            WHERE user_id = %s
+            """,
+            (target_id,)
+        )
+        target = cur.fetchone()
+
+        if not target:
+            await update.message.reply_text(
+                f"❌ Foydalanuvchi topilmadi.\n🆔 ID: {target_id}"
+            )
+            return
+
+        cur.execute(
+            """
+            SELECT
+                action,
+                days,
+                source,
+                admin_id,
+                old_premium_until,
+                new_premium_until,
+                created_at
+            FROM premium_history
+            WHERE user_id = %s
+            ORDER BY created_at DESC
+            LIMIT 30
+            """,
+            (target_id,)
+        )
+
+        rows = cur.fetchall()
+
+    finally:
+        cur.close()
+        conn.close()
+
+    if not rows:
+        await update.message.reply_text(
+            "👑 PREMIUM TARIXI\n\n"
+            f"👤 {target[0]}\n"
+            f"🆔 ID: {target_id}\n\n"
+            "📭 Premium tarixi mavjud emas."
+        )
+        return
+
+    text = (
+        "👑 PREMIUM TARIXI\n\n"
+        f"👤 {target[0]}\n"
+        f"📱 @{target[1] or 'yo‘q'}\n"
+        f"🆔 ID: {target_id}\n\n"
+    )
+
+    for i, row in enumerate(rows, 1):
+        action, days, source, admin_id, old_until, new_until, created_at = row
+
+        if action == "remove":
+            action_text = "❌ Premium bekor qilindi"
+        else:
+            action_text = f"✅ +{days} kun Premium"
+
+        if source == "referral":
+            source_text = "🎁 Referral"
+        elif source == "admin":
+            source_text = "👮 Admin"
+        elif source == "approve":
+            source_text = "💳 Approve"
+        else:
+            source_text = f"📌 {source}"
+
+        created_text = (
+            created_at.strftime("%d.%m.%Y %H:%M")
+            if created_at else "Noma'lum"
+        )
+
+        old_text = (
+            old_until.strftime("%d.%m.%Y %H:%M")
+            if old_until else "Yo‘q"
+        )
+
+        new_text = (
+            new_until.strftime("%d.%m.%Y %H:%M")
+            if new_until else "Yo‘q"
+        )
+
+        text += (
+            f"{i}. {action_text}\n"
+            f"📌 Manba: {source_text}\n"
+            f"📅 Amal vaqti: {created_text}\n"
+            f"⏮ Eski Premium: {old_text}\n"
+            f"⏭ Yangi Premium: {new_text}\n"
+        )
+
+        if admin_id:
+            text += f"👮 Admin ID: {admin_id}\n"
+
+        text += "\n"
+
+    await update.message.reply_text(text)
+
+
 async def approve(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -2195,10 +2410,44 @@ async def approve(update, context):
         parts = update.message.text.split()
         user_id = int(parts[1])
         days = int(parts[2])
-        premium_until = datetime.now() + timedelta(days=days)
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("UPDATE users SET premium_until = %s WHERE user_id = %s", (premium_until, user_id))
+
+        cur.execute(
+            "SELECT premium_until FROM users WHERE user_id = %s",
+            (user_id,)
+        )
+        row = cur.fetchone()
+
+        if not row:
+            cur.close()
+            conn.close()
+            await update.message.reply_text("❌ Foydalanuvchi topilmadi.")
+            return
+
+        old_until = row[0]
+
+        if old_until is not None and old_until > datetime.now():
+            premium_until = old_until + timedelta(days=days)
+        else:
+            premium_until = datetime.now() + timedelta(days=days)
+
+        cur.execute(
+            "UPDATE users SET premium_until = %s WHERE user_id = %s",
+            (premium_until, user_id)
+        )
+
+        save_premium_history(
+            cur,
+            user_id,
+            action="add",
+            days=days,
+            source="approve",
+            admin_id=user.id,
+            old_premium_until=old_until,
+            new_premium_until=premium_until
+        )
+
         conn.commit()
         cur.close()
         conn.close()
@@ -2254,6 +2503,7 @@ def main():
 
     app.add_handler(CommandHandler("checkpremium", checkpremium))
     app.add_handler(CommandHandler("premiumlist", premiumlist))
+    app.add_handler(CommandHandler("premiumhistory", premiumhistory))
     app.add_handler(CommandHandler("approve", approve))
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("find", find))
