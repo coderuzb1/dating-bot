@@ -196,8 +196,6 @@ async def find(update, context):
             )
             return
 
-    target_gender = "Ayol" if my_gender == "Erkak" else "Erkak"
-
     cur.execute(
         """
         SELECT
@@ -205,7 +203,6 @@ async def find(update, context):
             photo, city, is_active, premium_until, created_at
         FROM users
         WHERE user_id != %s
-        AND gender = %s
         AND is_active = TRUE
 
         AND user_id NOT IN (
@@ -230,7 +227,6 @@ async def find(update, context):
         """,
         (
             user.id,
-            target_gender,
             user.id,
             user.id,
             user.id,
