@@ -1980,25 +1980,69 @@ async def removepremium(update, context):
 
 async def admin(update, context):
     user = update.effective_user
+
     if user.id != ADMIN_ID:
         await update.message.reply_text("⛔ Siz admin emassiz!")
         return
+
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM users")
-    total_users = cur.fetchone()[0]
-    cur.execute("SELECT COUNT(*) FROM matches")
-    total_matches = cur.fetchone()[0]
-    cur.execute("SELECT COUNT(*) FROM likes")
-    total_likes = cur.fetchone()[0]
-    cur.close()
-    conn.close()
-    await update.message.reply_text(
-        f"📊 ADMIN PANEL:\n\n"
-        f"👥 Foydalanuvchilar: {total_users}\n"
-        f"❤️ Likelar: {total_likes}\n"
-        f"💞 Matchlar: {total_matches}"
+
+    try:
+        cur.execute("SELECT COUNT(*) FROM users")
+        total_users = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE is_active = TRUE
+        """)
+        active_users = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE premium_until IS NOT NULL
+              AND premium_until > NOW()
+        """)
+        premium_users = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE created_at >= CURRENT_DATE
+        """)
+        today_users = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM likes")
+        total_likes = cur.fetchone()[0]
+
+        cur.execute("SELECT COUNT(*) FROM matches")
+        total_matches = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE referred_by IS NOT NULL
+        """)
+        referral_users = cur.fetchone()[0]
+
+    finally:
+        cur.close()
+        conn.close()
+
+    text = (
+        "📊 ADMIN PANEL\n\n"
+        f"👥 Jami foydalanuvchilar: {total_users}\n"
+        f"🟢 Aktiv foydalanuvchilar: {active_users}\n"
+        f"👑 Premium foydalanuvchilar: {premium_users}\n"
+        f"🆕 Bugun qo'shilganlar: {today_users}\n\n"
+        f"❤️ Jami like: {total_likes}\n"
+        f"💞 Jami match: {total_matches}\n\n"
+        f"🎁 Referral orqali kelganlar: {referral_users}"
     )
+
+    await update.message.reply_text(text)
 
 
 
