@@ -1268,24 +1268,89 @@ async def handle_callback(update, context):
 
 async def save_edit(update, context):
     user = update.effective_user
-    text = update.message.text
-    field = context.user_data.get('edit_field')
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    if field == 'name':
-        cur.execute("UPDATE users SET first_name = %s WHERE user_id = %s", (text, user.id))
-        await update.message.reply_text("✅ Ism yangilandi!")
-    elif field == 'age':
-        if text.isdigit() and 16 <= int(text) <= 60:
-            cur.execute("UPDATE users SET age = %s WHERE user_id = %s", (int(text), user.id))
-            await update.message.reply_text("✅ Yosh yangilandi!")
-        else:
-            await update.message.reply_text("❌ Yosh 16-60 oralig'ida!")
-    elif field == 'bio':
-        cur.execute("UPDATE users SET bio = %s WHERE user_id = %s", (text, user.id))
-        await update.message.reply_text("✅ Bio yangilandi!")
-    elif field == 'city':
+    text = (update.message.text or "").strip()
+    field = context.user_data.get("edit_field")
+
+    if not field:
+        return
+
+    if field == "name":
+        if len(text) < 2 or len(text) > 50:
+            await update.message.reply_text(
+                "❌ Ism 2-50 ta belgidan iborat bo'lishi kerak."
+            )
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE users SET first_name = %s WHERE user_id = %s",
+            (text, user.id)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        context.user_data.pop("edit_field", None)
+
+        await update.message.reply_text(
+            "✅ Ism yangilandi!",
+            reply_markup=await get_main_keyboard()
+        )
+        return ConversationHandler.END
+
+    if field == "age":
+        if not text.isdigit() or not 16 <= int(text) <= 60:
+            await update.message.reply_text(
+                "❌ Yosh 16-60 oralig'ida bo'lishi kerak."
+            )
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE users SET age = %s WHERE user_id = %s",
+            (int(text), user.id)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        context.user_data.pop("edit_field", None)
+
+        await update.message.reply_text(
+            "✅ Yosh yangilandi!",
+            reply_markup=await get_main_keyboard()
+        )
+        return ConversationHandler.END
+
+    if field == "bio":
+        if len(text) < 2 or len(text) > 500:
+            await update.message.reply_text(
+                "❌ Bio 2-500 ta belgidan iborat bo'lishi kerak."
+            )
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE users SET bio = %s WHERE user_id = %s",
+            (text, user.id)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        context.user_data.pop("edit_field", None)
+
+        await update.message.reply_text(
+            "✅ Bio yangilandi!",
+            reply_markup=await get_main_keyboard()
+        )
+        return ConversationHandler.END
+
+    if field == "city":
+
         cities = {
             "Toshkent",
             "Samarqand",
@@ -1302,56 +1367,107 @@ async def save_edit(update, context):
             "Navoiy",
         }
 
+        forbidden_values = {
+            "👑 Premium",
+            "⚙️ Sozlamalar",
+            "👤 Profil",
+            "🔍 Qidirish",
+            "❤️ Yoqtirganlarim",
+            "💞 Matchlarim",
+            "🎁 Referal",
+            "✏️ Tahrirlash",
+        }
+
         if text in cities:
+            conn = get_db_connection()
+            cur = conn.cursor()
+
             cur.execute(
                 "UPDATE users SET city = %s WHERE user_id = %s",
                 (text, user.id)
             )
-            await update.message.reply_text("✅ Shahar yangilandi!")
 
-        elif text == "Boshqa":
-            context.user_data['custom_edit_city'] = True
+            conn.commit()
             cur.close()
             conn.close()
 
+            context.user_data.pop("edit_field", None)
+            context.user_data.pop("custom_edit_city", None)
+
             await update.message.reply_text(
-                "📍 Shahringiz nomini yozing:"
+                "✅ Shahar yangilandi!",
+                reply_markup=await get_main_keyboard()
+            )
+            return ConversationHandler.END
+
+        if text == "Boshqa":
+            context.user_data["custom_edit_city"] = True
+
+            await update.message.reply_text(
+                "📍 Shahringiz nomini yozing:\n\n"
+                "Masalan: Qo'qon"
             )
             return
 
-        elif context.user_data.get('custom_edit_city'):
-            if len(text.strip()) < 2 or len(text.strip()) > 50:
-                cur.close()
-                conn.close()
-
-                await update.message.reply_text(
-                    "❌ Shahar nomi 2-50 ta belgidan iborat bo'lishi kerak."
-                )
-                return
-
-            cur.execute(
-                "UPDATE users SET city = %s WHERE user_id = %s",
-                (text.strip(), user.id)
-            )
-            context.user_data.pop('custom_edit_city', None)
-
-            await update.message.reply_text("✅ Shahar yangilandi!")
-
-        else:
-            cur.close()
-            conn.close()
-
+        if not context.user_data.get("custom_edit_city"):
             await update.message.reply_text(
                 "❌ Iltimos, shaharni tugmalardan tanlang yoki "
                 "«Boshqa» tugmasini bosing."
             )
             return
-    
-    conn.commit()
-    cur.close()
-    conn.close()
-    del context.user_data['edit_field']
-    await update.message.reply_text("Bosh menyu:", reply_markup=await get_main_keyboard())
+
+        if text in forbidden_values:
+            await update.message.reply_text(
+                "❌ Bu shahar nomi emas.\n"
+                "📍 Iltimos, shahringiz nomini yozing."
+            )
+            return
+
+        if (
+            len(text) < 2
+            or len(text) > 50
+            or any(ch.isdigit() for ch in text)
+        ):
+            await update.message.reply_text(
+                "❌ Noto'g'ri shahar nomi.\n"
+                "📍 Masalan: Qo'qon"
+            )
+            return
+
+        if not any(ch.isalpha() for ch in text):
+            await update.message.reply_text(
+                "❌ Shahar nomida harflar bo'lishi kerak."
+            )
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "UPDATE users SET city = %s WHERE user_id = %s",
+            (text, user.id)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        context.user_data.pop("edit_field", None)
+        context.user_data.pop("custom_edit_city", None)
+
+        await update.message.reply_text(
+            "✅ Shahar yangilandi!",
+            reply_markup=await get_main_keyboard()
+        )
+        return ConversationHandler.END
+
+    context.user_data.pop("edit_field", None)
+    context.user_data.pop("custom_edit_city", None)
+
+    await update.message.reply_text(
+        "❌ O'zgartirish jarayoni bekor qilindi.",
+        reply_markup=await get_main_keyboard()
+    )
     return ConversationHandler.END
 
 async def save_edit_photo(update, context):
