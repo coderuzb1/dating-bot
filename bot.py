@@ -427,11 +427,13 @@ async def handle_callback(update, context):
         ])
         await query.message.reply_text(
             "👑 PREMIUM\n\n"
-            "⚡️ Imkoniyatlaringizni 5× oshiring\n\n"
-            "📈 Doim yuqorida ko'rinish\n"
-            "❤️ Cheksiz layklar\n"
-            "👀 Kim yoqtirganini ko'rish\n"
-            "💬 Match bo'lmasdan xabar yozish\n\n"
+            "✨ Premium imkoniyatlari:\n\n"
+            "♾️ Cheksiz profil ko'rish\n"
+            "❤️ Cheksiz like\n"
+            "✉️ Match bo'lmasdan yozish\n"
+            "👀 Kim sizni yoqtirganini ko'rish\n"
+            "⭐️ Premium belgisi\n"
+            "🚀 Profilingizga ustuvorlik\n\n"
             "📅 Muddatni tanlang:",
             reply_markup=keyboard
         )
