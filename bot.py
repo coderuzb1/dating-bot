@@ -2046,6 +2046,63 @@ async def admin(update, context):
 
 
 
+
+async def premiumlist(update, context):
+    """Admin uchun hozirgi Premium foydalanuvchilar ro'yxati."""
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            SELECT
+                user_id,
+                first_name,
+                username,
+                age,
+                gender,
+                city,
+                premium_until
+            FROM users
+            WHERE premium_until IS NOT NULL
+              AND premium_until > NOW()
+            ORDER BY premium_until DESC
+        """)
+
+        rows = cur.fetchall()
+
+    finally:
+        cur.close()
+        conn.close()
+
+    if not rows:
+        await update.message.reply_text(
+            "👑 Hozirda aktiv Premium foydalanuvchilar yo'q."
+        )
+        return
+
+    text = f"👑 PREMIUM FOYDALANUVCHILAR: {len(rows)} ta\n\n"
+
+    for i, row in enumerate(rows, 1):
+        user_id, first_name, username, age, gender, city, premium_until = row
+
+        text += (
+            f"{i}. 👤 {first_name}, {age}\n"
+            f"🆔 ID: {user_id}\n"
+            f"📱 @{username or 'yo‘q'}\n"
+            f"👤 {gender}\n"
+            f"📍 {city}\n"
+            f"📅 Premiumgacha: "
+            f"{premium_until.strftime('%d.%m.%Y %H:%M')}\n\n"
+        )
+
+    await update.message.reply_text(text)
+
 async def checkpremium(update, context):
     user = update.effective_user
 
@@ -2196,6 +2253,7 @@ def main():
     app.add_handler(CommandHandler("removepremium", removepremium))
 
     app.add_handler(CommandHandler("checkpremium", checkpremium))
+    app.add_handler(CommandHandler("premiumlist", premiumlist))
     app.add_handler(CommandHandler("approve", approve))
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("find", find))
