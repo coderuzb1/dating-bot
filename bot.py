@@ -1529,6 +1529,199 @@ async def handle_message(update, context):
         ])
         await update.message.reply_text("👑 PREMIUM\n\nMuddatni tanlang:", reply_markup=keyboard)
 
+
+async def givepremium(update, context):
+    """Admin foydalanuvchiga qo'lda Premium beradi."""
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+
+    if len(context.args) != 2:
+        await update.message.reply_text(
+            "❌ Format:\n"
+            "/givepremium USER_ID KUN\n\n"
+            "Masalan:\n"
+            "/givepremium 5634936318 30"
+        )
+        return
+
+    try:
+        target_id = int(context.args[0])
+        days = int(context.args[1])
+
+        if days <= 0:
+            await update.message.reply_text(
+                "❌ Kun soni 0 dan katta bo'lishi kerak."
+            )
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT first_name, premium_until
+            FROM users
+            WHERE user_id = %s
+            """,
+            (target_id,)
+        )
+        target = cur.fetchone()
+
+        if not target:
+            cur.close()
+            conn.close()
+            await update.message.reply_text(
+                f"❌ Foydalanuvchi topilmadi.\nID: {target_id}"
+            )
+            return
+
+        cur.execute(
+            """
+            UPDATE users
+            SET premium_until =
+                CASE
+                    WHEN premium_until IS NOT NULL
+                         AND premium_until > NOW()
+                    THEN premium_until + (%s * INTERVAL '1 day')
+                    ELSE NOW() + (%s * INTERVAL '1 day')
+                END
+            WHERE user_id = %s
+            """,
+            (days, days, target_id)
+        )
+
+        conn.commit()
+
+        cur.execute(
+            "SELECT premium_until FROM users WHERE user_id = %s",
+            (target_id,)
+        )
+        new_until = cur.fetchone()[0]
+
+        cur.close()
+        conn.close()
+
+        await update.message.reply_text(
+            "✅ PREMIUM BERILDI\n\n"
+            f"👤 Foydalanuvchi: {target[0]}\n"
+            f"🆔 ID: {target_id}\n"
+            f"👑 Qo'shilgan: {days} kun\n"
+            f"📅 Premiumgacha: {new_until.strftime('%d.%m.%Y %H:%M')}"
+        )
+
+        try:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=(
+                    "👑 PREMIUM FAOLLASHTIRILDI!\n\n"
+                    f"🎁 Sizga {days} kun Premium berildi.\n"
+                    f"📅 Amal qilish muddati: "
+                    f"{new_until.strftime('%d.%m.%Y %H:%M')}"
+                )
+            )
+        except Exception as e:
+            print(f"Premium notification error: {e}")
+
+    except ValueError:
+        await update.message.reply_text(
+            "❌ USER_ID va KUN son bo'lishi kerak.\n\n"
+            "Masalan:\n"
+            "/givepremium 5634936318 30"
+        )
+    except Exception as e:
+        print(f"Give premium error: {e}")
+        await update.message.reply_text(
+            "❌ Premium berishda xatolik yuz berdi."
+        )
+
+
+async def removepremium(update, context):
+    """Admin foydalanuvchining Premiumini bekor qiladi."""
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+
+    if len(context.args) != 1:
+        await update.message.reply_text(
+            "❌ Format:\n"
+            "/removepremium USER_ID\n\n"
+            "Masalan:\n"
+            "/removepremium 5634936318"
+        )
+        return
+
+    try:
+        target_id = int(context.args[0])
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT first_name, premium_until
+            FROM users
+            WHERE user_id = %s
+            """,
+            (target_id,)
+        )
+        target = cur.fetchone()
+
+        if not target:
+            cur.close()
+            conn.close()
+            await update.message.reply_text(
+                f"❌ Foydalanuvchi topilmadi.\nID: {target_id}"
+            )
+            return
+
+        cur.execute(
+            """
+            UPDATE users
+            SET premium_until = NULL
+            WHERE user_id = %s
+            """,
+            (target_id,)
+        )
+
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        await update.message.reply_text(
+            "✅ PREMIUM BEKOR QILINDI\n\n"
+            f"👤 Foydalanuvchi: {target[0]}\n"
+            f"🆔 ID: {target_id}\n"
+            "👑 Premium: ❌"
+        )
+
+        try:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=(
+                    "ℹ️ Premium obunangiz admin tomonidan bekor qilindi."
+                )
+            )
+        except Exception as e:
+            print(f"Premium revoke notification error: {e}")
+
+    except ValueError:
+        await update.message.reply_text(
+            "❌ USER_ID son bo'lishi kerak.\n\n"
+            "Masalan:\n"
+            "/removepremium 5634936318"
+        )
+    except Exception as e:
+        print(f"Remove premium error: {e}")
+        await update.message.reply_text(
+            "❌ Premiumni bekor qilishda xatolik yuz berdi."
+        )
+
 async def admin(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -1699,6 +1892,9 @@ def main():
     
     app.add_handler(conv_handler)
     app.add_handler(CommandHandler("admin", admin))
+    app.add_handler(CommandHandler("givepremium", givepremium))
+    app.add_handler(CommandHandler("removepremium", removepremium))
+
     app.add_handler(CommandHandler("checkpremium", checkpremium))
     app.add_handler(CommandHandler("approve", approve))
     app.add_handler(CommandHandler("broadcast", broadcast))
