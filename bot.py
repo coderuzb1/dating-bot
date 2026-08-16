@@ -159,21 +159,20 @@ async def find(update, context):
 
     my_gender, my_city, premium_until = user_data
 
-    is_premium = False
-
     cur.execute(
         """
-        SELECT premium_until > NOW()
-        FROM users
-        WHERE user_id = %s
+        SELECT EXISTS(
+            SELECT 1
+            FROM users
+            WHERE user_id = %s
+              AND premium_until IS NOT NULL
+              AND premium_until > NOW()
+        )
         """,
         (user.id,),
     )
 
-    premium_check = cur.fetchone()
-
-    if premium_check and premium_check[0] is True:
-        is_premium = True
+    is_premium = bool(cur.fetchone()[0])
 
     if not is_premium:
         cur.execute(
