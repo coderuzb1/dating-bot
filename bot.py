@@ -16,11 +16,20 @@ async def get_main_keyboard():
     return ReplyKeyboardMarkup([
         [KeyboardButton("🔍 Qidirish"), KeyboardButton("👤 Profil")],
         [KeyboardButton("❤️ Yoqtirganlarim"), KeyboardButton("💞 Matchlarim")],
-        [KeyboardButton("⚙️ Sozlamalar"), KeyboardButton("👑 Premium")]
+        [KeyboardButton("⚙️ Sozlamalar"), KeyboardButton("👑 Premium")],
+        [KeyboardButton("🎁 Referal")]
     ], resize_keyboard=True)
 
 async def start(update, context):
     user = update.effective_user
+
+    if context.args and context.args[0].startswith("ref_"):
+        try:
+            referrer_id = int(context.args[0].replace("ref_", ""))
+            if referrer_id != user.id:
+                context.user_data["referrer_id"] = referrer_id
+        except ValueError:
+            pass
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("SELECT is_active FROM users WHERE user_id = %s", (user.id,))
@@ -114,6 +123,98 @@ async def get_photo(update, context):
           context.user_data['gender'], context.user_data['bio'], photo, context.user_data['city'],
           context.user_data['age'], context.user_data['gender'],
           context.user_data['bio'], photo, context.user_data['city']))
+    # =========================
+    # REFERAL TIZIMI
+    # =========================
+    referrer_id = context.user_data.get("referrer_id")
+
+    if referrer_id and referrer_id != user.id:
+        cur.execute(
+            """
+            SELECT user_id
+            FROM users
+            WHERE user_id = %s
+            """,
+            (referrer_id,)
+        )
+        referrer_exists = cur.fetchone()
+
+        if referrer_exists:
+            cur.execute(
+                """
+                UPDATE users
+                SET referred_by = %s
+                WHERE user_id = %s
+                  AND referred_by IS NULL
+                """,
+                (referrer_id, user.id)
+            )
+
+            # Faqat yangi referal biriktirilgan bo'lsa mukofot hisoblanadi
+            if cur.rowcount > 0:
+                cur.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM users
+                    WHERE referred_by = %s
+                    """,
+                    (referrer_id,)
+                )
+                referral_count = cur.fetchone()[0]
+
+                rewards = {
+                    5: 1,
+                    10: 7,
+                    25: 30,
+                    50: 90,
+                    100: 365
+                }
+
+                if referral_count in rewards:
+                    premium_days = rewards[referral_count]
+
+                    cur.execute(
+                        """
+                        INSERT INTO referral_rewards
+                        (user_id, referrals_count, premium_days)
+                        VALUES (%s, %s, %s)
+                        ON CONFLICT (user_id, referrals_count)
+                        DO NOTHING
+                        """,
+                        (referrer_id, referral_count, premium_days)
+                    )
+
+                    if cur.rowcount > 0:
+                        cur.execute(
+                            """
+                            UPDATE users
+                            SET premium_until =
+                                CASE
+                                    WHEN premium_until IS NOT NULL
+                                         AND premium_until > NOW()
+                                    THEN premium_until + (%s * INTERVAL '1 day')
+                                    ELSE NOW() + (%s * INTERVAL '1 day')
+                                END
+                            WHERE user_id = %s
+                            """,
+                            (premium_days, premium_days, referrer_id)
+                        )
+
+                        try:
+                            await context.bot.send_message(
+                                chat_id=referrer_id,
+                                text=(
+                                    "🎉 REFERAL MUKOFOTI!\n\n"
+                                    f"👥 Referallaringiz: {referral_count} ta\n"
+                                    f"🎁 Mukofot: {premium_days} kun Premium\n\n"
+                                    "👑 Premium avtomatik faollashtirildi!"
+                                )
+                            )
+                        except:
+                            pass
+
+    context.user_data.pop("referrer_id", None)
+
     conn.commit()
     cur.close()
     conn.close()
@@ -741,6 +842,94 @@ async def settings(update, context):
     ])
     await update.message.reply_text("⚙️ Sozlamalar:", reply_markup=keyboard)
 
+async def referral_panel(update, context):
+    user = update.effective_user
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT COUNT(*)
+        FROM users
+        WHERE referred_by = %s
+        """,
+        (user.id,)
+    )
+    count = cur.fetchone()[0]
+
+    cur.execute(
+        """
+        SELECT premium_until
+        FROM users
+        WHERE user_id = %s
+        """,
+        (user.id,)
+    )
+    row = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    rewards = [
+        (5, 1),
+        (10, 7),
+        (25, 30),
+        (50, 90),
+        (100, 365),
+    ]
+
+    lines = []
+
+    for required, days in rewards:
+        if count >= required:
+            status = "✅"
+        else:
+            status = "🔒"
+
+        lines.append(
+            f"{status} {required} ta — {days} kun Premium"
+        )
+
+    next_reward = None
+
+    for required, days in rewards:
+        if count < required:
+            next_reward = (required, days)
+            break
+
+    if next_reward:
+        required, days = next_reward
+        remaining = required - count
+        next_text = (
+            f"🎯 Keyingi mukofot: {required} ta referal\n"
+            f"➡️ Yana {remaining} ta kerak"
+        )
+    else:
+        next_text = "🏆 Barcha referal mukofotlarini oldingiz!"
+
+    username = context.bot.username
+
+    link = (
+        f"https://t.me/{username}?start=ref_{user.id}"
+    )
+
+    text = (
+        "🎁 REFERAL DASTURI\n\n"
+        f"👥 Sizning referallaringiz: {count} ta\n\n"
+        "🏆 MUKOFOTLAR:\n"
+        + "\n".join(lines)
+        + "\n\n"
+        + next_text
+        + "\n\n"
+        "🔗 SIZNING REFERAL HAVOLANGIZ:\n"
+        f"{link}\n\n"
+        "📤 Havolani do'stlaringizga yuboring!\n"
+        "Do'stingiz profil yaratishni tugatsa, referal hisoblanadi."
+    )
+
+    await update.message.reply_text(text)
+
 async def handle_message(update, context):
     text = update.message.text
 
@@ -845,6 +1034,9 @@ async def handle_message(update, context):
         await matches(update, context)
     elif text == "⚙️ Sozlamalar":
         await settings(update, context)
+    elif text == "🎁 Referal":
+        await referral_panel(update, context)
+
     elif text == "👑 Premium":
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("1 hafta - 30 571 so'm", callback_data="premium_1w")],

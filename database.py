@@ -95,6 +95,23 @@ def init_db():
             created_at TIMESTAMP DEFAULT NOW()
         )
     """)
+
+    cur.execute("""
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS referred_by BIGINT
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS referral_rewards (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            referrals_count INTEGER NOT NULL,
+            premium_days INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(user_id, referrals_count)
+        )
+    """)
+
     conn.commit()
     cur.close()
     conn.close()
