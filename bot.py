@@ -475,9 +475,11 @@ async def handle_callback(update, context):
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("1 hafta - 30 571 so'm", callback_data="premium_1w")],
             [InlineKeyboardButton("1 oy - 63 429 so'm ⭐️", callback_data="premium_1m")],
-            [InlineKeyboardButton("3 oy - 137 714 so'm", callback_data="premium_3m")],[InlineKeyboardButton("1 yil - 282 000 so'm", callback_data="premium_1y")],
+            [InlineKeyboardButton("3 oy - 137 714 so'm", callback_data="premium_3m")],
+            [InlineKeyboardButton("1 yil - 282 000 so'm", callback_data="premium_1y")],
             [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
         ])
+
         await query.message.reply_text(
             "👑 PREMIUM\n\n"
             "✨ Premium imkoniyatlari:\n\n"
@@ -491,29 +493,65 @@ async def handle_callback(update, context):
             reply_markup=keyboard
         )
         return
-    
+
     if data.startswith("premium_"):
-        durations = {"premium_1w": 7, "premium_1m": 30, "premium_3m": 90, "premium_1y": 365}
-        prices = {"premium_1w": "30 571", "premium_1m": "63 429", "premium_3m": "137 714", "premium_1y": "282 000"}
-        if data in durations:
-            days = durations[data]
-            price = prices[data]
-            keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ To'lov qildim", callback_data=f"confirm_{data}")],
-                [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
-            ])
-            await query.message.reply_text(
-                f"💳 TO'LOV\n\n"
-                f"📅 Muddat: {days} kun\n"
-                f"💰 Summa: {price} so'm\n\n"
-                f"💳 Karta: 9860 0866 0148 0972\n\n"
-                f"To'lov qilgach '✅ To'lov qildim' ni bosing.",
-                reply_markup=keyboard
-            )
+        durations = {
+            "premium_1w": 7,
+            "premium_1m": 30,
+            "premium_3m": 90,
+            "premium_1y": 365
+        }
+
+        prices = {
+            "premium_1w": "30 571",
+            "premium_1m": "63 429",
+            "premium_3m": "137 714",
+            "premium_1y": "282 000"
+        }
+
+        if data not in durations:
+            return
+
+        days = durations[data]
+        price = prices[data]
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "💳 HUMO",
+                    callback_data=f"pay_humo_{data}"
+                ),
+                InlineKeyboardButton(
+                    "💳 VISA",
+                    callback_data=f"pay_visa_{data}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "❌ Bekor qilish",
+                    callback_data="cancel_premium"
+                )
+            ]
+        ])
+
+        await query.message.reply_text(
+            "💳 TO'LOV USULINI TANLANG\n\n"
+            f"📅 Muddat: {days} kun\n"
+            f"💰 Summa: {price} so'm\n\n"
+            "Quyidagi to'lov usullaridan birini tanlang:",
+            reply_markup=keyboard
+        )
         return
-    
-    if data.startswith("confirm_"):
-        plan = data.replace("confirm_", "")
+
+    if data.startswith("pay_humo_") or data.startswith("pay_visa_"):
+        parts = data.split("_", 2)
+
+        if len(parts) != 3:
+            await query.message.reply_text("❌ To'lov ma'lumotlari xato.")
+            return
+
+        payment_method = parts[1].upper()
+        plan = parts[2]
 
         durations = {
             "premium_1w": 7,
@@ -530,7 +568,76 @@ async def handle_callback(update, context):
         }
 
         if plan not in durations:
-            await query.message.reply_text("Tarif topilmadi.")
+            await query.message.reply_text("❌ Tarif topilmadi.")
+            return
+
+        days = durations[plan]
+        price = prices[plan]
+
+        if payment_method == "HUMO":
+            card = os.environ.get("HUMO_CARD", "")
+        else:
+            card = os.environ.get("VISA_CARD", "")
+
+        if not card:
+            await query.message.reply_text(
+                "❌ Ushbu to'lov usuli hozircha sozlanmagan."
+            )
+            return
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "✅ To'lov qildim",
+                    callback_data=f"confirm_{payment_method}_{plan}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "❌ Bekor qilish",
+                    callback_data="cancel_premium"
+                )
+            ]
+        ])
+
+        await query.message.reply_text(
+            "💳 TO'LOV\n\n"
+            f"💳 Usul: {payment_method}\n"
+            f"📅 Muddat: {days} kun\n"
+            f"💰 Summa: {price} so'm\n\n"
+            f"💳 Karta: {card}\n\n"
+            "To'lovni amalga oshirgach, "
+            "«✅ To'lov qildim» tugmasini bosing.",
+            reply_markup=keyboard
+        )
+        return
+
+    if data.startswith("confirm_"):
+        parts = data.split("_", 2)
+
+        if len(parts) != 3:
+            await query.message.reply_text("❌ To'lov ma'lumotlari xato.")
+            return
+
+        payment_method = parts[1].upper()
+        plan = parts[2]
+
+        durations = {
+            "premium_1w": 7,
+            "premium_1m": 30,
+            "premium_3m": 90,
+            "premium_1y": 365
+        }
+
+        prices = {
+            "premium_1w": "30 571",
+            "premium_1m": "63 429",
+            "premium_3m": "137 714",
+            "premium_1y": "282 000"
+        }
+
+        if plan not in durations:
+            await query.message.reply_text("❌ Tarif topilmadi.")
             return
 
         days = durations[plan]
@@ -539,13 +646,13 @@ async def handle_callback(update, context):
         keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
-                    "TASDIQLASH",
+                    "✅ TASDIQLASH",
                     callback_data=f"admin_approve_{user.id}_{days}"
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "RAD ETISH",
+                    "❌ RAD ETISH",
                     callback_data=f"admin_reject_{user.id}_{days}"
                 )
             ]
@@ -555,27 +662,32 @@ async def handle_callback(update, context):
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
                 text=(
-                    "PREMIUM TO'LOV SO'ROVI\n\n"
-                    f"Ism: {user.first_name}\n"
-                    f"Username: @{user.username or 'yoq'}\n"
-                    f"ID: {user.id}\n\n"
-                    f"Tarif: {days} kun\n"
-                    f"Summa: {price} som\n\n"
-                    "To'lovni tekshirgandan keyin tugmani bosing."
+                    "💳 YANGI PREMIUM TO'LOVI\n\n"
+                    f"👤 Ism: {user.first_name}\n"
+                    f"📱 Username: @{user.username or 'yoq'}\n"
+                    f"🆔 ID: {user.id}\n\n"
+                    f"📅 Tarif: {days} kun\n"
+                    f"💰 Summa: {price} so'm\n"
+                    f"💳 To'lov usuli: {payment_method}\n\n"
+                    "⚠️ To'lovni tekshirgandan keyin "
+                    "tasdiqlang yoki rad eting."
                 ),
                 reply_markup=keyboard
             )
 
             await query.message.reply_text(
-                "To'lov so'rovingiz adminga yuborildi.\n\n"
-                "To'lov tekshirilmoqda. Admin tasdiqlaganidan "
-                "keyin Premium avtomatik faollashadi."
+                "✅ To'lov so'rovingiz adminga yuborildi!\n\n"
+                f"💳 To'lov usuli: {payment_method}\n"
+                f"📅 Muddat: {days} kun\n"
+                f"💰 Summa: {price} so'm\n\n"
+                "⏳ Admin to'lovni tekshiradi. "
+                "Tasdiqlangandan keyin Premium avtomatik faollashadi."
             )
 
         except Exception as e:
             print(f"Payment request error: {e}")
             await query.message.reply_text(
-                "To'lov so'rovini yuborishda xatolik yuz berdi."
+                "❌ To'lov so'rovini yuborishda xatolik yuz berdi."
             )
 
         return
