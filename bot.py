@@ -141,53 +141,168 @@ async def find(update, context):
     else:
         message = update.message
         user = update.effective_user
-    
+
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT gender, city, premium_until FROM users WHERE user_id = %s", (user.id,))
+
+    cur.execute(
+        "SELECT gender, city, premium_until FROM users WHERE user_id = %s",
+        (user.id,),
+    )
     user_data = cur.fetchone()
+
     if not user_data:
         await message.reply_text("❌ Avval profil yarating. /start bosing.")
         cur.close()
         conn.close()
         return
-    
+
     my_gender, my_city, premium_until = user_data
-    is_premium = premium_until and premium_until > datetime.now()
-    
+
+    is_premium = (
+        premium_until is not None
+        and premium_until > datetime.now()
+    )
+
+    if not is_premium:
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM profile_views
+            WHERE user_id = %s
+            AND viewed_at >= CURRENT_DATE
+            """,
+            (user.id,),
+        )
+
+        today_count = cur.fetchone()[0]
+
+        if today_count >= 15:
+            cur.close()
+            conn.close()
+            await message.reply_text(
+                "🚫 Bugungi 15 ta profil limitingiz tugadi.\n\n"
+                "👑 Premiumga o'tib, profillarni cheksiz ko'rishingiz mumkin."
+            )
+            return
+
     target_gender = "Ayol" if my_gender == "Erkak" else "Erkak"
-    cur.execute("""
-        SELECT user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at
+
+    cur.execute(
+        """
+        SELECT
+            user_id, username, first_name, age, gender, bio,
+            photo, city, is_active, premium_until, created_at
         FROM users
         WHERE user_id != %s
         AND gender = %s
         AND is_active = TRUE
-        AND user_id NOT IN (SELECT to_user FROM likes WHERE from_user = %s)
-        ORDER BY CASE WHEN city = %s THEN 0 ELSE 1 END, created_at DESC
+
+        AND user_id NOT IN (
+            SELECT to_user FROM likes WHERE from_user = %s
+        )
+
+        AND user_id NOT IN (
+            SELECT to_user FROM skips WHERE from_user = %s
+        )
+
+        AND user_id NOT IN (
+            SELECT viewed_user_id
+            FROM profile_views
+            WHERE user_id = %s
+        )
+
+        ORDER BY
+            CASE WHEN city = %s THEN 0 ELSE 1 END,
+            created_at DESC
+
         LIMIT 1
-    """, (user.id, target_gender, user.id, my_city))
+        """,
+        (
+            user.id,
+            target_gender,
+            user.id,
+            user.id,
+            user.id,
+            my_city,
+        ),
+    )
+
     target = cur.fetchone()
+
+    if not target:
+        cur.close()
+        conn.close()
+        await message.reply_text(
+            f"😔 Hozircha {target_gender} profillar qolmagan."
+        )
+        return
+
+    (
+        target_id,
+        username,
+        first_name,
+        age,
+        gender,
+        bio,
+        photo,
+        city,
+        is_active,
+        target_premium_until,
+        created_at,
+    ) = target
+
+    cur.execute(
+        """
+        INSERT INTO profile_views (user_id, viewed_user_id)
+        VALUES (%s, %s)
+        """,
+        (user.id, target_id),
+    )
+
+    conn.commit()
     cur.close()
     conn.close()
-    
-    if not target:
-        await message.reply_text(f"😔 Hozircha {target_gender} profillar yo'q.")
-        return
-    
-    target_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at = target
-    is_premium_user = premium_until and premium_until > datetime.now()
-    premium_badge = " ⭐" if is_premium_user else ""
-    
-    keyboard = InlineKeyboardMarkup([
+
+    target_is_premium = (
+        target_premium_until is not None
+        and target_premium_until > datetime.now()
+    )
+
+    premium_badge = " ⭐" if target_is_premium else ""
+
+    buttons = [
         [
-            InlineKeyboardButton("👎 Yoqmadi", callback_data=f"skip_{target_id}"),
-            InlineKeyboardButton("❤️ Yoqdi", callback_data=f"like_{target_id}")
+            InlineKeyboardButton(
+                "👎 Yoqmadi",
+                callback_data=f"skip_{target_id}"
+            ),
+            InlineKeyboardButton(
+                "❤️ Yoqdi",
+                callback_data=f"like_{target_id}"
+            ),
         ]
-    ])
+    ]
+
+    if is_premium:
+        buttons.append([
+            InlineKeyboardButton(
+                "✉️ Yozish",
+                callback_data=f"write_{target_id}"
+            )
+        ])
+
+    keyboard = InlineKeyboardMarkup(buttons)
+
     await message.reply_photo(
         photo=photo,
-        caption=f"👤 {first_name}, {age}{premium_badge}\n👤 {gender}\n📍 {city}\n📝 {bio}",
-        reply_markup=keyboard
+        caption=(
+            f"👤 {first_name}, {age}{premium_badge}\n"
+            f"👤 {gender}\n"
+            f"📍 {city}\n"
+            f"📝 {bio or 'Bio yozilmagan'}"
+        ),
+        reply_markup=keyboard,
     )
 
 async def handle_callback(update, context):
@@ -309,9 +424,58 @@ async def handle_callback(update, context):
         await query.message.reply_text("Yangi rasm yuboring:")
         return
     
+    if data.startswith("write_"):
+        target_id = int(data.split("_")[1])
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT premium_until FROM users WHERE user_id = %s",
+            (user.id,)
+        )
+        row = cur.fetchone()
+
+        is_premium = (
+            row
+            and row[0] is not None
+            and row[0] > datetime.now()
+        )
+
+        if not is_premium:
+            cur.close()
+            conn.close()
+            await query.message.reply_text(
+                "👑 Bu funksiya faqat Premium uchun."
+            )
+            return
+
+        cur.execute(
+            "SELECT first_name FROM users WHERE user_id = %s",
+            (target_id,)
+        )
+        target = cur.fetchone()
+
+        cur.close()
+        conn.close()
+
+        if not target:
+            await query.message.reply_text(
+                "❌ Foydalanuvchi topilmadi."
+            )
+            return
+
+        context.user_data["writing_to"] = target_id
+
+        await query.message.reply_text(
+            f"✉️ {target[0]} ga yubormoqchi bo'lgan xabaringizni yozing.\n\n"
+            "❌ Bekor qilish: /cancel"
+        )
+        return
+
     if data.startswith("skip_"):
         await query.message.delete()
-        await find(query, context)
+        await find(update, context)
         return
     
     if data.startswith("like_"):
@@ -332,7 +496,7 @@ async def handle_callback(update, context):
         cur.close()
         conn.close()
         await query.message.delete()
-        await find(query, context)
+        await find(update, context)
         return
 
 async def save_edit(update, context):
@@ -458,6 +622,94 @@ async def settings(update, context):
     await update.message.reply_text("⚙️ Sozlamalar:", reply_markup=keyboard)
 
 async def handle_message(update, context):
+    text = update.message.text
+
+    # Premium foydalanuvchi profil egasiga xabar yozmoqda
+    if "writing_to" in context.user_data:
+        target_id = context.user_data["writing_to"]
+        sender = update.effective_user
+
+        if text == "/cancel":
+            context.user_data.pop("writing_to", None)
+            await update.message.reply_text(
+                "❌ Xabar yuborish bekor qilindi."
+            )
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT premium_until FROM users WHERE user_id = %s",
+            (sender.id,)
+        )
+        row = cur.fetchone()
+
+        is_premium = (
+            row
+            and row[0] is not None
+            and row[0] > datetime.now()
+        )
+
+        if not is_premium:
+            context.user_data.pop("writing_to", None)
+            cur.close()
+            conn.close()
+
+            await update.message.reply_text(
+                "❌ Premium muddati tugagan."
+            )
+            return
+
+        cur.execute(
+            """
+            INSERT INTO messages (from_user, to_user, text)
+            VALUES (%s, %s, %s)
+            """,
+            (sender.id, target_id, text)
+        )
+
+        cur.execute(
+            "SELECT first_name FROM users WHERE user_id = %s",
+            (target_id,)
+        )
+        target = cur.fetchone()
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        context.user_data.pop("writing_to", None)
+
+        if not target:
+            await update.message.reply_text(
+                "❌ Foydalanuvchi topilmadi."
+            )
+            return
+
+        try:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=(
+                    "💌 Sizga SaraMatch'dan yangi xabar!\n\n"
+                    f"👤 {sender.first_name}:\n"
+                    f"{text}"
+                )
+            )
+
+            await update.message.reply_text(
+                "✅ Xabaringiz yuborildi!"
+            )
+
+        except Exception:
+            await update.message.reply_text(
+                "⚠️ Xabarni yetkazib bo'lmadi. "
+                "Foydalanuvchi botni bloklagan bo'lishi mumkin."
+            )
+
+        return
+
+
     text = update.message.text
     
     if 'edit_field' in context.user_data:
