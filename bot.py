@@ -235,6 +235,19 @@ async def handle_callback(update, context):
             pass
         await query.message.reply_text("✅ To'lov so'rovi yuborildi! Admin tasdiqlagach Premium faollashadi.")
         return
+
+    if data == "user_info":
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT user_id, first_name, username FROM users ORDER BY created_at DESC LIMIT 20")
+        users = cur.fetchall()
+        cur.close()
+        conn.close()
+        text = "👥 Foydalanuvchilar:\n\n"
+        for u in users:
+            text += f"• {u[1]} - ID: {u[0]}\n"
+        await query.message.reply_text(text)
+        return
     
     if data == "cancel_premium":
         await query.message.reply_text("❌ Bekor qilindi.")
