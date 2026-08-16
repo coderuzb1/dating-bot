@@ -11,6 +11,7 @@ from notifications import (
     notify_inactive_users_7_days,
     notify_premium_promotion,
     notify_new_user_in_city,
+    retention_job,
 )
 from datetime import datetime, timedelta
 
