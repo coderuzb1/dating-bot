@@ -230,7 +230,7 @@ async def handle_callback(update, context):
         durations = {"premium_1w": 7, "premium_1m": 30, "premium_3m": 90, "premium_1y": 365}
         days = durations.get(plan, 0)
         try:
-            await context.bot.send_message(chat_id=ADMIN_ID, text=f"💳 To'lov so'rovi!\n👤 {user.first_name}\n📅 {days} kun")
+            await context.bot.send_message(chat_id=ADMIN_ID, text=f"💳 To'lov so'rovi!\n👤 {user.first_name}\n🆔 ID: {user.id}\n📅 {days} kun")
         except:
             pass
         await query.message.reply_text("✅ To'lov so'rovi yuborildi! Admin tasdiqlagach Premium faollashadi.")
