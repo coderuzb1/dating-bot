@@ -2416,6 +2416,81 @@ async def premiumhistory(update, context):
     await update.message.reply_text(text)
 
 
+
+async def premiumstats(update, context):
+    """Admin uchun umumiy Premium statistikasi."""
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE premium_until IS NOT NULL
+              AND premium_until > NOW()
+        """)
+        active_premium = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM premium_history
+            WHERE action = 'add'
+              AND source = 'payment'
+        """)
+        payment_count = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM premium_history
+            WHERE action = 'add'
+              AND source = 'admin'
+        """)
+        admin_count = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM premium_history
+            WHERE action = 'add'
+              AND source = 'referral'
+        """)
+        referral_count = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM premium_history
+            WHERE action = 'remove'
+        """)
+        removed_count = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM premium_history
+        """)
+        total_history = cur.fetchone()[0]
+
+    finally:
+        cur.close()
+        conn.close()
+
+    text = (
+        "📊 PREMIUM STATISTIKA\n\n"
+        f"👑 Aktiv Premium: {active_premium} ta\n\n"
+        f"💳 To‘lov orqali: {payment_count} ta\n"
+        f"👮 Admin orqali: {admin_count} ta\n"
+        f"🎁 Referral orqali: {referral_count} ta\n"
+        f"❌ Bekor qilingan: {removed_count} ta\n\n"
+        f"📚 Jami tarix yozuvlari: {total_history} ta"
+    )
+
+    await update.message.reply_text(text)
+
+
 async def approve(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -2519,6 +2594,7 @@ def main():
     app.add_handler(CommandHandler("checkpremium", checkpremium))
     app.add_handler(CommandHandler("premiumlist", premiumlist))
     app.add_handler(CommandHandler("premiumhistory", premiumhistory))
+    app.add_handler(CommandHandler("premiumstats", premiumstats))
     app.add_handler(CommandHandler("approve", approve))
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("find", find))
