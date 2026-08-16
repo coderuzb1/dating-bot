@@ -878,7 +878,7 @@ async def handle_callback(update, context):
             cur = conn.cursor()
 
             cur.execute(
-                "SELECT first_name FROM users WHERE user_id = %s",
+                "SELECT first_name, premium_until FROM users WHERE user_id = %s",
                 (user_id,)
             )
             target_user = cur.fetchone()
@@ -890,6 +890,8 @@ async def handle_callback(update, context):
                     "Foydalanuvchi topilmadi."
                 )
                 return
+
+            old_until = target_user[1]
 
             cur.execute(
                 """
@@ -913,6 +915,19 @@ async def handle_callback(update, context):
                 (user_id,)
             )
             new_until = cur.fetchone()[0]
+
+            save_premium_history(
+                cur,
+                user_id,
+                action="add",
+                days=days,
+                source="payment",
+                admin_id=user.id,
+                old_premium_until=old_until,
+                new_premium_until=new_until
+            )
+
+            conn.commit()
 
             cur.close()
             conn.close()
