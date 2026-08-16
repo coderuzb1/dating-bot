@@ -1031,7 +1031,7 @@ async def handle_callback(update, context):
                 await query.message.edit_text(
                     "✅ PREMIUM TO'LOVI TASDIQLANDI\n\n"
                     f"🧾 To'lov ID: #{payment_id}\n"
-                    f"👤 Foydalanuvchi: {first_name or 'Noma' + chr(39) + 'lum'}\n"
+                    f"👤 Foydalanuvchi: {first_name_display}\\n"
                     f"🆔 ID: {target_id}\n"
                     f"📅 Qo'shilgan: {days} kun\n"
                     f"💰 Summa: {amount} so'm\n"
@@ -1133,10 +1133,11 @@ async def handle_callback(update, context):
                 print(f"Reject notification error: {e}")
 
             # Admin xabarini yangilash
+            first_name_display = first_name or "Noma'lum"
             await query.message.edit_text(
                 "❌ PREMIUM TO'LOVI RAD ETILDI\\n\\n"
                 f"🧾 To'lov ID: #{payment_id}\\n"
-                  f"👤 Foydalanuvchi: {first_name or "Noma'lum"}\n"
+                  f"👤 Foydalanuvchi: {first_name_display}\n" 
                 f"🆔 ID: {target_id}\\n"
                 f"📅 Tarif: {days} kun\\n"
                 f"💰 Summa: {amount} so'm"
