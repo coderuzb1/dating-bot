@@ -1551,6 +1551,91 @@ async def admin(update, context):
         f"💞 Matchlar: {total_matches}"
     )
 
+
+
+async def checkpremium(update, context):
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "❗ Foydalanish:\n"
+            "/checkpremium TELEGRAM_ID\n\n"
+            "Masalan:\n"
+            "/checkpremium 5634936318"
+        )
+        return
+
+    try:
+        target_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("❌ Telegram ID noto‘g‘ri.")
+        return
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT user_id, first_name, username, city, premium_until
+        FROM users
+        WHERE user_id = %s
+        """,
+        (target_id,)
+    )
+
+    data = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not data:
+        await update.message.reply_text(
+            f"❌ {target_id} ID bilan foydalanuvchi topilmadi."
+        )
+        return
+
+    user_id, first_name, username, city, premium_until = data
+
+    premium_active = False
+
+    if premium_until:
+        try:
+            if isinstance(premium_until, str):
+                premium_until = datetime.fromisoformat(
+                    premium_until.replace("Z", "+00:00")
+                )
+
+            now = (
+                datetime.now(premium_until.tzinfo)
+                if premium_until.tzinfo
+                else datetime.now()
+            )
+
+            premium_active = premium_until > now
+
+        except Exception:
+            premium_active = False
+
+    status = "✅ FAOL" if premium_active else "❌ FAOL EMAS"
+
+    premium_date = (
+        premium_until.strftime("%d.%m.%Y %H:%M")
+        if premium_until else "Yo‘q"
+    )
+
+    await update.message.reply_text(
+        f"🔎 PREMIUM TEKSHIRUVI\n\n"
+        f"👤 Ism: {first_name}\n"
+        f"🆔 ID: {user_id}\n"
+        f"👤 Username: @{username if username else 'yo‘q'}\n"
+        f"📍 Shahar: {city or 'Kiritilmagan'}\n\n"
+        f"👑 Premium: {status}\n"
+        f"📅 Premiumgacha: {premium_date}"
+    )
+
 async def approve(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -1614,6 +1699,7 @@ def main():
     
     app.add_handler(conv_handler)
     app.add_handler(CommandHandler("admin", admin))
+    app.add_handler(CommandHandler("checkpremium", checkpremium))
     app.add_handler(CommandHandler("approve", approve))
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("find", find))
