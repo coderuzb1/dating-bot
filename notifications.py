@@ -3,6 +3,7 @@ import os
 import psycopg2
 
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.error import Forbidden
 
 
 def get_db_connection():
@@ -102,6 +103,27 @@ async def safe_send_message(
         )
         return True
 
+    except Forbidden:
+        print(f"🚫 User blocked bot, deactivating: {user_id}")
+
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE users SET is_active = FALSE WHERE user_id = %s",
+                (user_id,)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as db_error:
+            print(
+                f"❌ Could not deactivate blocked user "
+                f"{user_id}: {db_error}"
+            )
+
+        return False
+
     except Exception as e:
         print(
             f"Notification error | user={user_id} | {e}"
@@ -138,8 +160,8 @@ async def notify_like(
     ])
 
     text = (
-        "💕 Sizni kimdir yoqtirdi!\n\n"
-        f"👤 {from_user_name}\n\n"
+        "💕 Sizni kimdir yoqtirdi!\\n\\n"
+        f"👤 {from_user_name}\\n\\n"
         "👀 Kim ekanini ko‘rish"
     )
 
@@ -163,6 +185,25 @@ async def notify_like(
             "like",
             from_user_id
         )
+
+    except Forbidden:
+        print(f"🚫 Like recipient blocked bot: {to_user_id}")
+
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE users SET is_active = FALSE WHERE user_id = %s",
+                (to_user_id,)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as db_error:
+            print(
+                f"❌ Could not deactivate blocked like recipient "
+                f"{to_user_id}: {db_error}"
+            )
 
     except Exception as e:
         print(f"Like notification error: {e}")
@@ -238,6 +279,21 @@ async def notify_new_match(
                 user2_id
             )
 
+    except Forbidden:
+        print(f"🚫 Match user1 blocked bot: {user1_id}")
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE users SET is_active = FALSE WHERE user_id = %s",
+                (user1_id,)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as db_error:
+            print(f"❌ Could not deactivate user {user1_id}: {db_error}")
+
     except Exception as e:
         print(f"Match user1 error: {e}")
 
@@ -267,6 +323,21 @@ async def notify_new_match(
                 "match",
                 user1_id
             )
+
+    except Forbidden:
+        print(f"🚫 Match user2 blocked bot: {user2_id}")
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE users SET is_active = FALSE WHERE user_id = %s",
+                (user2_id,)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as db_error:
+            print(f"❌ Could not deactivate user {user2_id}: {db_error}")
 
     except Exception as e:
         print(f"Match user2 error: {e}")
