@@ -3300,56 +3300,162 @@ async def handle_message(update, context):
         tr("uz_cyr", "superlike"),
     }:
         user = update.effective_user
+        language = get_user_language(user.id)
+
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT superlike_balance FROM users WHERE user_id = %s", (user.id,))
+        cur.execute(
+            "SELECT superlike_balance FROM users WHERE user_id = %s",
+            (user.id,)
+        )
         result = cur.fetchone()
         balance = result[0] if result and result[0] else 0
         cur.close()
         conn.close()
-        
+
+        texts = {
+            "uz": {
+                "title": "⭐ SUPERLIKE",
+                "balance": "📊 Mavjud: {balance} ta",
+                "priority": "🔥 Profilingiz birinchi chiqadi!",
+                "power": "💪 3x kuchliroq",
+                "choose": "Paketni tanlang:",
+                "p1": "1 ta - 1 000 so'm",
+                "p5": "5 ta - 4 000 so'm",
+                "p10": "10 ta - 7 000 so'm",
+            },
+            "ru": {
+                "title": "⭐ СУПЕРЛАЙК",
+                "balance": "📊 Доступно: {balance} шт.",
+                "priority": "🔥 Ваш профиль будет показан первым!",
+                "power": "💪 В 3 раза сильнее",
+                "choose": "Выберите пакет:",
+                "p1": "1 шт. - 1 000 сум",
+                "p5": "5 шт. - 4 000 сум",
+                "p10": "10 шт. - 7 000 сум",
+            },
+            "uz_cyr": {
+                "title": "⭐ СУПЕРЛАЙК",
+                "balance": "📊 Мавжуд: {balance} та",
+                "priority": "🔥 Профилингиз биринчи чиқади!",
+                "power": "💪 3 баравар кучлироқ",
+                "choose": "Пакетни танланг:",
+                "p1": "1 та - 1 000 сўм",
+                "p5": "5 та - 4 000 сўм",
+                "p10": "10 та - 7 000 сўм",
+            },
+        }
+
+        t = texts.get(language, texts["uz"])
+
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("1 ta - 1 000 so'm", callback_data="sl_1")],
-            [InlineKeyboardButton("5 ta - 4 000 so'm", callback_data="sl_5")],
-            [InlineKeyboardButton("10 ta - 7 000 so'm", callback_data="sl_10")]
+            [InlineKeyboardButton(t["p1"], callback_data="sl_1")],
+            [InlineKeyboardButton(t["p5"], callback_data="sl_5")],
+            [InlineKeyboardButton(t["p10"], callback_data="sl_10")],
         ])
+
         await update.message.reply_text(
-            f"⭐ SUPERLIKE\n\n"
-            f"📊 Mavjud: {balance} ta\n\n"
-            f"🔥 Profilingiz birinchi chiqadi!\n"
-            f"💪 3x kuchliroq\n\n"
-            f"Paketni tanlang:",
+            f'{t["title"]}\n\n'
+            f'{t["balance"].format(balance=balance)}\n\n'
+            f'{t["priority"]}\n'
+            f'{t["power"]}\n\n'
+            f'{t["choose"]}',
             reply_markup=keyboard
         )
+
     elif text in {
         tr("uz", "premium"),
         tr("ru", "premium"),
         tr("uz_cyr", "premium"),
     }:
+        language = get_user_language(update.effective_user.id)
+
+        texts = {
+            "uz": {
+                "title": "👑 <b>PREMIUM</b>",
+                "intro": "💎 Premium bilan tanishuv imkoniyatlaringizni yanada kengaytiring!",
+                "unlimited_profiles": "♾️ <b>Cheksiz profil ko'rish</b> — ko'proq odamlarni kashf eting",
+                "unlimited_likes": "❤️ <b>Cheksiz Like</b> — imkoniyatlarni o'tkazib yubormang",
+                "direct": "✉️ <b>Matchni kutmasdan yozing</b> — yoqqan insoningiz bilan darhol suhbat boshlang",
+                "who": "👀 <b>Sizni kim yoqtirganini ko'ring</b> — kim sizga qiziqayotganini biling",
+                "badge": "⭐️ <b>Premium belgisi</b> — profilingizni ajratib turing",
+                "priority": "🚀 <b>Profil ustuvorligi</b> — ko'proq ko'rinishga ega bo'ling",
+                "more": "🔥 <b>Ko'proq ko'rinish → ko'proq Like → ko'proq Match!</b>",
+                "choose": "✨ O'zingizga mos Premium tarifini tanlang:",
+                "duration": "📅 <b>Muddatni tanlang:</b>",
+                "p1": "📅 1 hafta - 25 000 so'm • QULAY",
+                "p2": "🔥 14 kun - 39 000 so'm • ENG QULAY",
+                "p3": "⭐️ 1 oy - 59 000 so'm • OMMABOP",
+                "p4": "👑 3 oy - 129 000 so'm • TEJAMKOR",
+                "cancel": "❌ Bekor qilish",
+            },
+            "ru": {
+                "title": "👑 <b>ПРЕМИУМ</b>",
+                "intro": "💎 С Премиумом ваши возможности для знакомств станут намного шире!",
+                "unlimited_profiles": "♾️ <b>Безлимитный просмотр профилей</b> — находите больше людей",
+                "unlimited_likes": "❤️ <b>Безлимитные лайки</b> — не упускайте возможности",
+                "direct": "✉️ <b>Пишите без ожидания совпадения</b> — начинайте общение сразу",
+                "who": "👀 <b>Узнавайте, кто вас лайкнул</b> — знайте, кто вами интересуется",
+                "badge": "⭐️ <b>Значок Премиум</b> — выделяйте свой профиль",
+                "priority": "🚀 <b>Приоритет профиля</b> — получайте больше просмотров",
+                "more": "🔥 <b>Больше просмотров → больше лайков → больше совпадений!</b>",
+                "choose": "✨ Выберите подходящий тариф Премиум:",
+                "duration": "📅 <b>Выберите срок:</b>",
+                "p1": "📅 1 неделя - 25 000 сум • ВЫГОДНО",
+                "p2": "🔥 14 дней - 39 000 сум • ЛУЧШИЙ ВЫБОР",
+                "p3": "⭐️ 1 месяц - 59 000 сум • ПОПУЛЯРНЫЙ",
+                "p4": "👑 3 месяца - 129 000 сум • ЭКОНОМНЫЙ",
+                "cancel": "❌ Отмена",
+            },
+            "uz_cyr": {
+                "title": "👑 <b>ПРЕМИУМ</b>",
+                "intro": "💎 Премиум билан танишув имкониятларингизни янада кенгайтиринг!",
+                "unlimited_profiles": "♾️ <b>Чексиз профиль кўриш</b> — кўпроқ одамларни кашф этинг",
+                "unlimited_likes": "❤️ <b>Чексиз лайк</b> — имкониятларни ўтказиб юборманг",
+                "direct": "✉️ <b>Мэтчни кутмасдан ёзинг</b> — ёққан инсонгиз билан дарҳол суҳбат бошланг",
+                "who": "👀 <b>Сизни ким ёқтирганини кўринг</b> — ким сизга қизиқиш билдирганини билинг",
+                "badge": "⭐️ <b>Премиум белгиси</b> — профилингизни ажратиб туринг",
+                "priority": "🚀 <b>Профиль устуворлиги</b> — кўпроқ кўринишга эга бўлинг",
+                "more": "🔥 <b>Кўпроқ кўриниш → кўпроқ лайк → кўпроқ мэтч!</b>",
+                "choose": "✨ Ўзингизга мос Премиум тарифини танланг:",
+                "duration": "📅 <b>Муддатни танланг:</b>",
+                "p1": "📅 1 ҳафта - 25 000 сўм • ҚУЛАЙ",
+                "p2": "🔥 14 кун - 39 000 сўм • ЭНГ ҚУЛАЙ",
+                "p3": "⭐️ 1 ой - 59 000 сўм • ОММАБОП",
+                "p4": "👑 3 ой - 129 000 сўм • ТЕЖАМКОР",
+                "cancel": "❌ Бекор қилиш",
+            },
+        }
+
+        t = texts.get(language, texts["uz"])
+
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📅 1 hafta - 25 000 so'm • QULAY", callback_data="premium_1w")],
-            [InlineKeyboardButton("🔥 14 kun - 39 000 so'm • ENG QULAY", callback_data="premium_2w")],
-            [InlineKeyboardButton("⭐️ 1 oy - 59 000 so'm • OMMABOP", callback_data="premium_1m")],
-            [InlineKeyboardButton("👑 3 oy - 129 000 so'm • TEJAMKOR", callback_data="premium_3m")],
-            [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
+            [InlineKeyboardButton(t["p1"], callback_data="premium_1w")],
+            [InlineKeyboardButton(t["p2"], callback_data="premium_2w")],
+            [InlineKeyboardButton(t["p3"], callback_data="premium_1m")],
+            [InlineKeyboardButton(t["p4"], callback_data="premium_3m")],
+            [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")],
         ])
 
+        message = (
+            f'{t["title"]}\n\n'
+            f'{t["intro"]}\n\n'
+            f'{t["unlimited_profiles"]}\n'
+            f'{t["unlimited_likes"]}\n'
+            f'{t["direct"]}\n'
+            f'{t["who"]}\n'
+            f'{t["badge"]}\n'
+            f'{t["priority"]}\n\n'
+            f'{t["more"]}\n\n'
+            f'{t["choose"]}\n\n'
+            f'{t["duration"]}'
+        )
+
         await update.message.reply_text(
-            "👑 <b>PREMIUM</b>\n\n"
-            "💎 Premium bilan tanishuv imkoniyatlaringizni yanada kengaytiring!\n\n"
-            "♾️ <b>Cheksiz profil ko'rish</b> — ko'proq odamlarni kashf eting\n"
-            "❤️ <b>Cheksiz Like</b> — imkoniyatlarni o'tkazib yubormang\n"
-            "✉️ <b>Matchni kutmasdan yozing</b> — yoqqan insoningiz bilan darhol suhbat boshlang\n"
-            "👀 <b>Sizni kim yoqtirganini ko'ring</b> — kim sizga qiziqayotganini biling\n"
-            "⭐️ <b>Premium belgisi</b> — profilingizni ajratib turing\n"
-            "🚀 <b>Profil ustuvorligi</b> — ko'proq ko'rinishga ega bo'ling\n\n"
-            "🔥 <b>Ko'proq ko'rinish → ko'proq Like → ko'proq Match!</b>\n\n"
-            "✨ O'zingizga mos Premium tarifini tanlang:\n\n"
-            "📅 <b>Muddatni tanlang:</b>",
+            message,
             reply_markup=keyboard,
             parse_mode="HTML"
         )
-
 
 async def givepremium(update, context):
     """Admin foydalanuvchiga qo'lda Premium beradi."""
