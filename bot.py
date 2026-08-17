@@ -1116,49 +1116,68 @@ async def handle_callback(update, context):
 
     if data.startswith("sl_"):
         amount = int(data.split("_")[1])
-        prices = {1: "1 000", 5: "4 000", 10: "7 000"}
+
+        prices = {
+            1: "1 000",
+            5: "4 000",
+            10: "7 000",
+        }
+
         price = prices[amount]
+
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ To'lov qildim", callback_data=f"confirmsl_{amount}")],
-            [InlineKeyboardButton("❌ Bekor", callback_data="cancel_sl")]
+            [
+                InlineKeyboardButton(
+                    "✅ To'lov qildim",
+                    callback_data=f"confirmsl_{amount}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "❌ Bekor",
+                    callback_data="cancel_sl"
+                )
+            ]
         ])
+
         await query.message.reply_text(
-            f"💳 TO'LOV\n\n"
+            "💳 TO'LOV\n\n"
             f"⭐ {amount} ta Superlike\n"
             f"💰 Summa: {price} so'm\n\n"
-            f"💳 Karta: 9860 0866 0148 0972\n\n"
-            f"To'lov qilgach '✅' ni bosing.",
+            "💳 Karta: 9860 0866 0148 0972\n\n"
+            "To'lovni amalga oshiring va "
+            "«✅ To'lov qildim» tugmasini bosing.",
             reply_markup=keyboard
         )
         return
 
     if data.startswith("confirmsl_"):
         amount = int(data.split("_")[1])
-        prices = {1: 1000, 5: 4000, 10: 7000}
-        total = prices.get(amount, amount * 1000)
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"ok_sl_{user.id}_{amount}"),
-                InlineKeyboardButton("❌ Rad etish", callback_data=f"no_sl_{user.id}")
-            ]
-        ])
-        try:
-            await context.bot.send_message(
-                chat_id=ADMIN_ID,
-                text=f"💳 SUPERLIKE TO'LOV SO'ROVI!\n\n"
-                     f"👤 {user.first_name}\n"
-                     f"🆔 ID: {user.id}\n"
-                     f"⭐ Miqdor: {amount} ta\n"
-                     f"💰 Summa: {total} so'm",
-                reply_markup=keyboard
-            )
-        except:
-            pass
+
+        prices = {
+            1: "1 000",
+            5: "4 000",
+            10: "7 000",
+        }
+
+        price = prices.get(amount, "?")
+
+        # Foydalanuvchi endi chek yuborishi kerak.
+        # Rasm ham, PDF/fayl ham qabul qilinadi.
+        context.user_data["pending_payment"] = {
+            "type": "superlike",
+            "amount": amount,
+            "user_id": user.id,
+            "price": price,
+        }
+
         await query.message.reply_text(
-            "📸 To'lov chekini yuboring (skrinshot yoki rasm)\n\n"
-            "Chekni ko'rib chiqib, admin tasdiqlaydi."
+            "📸📄 SUPERLIKE TO'LOV CHEKINI YUBORING\n\n"
+            f"⭐ Miqdor: {amount} ta Superlike\n"
+            f"💰 Summa: {price} so'm\n\n"
+            "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
+            "⏳ Chek yuborilgach admin tekshiradi."
         )
-        context.user_data['pending_sl'] = {'amount': amount, 'user_id': user.id}
         return
 
     if data.startswith("ok_sl_"):
