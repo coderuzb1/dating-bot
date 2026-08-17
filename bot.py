@@ -918,6 +918,8 @@ async def handle_callback(update, context):
             f"💰 Summa: {price} so'm\n"
             f"💳 To'lov usuli: {payment_method}\n\n"
             "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
+            "⚠️ Faqat haqiqiy to‘lov chekini yuboring!\n"
+            "🚫 Soxta chek yuborsangiz, darhol botdan bloklanasiz va Premium berilmaydi.\n\n"
             "⏳ Chek yuborilgach admin tekshiradi."
         )
         return
