@@ -3337,6 +3337,7 @@ def main():
     app.add_handler(CommandHandler("matches", matches))
     app.add_handler(CommandHandler("settings", settings))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_payment_check))
     app.add_handler(CallbackQueryHandler(handle_callback))
     
     # =========================================================
