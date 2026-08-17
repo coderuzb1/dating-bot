@@ -15,7 +15,7 @@ from notifications import (
 )
 from datetime import datetime, timedelta
 
-LANGUAGE, AGE, GENDER, BIO, PHOTO, CITY = range(6)
+LANGUAGE, NAME, AGE, GENDER, CITY, BIO, PHOTO = range(7)
 ADMIN_ID = 6310532367
 HUMO_CARD = "9860086601480972"
 VISA_CARD = "4916990302424491"
@@ -178,7 +178,34 @@ async def get_language(update, context):
     context.user_data["language"] = languages[text]
 
     await update.message.reply_text(
-        "📝 Profil yaratish uchun yoshingizni kiriting (16-60):"
+        "👤 <b>1/7</b>\n\n"
+        "Ismingizni kiriting:",
+        parse_mode="HTML"
+    )
+    return NAME
+
+
+async def get_name(update, context):
+    name = update.message.text.strip()
+
+    if len(name) < 2 or len(name) > 30:
+        await update.message.reply_text(
+            "❌ Ism 2-30 ta belgidan iborat bo'lishi kerak."
+        )
+        return NAME
+
+    if not any(ch.isalpha() for ch in name):
+        await update.message.reply_text(
+            "❌ Ismda harflar bo'lishi kerak."
+        )
+        return NAME
+
+    context.user_data["profile_name"] = name
+
+    await update.message.reply_text(
+        "🎂 <b>2/7</b>\n\n"
+        "Yoshingizni kiriting (16-60):",
+        parse_mode="HTML"
     )
     return AGE
 
@@ -192,7 +219,12 @@ async def get_age(update, context):
     keyboard = ReplyKeyboardMarkup([
         [KeyboardButton("👨 Erkak"), KeyboardButton("👩 Ayol")]
     ], resize_keyboard=True, one_time_keyboard=True)
-    await update.message.reply_text("Jinsingizni tanlang:", reply_markup=keyboard)
+    await update.message.reply_text(
+        "👤 <b>3/7</b>\n\n"
+        "Jinsingizni tanlang:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
     return GENDER
 
 async def get_gender(update, context):
@@ -211,7 +243,12 @@ async def get_gender(update, context):
         [KeyboardButton("Guliston"), KeyboardButton("Termiz")],
         [KeyboardButton("Navoiy"), KeyboardButton("Boshqa")]
     ], resize_keyboard=True, one_time_keyboard=True)
-    await update.message.reply_text("📍 Yashash shahringizni tanlang:", reply_markup=keyboard)
+    await update.message.reply_text(
+        "📍 <b>4/7</b>\n\n"
+        "Yashash shahringizni tanlang:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
     return CITY
 
 async def get_city(update, context):
@@ -239,7 +276,9 @@ async def get_city(update, context):
         context.user_data.pop('custom_city', None)
 
         await update.message.reply_text(
-            "📝 O'zingiz haqingizda qisqacha yozing:"
+            "📝 <b>5/7</b>\n\n"
+            "O'zingiz haqingizda qisqacha yozing:",
+            parse_mode="HTML"
         )
         return BIO
 
@@ -264,7 +303,9 @@ async def get_city(update, context):
         context.user_data.pop('custom_city', None)
 
         await update.message.reply_text(
-            "📝 O'zingiz haqingizda qisqacha yozing:"
+            "📝 <b>5/7</b>\n\n"
+            "O'zingiz haqingizda qisqacha yozing:",
+            parse_mode="HTML"
         )
         return BIO
 
@@ -277,7 +318,11 @@ async def get_city(update, context):
 async def get_bio(update, context):
     bio = update.message.text
     context.user_data['bio'] = bio
-    await update.message.reply_text("📸 Profil rasmingizni yuboring:")
+    await update.message.reply_text(
+        "📸 <b>6/7</b>\n\n"
+        "Profil rasmingizni yuboring:",
+        parse_mode="HTML"
+    )
     return PHOTO
 
 async def get_photo(update, context):
@@ -291,6 +336,7 @@ async def get_photo(update, context):
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (user_id) DO UPDATE SET
+            first_name = %s,
             age = %s,
             gender = %s,
             bio = %s,
@@ -300,13 +346,14 @@ async def get_photo(update, context):
     """, (
         user.id,
         user.username,
-        user.first_name,
+        context.user_data.get('profile_name', user.first_name),
         context.user_data['age'],
         context.user_data['gender'],
         context.user_data['bio'],
         photo,
         context.user_data['city'],
         context.user_data.get('language', 'uz'),
+        context.user_data.get('profile_name', user.first_name),
         context.user_data['age'],
         context.user_data['gender'],
         context.user_data['bio'],
@@ -3276,6 +3323,7 @@ def main():
         entry_points=[CommandHandler("start", start)],
         states={
             LANGUAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_language)],
+            NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
             AGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_age)],
             GENDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_gender)],
             CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_city)],
@@ -3306,6 +3354,15 @@ def main():
     )
 
     app.add_handler(conv_handler)
+
+    # New user onboarding: Welcome -> Profil yaratish -> Til
+    app.add_handler(
+        CallbackQueryHandler(
+            create_profile,
+            pattern="^create_profile$"
+        )
+    )
+
     app.add_handler(CommandHandler("admin", admin))
     app.add_handler(CommandHandler("givepremium", givepremium))
     app.add_handler(CommandHandler("removepremium", removepremium))
