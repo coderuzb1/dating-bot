@@ -578,11 +578,11 @@ async def find(update, context):
 
         today_count = cur.fetchone()[0]
 
-        if today_count >= 15:
+        if today_count >= 20:
             cur.close()
             conn.close()
             await message.reply_text(
-                "🚫 Bugungi 15 ta profil limitingiz tugadi.\n\n"
+                "🚫 Bugungi 20 ta profil limitingiz tugadi.\n\n"
                 "👑 Premiumga o'tib, profillarni cheksiz ko'rishingiz mumkin."
             )
             return
@@ -1467,6 +1467,52 @@ async def handle_callback(update, context):
                 show_alert=True
             )
             return
+
+        # =========================
+        # DAILY LIKE LIMIT
+        # Oddiy foydalanuvchi: 3 Like/kun
+        # Premium: cheksiz Like
+        # =========================
+        cur.execute(
+            """
+            SELECT premium_until
+            FROM users
+            WHERE user_id = %s
+            """,
+            (user.id,)
+        )
+        premium_result = cur.fetchone()
+
+        is_premium = (
+            premium_result
+            and premium_result[0] is not None
+            and premium_result[0] > datetime.now()
+        )
+
+        if not is_premium:
+            cur.execute(
+                """
+                SELECT COUNT(*)
+                FROM likes
+                WHERE from_user = %s
+                  AND created_at >= CURRENT_DATE
+                  AND created_at < CURRENT_DATE + INTERVAL '1 day'
+                """,
+                (user.id,)
+            )
+
+            today_likes = cur.fetchone()[0]
+
+            if today_likes >= 3:
+                cur.close()
+                conn.close()
+
+                await query.answer(
+                    "❤️ Bugungi 3 ta Like limitingiz tugadi!\n\n"
+                    "👑 Premium bilan cheksiz Like bosing.",
+                    show_alert=True
+                )
+                return
 
         cur.execute(
             """
