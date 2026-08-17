@@ -1203,13 +1203,19 @@ async def handle_callback(update, context):
 
     if data.startswith("confirmsl_"):
         amount = int(data.split("_")[1])
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET superlike_balance = COALESCE(superlike_balance, 0) + %s WHERE user_id = %s", (amount, user.id))
-        conn.commit()
-        cur.close()
-        conn.close()
-        await query.message.reply_text(f"✅ {amount} ta Superlike qo'shildi!")
+        try:
+            await context.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=f"💳 SUPERLIKE TO'LOV SO'ROVI!\n\n"
+                     f"👤 {user.first_name}\n"
+                     f"🆔 ID: {user.id}\n"
+                     f"⭐ Miqdor: {amount} ta\n"
+                     f"💰 Summa: {amount * 1000} so'm\n\n"
+                     f"Tasdiqlash: /approvesl {user.id} {amount}"
+            )
+        except:
+            pass
+        await query.message.reply_text("✅ To'lov so'rovi yuborildi! Admin tasdiqlagach Superlike qo'shiladi.")
         return
 
     if data == "cancel_sl":
@@ -2109,6 +2115,19 @@ async def handle_message(update, context):
     elif text == "🎁 Referal":
         await referral_panel(update, context)
 
+    elif text == "⭐ Superlike":
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("1 ta - 1 000 so'm", callback_data="sl_1")],
+            [InlineKeyboardButton("5 ta - 4 000 so'm", callback_data="sl_5")],
+            [InlineKeyboardButton("10 ta - 7 000 so'm", callback_data="sl_10")]
+        ])
+        await update.message.reply_text(
+            "⭐ SUPERLIKE\n\n"
+            "🔥 Profilingiz birinchi chiqadi!\n"
+            "💪 3x kuchliroq\n\n"
+            "Paketni tanlang:",
+            reply_markup=keyboard
+        )
     elif text == "👑 Premium":
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("1 hafta - 30 571 so'm", callback_data="premium_1w")],
@@ -2974,6 +2993,29 @@ async def find_user(update, context):
         await update.message.reply_text(text)
     except:
         await update.message.reply_text("❌ Format: /finduser ISM")
+
+async def approve_sl(update, context):
+    user = update.effective_user
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+    try:
+        parts = update.message.text.split()
+        user_id = int(parts[1])
+        amount = int(parts[2])
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET superlike_balance = COALESCE(superlike_balance, 0) + %s WHERE user_id = %s", (amount, user_id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        await update.message.reply_text(f"✅ Superlike tasdiqlandi! {amount} ta")
+        try:
+            await context.bot.send_message(chat_id=user_id, text=f"🎉 {amount} ta Superlike hisobingizga qo'shildi!")
+        except:
+            pass
+    except:
+        await update.message.reply_text("❌ Format: /approvesl USER_ID MIQDOR")
 
 async def broadcast(update, context):
     user = update.effective_user
