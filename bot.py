@@ -2752,39 +2752,99 @@ async def profile(update, context):
 
 async def likes(update, context):
     user = update.effective_user
+    language = get_user_language(user.id)
+
+    texts = {
+        "uz": {
+            "empty": "❤️ Hozircha yoqtirganlaringiz yo'q.",
+            "title": "❤️ Siz yoqtirganlar:",
+        },
+        "ru": {
+            "empty": "❤️ Вы пока никого не лайкнули.",
+            "title": "❤️ Вы отметили лайком:",
+        },
+        "uz_cyr": {
+            "empty": "❤️ Ҳозирча ёқтирганларингиз йўқ.",
+            "title": "❤️ Сиз ёқтирганлар:",
+        },
+    }
+
+    t = texts.get(language, texts["uz"])
+
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT u.first_name, u.age FROM users u JOIN likes l ON u.user_id = l.to_user WHERE l.from_user = %s", (user.id,))
+    cur.execute(
+        "SELECT u.first_name, u.age FROM users u "
+        "JOIN likes l ON u.user_id = l.to_user "
+        "WHERE l.from_user = %s",
+        (user.id,)
+    )
     likes_list = cur.fetchall()
     cur.close()
     conn.close()
+
     if not likes_list:
-        await update.message.reply_text("❤️ Hozircha yoqtirganlaringiz yo'q.")
+        await update.message.reply_text(t["empty"])
         return
-    text = "❤️ Siz yoqtirganlar:\n\n"
+
+    text = t["title"] + "\n\n"
+
     for like in likes_list:
         text += f"• {like[0]}, {like[1]}\n"
+
     await update.message.reply_text(text)
+
 
 async def matches(update, context):
     user = update.effective_user
+    language = get_user_language(user.id)
+
+    texts = {
+        "uz": {
+            "empty": "💞 Hozircha matchlar yo'q.",
+            "title": "💞 Matchlaringiz:",
+        },
+        "ru": {
+            "empty": "💞 Пока совпадений нет.",
+            "title": "💞 Ваши совпадения:",
+        },
+        "uz_cyr": {
+            "empty": "💞 Ҳозирча мэтчлар йўқ.",
+            "title": "💞 Сизнинг мэтчларингиз:",
+        },
+    }
+
+    t = texts.get(language, texts["uz"])
+
     conn = get_db_connection()
     cur = conn.cursor()
+
     cur.execute("""
-        SELECT u.first_name, u.age FROM users u
-        JOIN matches m ON u.user_id = CASE WHEN m.user1 = %s THEN m.user2 ELSE m.user1 END
+        SELECT u.first_name, u.age
+        FROM users u
+        JOIN matches m
+          ON u.user_id = CASE
+              WHEN m.user1 = %s THEN m.user2
+              ELSE m.user1
+          END
         WHERE m.user1 = %s OR m.user2 = %s
     """, (user.id, user.id, user.id))
+
     matches_list = cur.fetchall()
     cur.close()
     conn.close()
+
     if not matches_list:
-        await update.message.reply_text("💞 Hozircha matchlar yo'q.")
+        await update.message.reply_text(t["empty"])
         return
-    text = "💞 Matchlaringiz:\n\n"
+
+    text = t["title"] + "\n\n"
+
     for match in matches_list:
         text += f"• {match[0]}, {match[1]}\n"
+
     await update.message.reply_text(text)
+
 
 async def settings(update, context):
     user = update.effective_user
@@ -2927,29 +2987,57 @@ async def save_language(update, context, language):
 
 async def referral_panel(update, context):
     user = update.effective_user
+    language = get_user_language(user.id)
+
+    texts = {
+        "uz": {
+            "title": "🎁 REFERAL DASTURI",
+            "referrals": "👥 Sizning referallaringiz: {count} ta",
+            "rewards": "🏆 MUKOFOTLAR:",
+            "reward": "{status} {required} ta — {days} kun Premium",
+            "next": "🎯 Keyingi mukofot: {required} ta referal",
+            "remaining": "➡️ Yana {remaining} ta kerak",
+            "all": "🏆 Barcha referal mukofotlarini oldingiz!",
+            "link": "🔗 SIZNING REFERAL HAVOLANGIZ:",
+            "share": "📤 Havolani do'stlaringizga yuboring!",
+            "finish": "Do'stingiz profil yaratishni tugatsa, referal hisoblanadi.",
+        },
+        "ru": {
+            "title": "🎁 РЕФЕРАЛЬНАЯ ПРОГРАММА",
+            "referrals": "👥 Ваши рефералы: {count}",
+            "rewards": "🏆 НАГРАДЫ:",
+            "reward": "{status} {required} рефералов — {days} дней Премиум",
+            "next": "🎯 Следующая награда: {required} рефералов",
+            "remaining": "➡️ Осталось ещё {remaining}",
+            "all": "🏆 Вы получили все реферальные награды!",
+            "link": "🔗 ВАША РЕФЕРАЛЬНАЯ ССЫЛКА:",
+            "share": "📤 Отправьте ссылку своим друзьям!",
+            "finish": "Реферал засчитывается после завершения создания профиля другом.",
+        },
+        "uz_cyr": {
+            "title": "🎁 РЕФЕРАЛ ДАСТУРИ",
+            "referrals": "👥 Сизнинг рефералларингиз: {count} та",
+            "rewards": "🏆 МУКОФОТЛАР:",
+            "reward": "{status} {required} та — {days} кун Премиум",
+            "next": "🎯 Кейинги мукофот: {required} та реферал",
+            "remaining": "➡️ Яна {remaining} та керак",
+            "all": "🏆 Барча реферал мукофотларини олдингиз!",
+            "link": "🔗 СИЗНИНГ РЕФЕРАЛ ҲАВОЛАНГИЗ:",
+            "share": "📤 Ҳаволани дўстларингизга юборинг!",
+            "finish": "Дўстингиз профиль яратишни тугатса, реферал ҳисобланади.",
+        },
+    }
+
+    t = texts.get(language, texts["uz"])
 
     conn = get_db_connection()
     cur = conn.cursor()
 
     cur.execute(
-        """
-        SELECT COUNT(*)
-        FROM users
-        WHERE referred_by = %s
-        """,
+        "SELECT COUNT(*) FROM users WHERE referred_by = %s",
         (user.id,)
     )
     count = cur.fetchone()[0]
-
-    cur.execute(
-        """
-        SELECT premium_until
-        FROM users
-        WHERE user_id = %s
-        """,
-        (user.id,)
-    )
-    row = cur.fetchone()
 
     cur.close()
     conn.close()
@@ -2965,13 +3053,13 @@ async def referral_panel(update, context):
     lines = []
 
     for required, days in rewards:
-        if count >= required:
-            status = "✅"
-        else:
-            status = "🔒"
-
+        status = "✅" if count >= required else "🔒"
         lines.append(
-            f"{status} {required} ta — {days} kun Premium"
+            t["reward"].format(
+                status=status,
+                required=required,
+                days=days
+            )
         )
 
     next_reward = None
@@ -2985,30 +3073,33 @@ async def referral_panel(update, context):
         required, days = next_reward
         remaining = required - count
         next_text = (
-            f"🎯 Keyingi mukofot: {required} ta referal\n"
-            f"➡️ Yana {remaining} ta kerak"
+            t["next"].format(required=required)
+            + "\n"
+            + t["remaining"].format(remaining=remaining)
         )
     else:
-        next_text = "🏆 Barcha referal mukofotlarini oldingiz!"
+        next_text = t["all"]
 
     username = context.bot.username
-
-    link = (
-        f"https://t.me/{username}?start=ref_{user.id}"
-    )
+    link = f"https://t.me/{username}?start=ref_{user.id}"
 
     text = (
-        "🎁 REFERAL DASTURI\n\n"
-        f"👥 Sizning referallaringiz: {count} ta\n\n"
-        "🏆 MUKOFOTLAR:\n"
+        t["title"] + "\n\n"
+        + t["referrals"].format(count=count)
+        + "\n\n"
+        + t["rewards"]
+        + "\n"
         + "\n".join(lines)
         + "\n\n"
         + next_text
         + "\n\n"
-        "🔗 SIZNING REFERAL HAVOLANGIZ:\n"
-        f"{link}\n\n"
-        "📤 Havolani do'stlaringizga yuboring!\n"
-        "Do'stingiz profil yaratishni tugatsa, referal hisoblanadi."
+        + t["link"]
+        + "\n"
+        + link
+        + "\n\n"
+        + t["share"]
+        + "\n"
+        + t["finish"]
     )
 
     await update.message.reply_text(text)
