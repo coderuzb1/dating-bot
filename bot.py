@@ -823,20 +823,23 @@ async def handle_callback(update, context):
 
         # Chek yuborilgunga qadar foydalanuvchining
         # tanlagan Premium tarifini saqlab qo'yamiz.
-        context.user_data["pending_premium"] = {
+        # Chek yuborilgunga qadar to'lov ma'lumotlarini saqlaymiz.
+        # handle_payment_check aynan pending_payment ni kutadi.
+        context.user_data["pending_payment"] = {
+            "type": "premium",
             "days": days,
             "plan": plan,
             "price": price,
             "payment_method": payment_method,
+            "user_id": user.id,
         }
 
         await query.message.reply_text(
-            "📸 TO'LOV CHEKINI YUBORING\n\n"
+            "📸📄 TO'LOV CHEKINI YUBORING\n\n"
             f"👑 Premium: {days} kun\n"
             f"💰 Summa: {price} so'm\n"
             f"💳 To'lov usuli: {payment_method}\n\n"
-            "To'lov qilganingizni tasdiqlovchi "
-            "skrinshot yoki chek rasmini yuboring.\n\n"
+            "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
             "⏳ Chek yuborilgach admin tekshiradi."
         )
         return
