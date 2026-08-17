@@ -1203,6 +1203,8 @@ async def handle_callback(update, context):
 
     if data.startswith("confirmsl_"):
         amount = int(data.split("_")[1])
+        prices = {1: 1000, 5: 4000, 10: 7000}
+        total = prices.get(amount, amount * 1000)
         try:
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
@@ -1210,7 +1212,7 @@ async def handle_callback(update, context):
                      f"👤 {user.first_name}\n"
                      f"🆔 ID: {user.id}\n"
                      f"⭐ Miqdor: {amount} ta\n"
-                     f"💰 Summa: {amount * 1000} so'm\n\n"
+                     f"💰 Summa: {total} so'm\n\n"
                      f"Tasdiqlash: /approvesl {user.id} {amount}"
             )
         except:
