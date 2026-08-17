@@ -714,10 +714,10 @@ async def handle_callback(update, context):
     
     if data == "premium_buy":
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📅 1 hafta - 25 000 so'm", callback_data="premium_1w")],
-            [InlineKeyboardButton("🔥 14 kun - 39 000 so'm", callback_data="premium_2w")],
-            [InlineKeyboardButton("⭐️ 1 oy - 59 000 so'm", callback_data="premium_1m")],
-            [InlineKeyboardButton("👑 3 oy - 129 000 so'm", callback_data="premium_3m")],
+            [InlineKeyboardButton("📅 1 hafta - 25 000 so'm • QULAY", callback_data="premium_1w")],
+            [InlineKeyboardButton("🔥 14 kun - 39 000 so'm • ENG QULAY", callback_data="premium_2w")],
+            [InlineKeyboardButton("⭐️ 1 oy - 59 000 so'm • OMMABOP", callback_data="premium_1m")],
+            [InlineKeyboardButton("👑 3 oy - 129 000 so'm • TEJAMKOR", callback_data="premium_3m")],
             [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
         ])
 
@@ -2481,10 +2481,10 @@ async def handle_message(update, context):
         )
     elif text == "👑 Premium":
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📅 1 hafta - 25 000 so'm", callback_data="premium_1w")],
-            [InlineKeyboardButton("🔥 14 kun - 39 000 so'm", callback_data="premium_2w")],
-            [InlineKeyboardButton("⭐️ 1 oy - 59 000 so'm", callback_data="premium_1m")],
-            [InlineKeyboardButton("👑 3 oy - 129 000 so'm", callback_data="premium_3m")],
+            [InlineKeyboardButton("📅 1 hafta - 25 000 so'm • QULAY", callback_data="premium_1w")],
+            [InlineKeyboardButton("🔥 14 kun - 39 000 so'm • ENG QULAY", callback_data="premium_2w")],
+            [InlineKeyboardButton("⭐️ 1 oy - 59 000 so'm • OMMABOP", callback_data="premium_1m")],
+            [InlineKeyboardButton("👑 3 oy - 129 000 so'm • TEJAMKOR", callback_data="premium_3m")],
             [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
         ])
 
