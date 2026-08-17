@@ -1886,6 +1886,78 @@ async def handle_payment_check(update, context):
     if 'edit_field' in context.user_data:
         return await save_edit_photo(update, context)
 
+async def handle_payment_check(update, context):
+    user = update.effective_user
+    photo = update.message.photo[-1].file_id
+    
+    if 'pending_sl' in context.user_data:
+        pending = context.user_data['pending_sl']
+        amount = pending['amount']
+        prices = {1: 1000, 5: 4000, 10: 7000}
+        total = prices.get(amount, amount * 1000)
+        
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"ok_sl_{user.id}_{amount}"),
+                InlineKeyboardButton("❌ Rad etish", callback_data=f"no_sl_{user.id}")
+            ]
+        ])
+        
+        try:
+            await context.bot.send_photo(
+                chat_id=ADMIN_ID,
+                photo=photo,
+                caption=f"💳 SUPERLIKE TO'LOV CHEKI!\n\n"
+                        f"👤 {user.first_name}\n"
+                        f"🆔 ID: {user.id}\n"
+                        f"⭐ Miqdor: {amount} ta\n"
+                        f"💰 Summa: {total} so'm\n\n"
+                        f"Chekni tekshirib tasdiqlang.",
+                reply_markup=keyboard
+            )
+        except Exception as e:
+            print(f"Chek yuborish xato: {e}")
+        
+        await update.message.reply_text("✅ Chek yuborildi! Admin tekshiradi.")
+        del context.user_data['pending_sl']
+        return ConversationHandler.END
+    
+    if 'pending_premium' in context.user_data:
+        pending = context.user_data['pending_premium']
+        days = pending['days']
+        plan = pending['plan']
+        prices = {"premium_1w": "30 571", "premium_1m": "63 429", "premium_3m": "137 714", "premium_1y": "282 000"}
+        price = prices.get(plan, "?")
+        
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"ok_prem_{user.id}_{days}"),
+                InlineKeyboardButton("❌ Rad etish", callback_data=f"no_prem_{user.id}")
+            ]
+        ])
+        
+        try:
+            await context.bot.send_photo(
+                chat_id=ADMIN_ID,
+                photo=photo,
+                caption=f"💳 PREMIUM TO'LOV CHEKI!\n\n"
+                        f"👤 {user.first_name}\n"
+                        f"🆔 ID: {user.id}\n"
+                        f"📅 Muddat: {days} kun\n"
+                        f"💰 Summa: {price} so'm\n\n"
+                        f"Chekni tekshirib tasdiqlang.",
+                reply_markup=keyboard
+            )
+        except Exception as e:
+            print(f"Chek yuborish xato: {e}")
+        
+        await update.message.reply_text("✅ Chek yuborildi! Admin tekshiradi.")
+        del context.user_data['pending_premium']
+        return ConversationHandler.END
+    
+    if 'edit_field' in context.user_data:
+        return await save_edit_photo(update, context)
+
 async def save_edit_photo(update, context):
     user = update.effective_user
     photo = update.message.photo[-1].file_id
