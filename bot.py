@@ -1192,7 +1192,10 @@ async def handle_callback(update, context):
             [InlineKeyboardButton("❌ Bekor", callback_data="cancel_sl")]
         ])
         await query.message.reply_text(
-            f"💳 TO'LOV\n\n⭐ {amount} ta Superlike\n💰 {price} so'm\n\n"
+            f"💳 TO'LOV\n\n"
+            f"⭐ {amount} ta Superlike\n"
+            f"💰 Summa: {price} so'm\n\n"
+            f"💳 Karta: 9860 0866 0148 0972\n\n"
             f"To'lov qilgach '✅' ni bosing.",
             reply_markup=keyboard
         )
@@ -1745,14 +1748,18 @@ async def buy_superlikes(update, context):
     query = update.callback_query
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("1 ta - 1 000 so'm", callback_data="sl_1")],
-        [InlineKeyboardButton("5 ta - 4 000 so'm", callback_data="sl_5")],
-        [InlineKeyboardButton("10 ta - 7 000 so'm", callback_data="sl_10")],
+        [InlineKeyboardButton("5 ta - 4 000 so'm (-20%)", callback_data="sl_5")],
+        [InlineKeyboardButton("10 ta - 7 000 so'm (-30%)", callback_data="sl_10")],
         [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_sl")]
     ])
     await query.message.reply_text(
         "⭐ SUPERLIKE\n\n"
-        "Superlike - profilingiz birinchi chiqadi!\n\n"
-        "Paketni tanlang:",
+        "🔥 Superlike bilan profilingiz qarshi tomonga BIRINCHI bo'lib chiqadi!\n\n"
+        "💪 Oddiy like'dan 3x KUCHLIROQ\n"
+        "👀 Qarshi tomon sizni darhol ko'radi\n"
+        "💕 Match bo'lish ehtimoli 3x yuqori\n"
+        "⚡️ Tezroq tanishish imkoniyati\n\n"
+        "📦 Paketni tanlang:",
         reply_markup=keyboard
     )
 
