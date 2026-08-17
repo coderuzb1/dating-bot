@@ -2163,16 +2163,26 @@ async def handle_message(update, context):
         await referral_panel(update, context)
 
     elif text == "⭐ Superlike":
+        user = update.effective_user
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT superlike_balance FROM users WHERE user_id = %s", (user.id,))
+        result = cur.fetchone()
+        balance = result[0] if result and result[0] else 0
+        cur.close()
+        conn.close()
+        
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("1 ta - 1 000 so'm", callback_data="sl_1")],
             [InlineKeyboardButton("5 ta - 4 000 so'm", callback_data="sl_5")],
             [InlineKeyboardButton("10 ta - 7 000 so'm", callback_data="sl_10")]
         ])
         await update.message.reply_text(
-            "⭐ SUPERLIKE\n\n"
-            "🔥 Profilingiz birinchi chiqadi!\n"
-            "💪 3x kuchliroq\n\n"
-            "Paketni tanlang:",
+            f"⭐ SUPERLIKE\n\n"
+            f"📊 Mavjud: {balance} ta\n\n"
+            f"🔥 Profilingiz birinchi chiqadi!\n"
+            f"💪 3x kuchliroq\n\n"
+            f"Paketni tanlang:",
             reply_markup=keyboard
         )
     elif text == "👑 Premium":
