@@ -85,8 +85,8 @@ async def get_main_keyboard():
     return ReplyKeyboardMarkup([
         [KeyboardButton("🔍 Qidirish"), KeyboardButton("👤 Profil")],
         [KeyboardButton("❤️ Yoqtirganlarim"), KeyboardButton("💞 Matchlarim")],
-        [KeyboardButton("⚙️ Sozlamalar"), KeyboardButton("👑 Premium")],
-        [KeyboardButton("🎁 Referal")]
+        [KeyboardButton("⭐ Superlike"), KeyboardButton("👑 Premium")],
+        [KeyboardButton("⚙️ Sozlamalar"), KeyboardButton("🎁 Referal")]
     ], resize_keyboard=True)
 
 async def start(update, context):
