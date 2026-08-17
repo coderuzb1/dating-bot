@@ -790,7 +790,9 @@ async def handle_callback(update, context):
         parts = data.split("_", 2)
 
         if len(parts) != 3:
-            await query.message.reply_text("❌ To'lov ma'lumotlari xato.")
+            await query.message.reply_text(
+                "❌ To'lov ma'lumotlari xato."
+            )
             return
 
         payment_method = parts[1].upper()
@@ -800,121 +802,43 @@ async def handle_callback(update, context):
             "premium_1w": 7,
             "premium_1m": 30,
             "premium_3m": 90,
-            "premium_1y": 365
+            "premium_1y": 365,
         }
 
         prices = {
             "premium_1w": "30 571",
             "premium_1m": "63 429",
             "premium_3m": "137 714",
-            "premium_1y": "282 000"
+            "premium_1y": "282 000",
         }
 
         if plan not in durations:
-            await query.message.reply_text("❌ Tarif topilmadi.")
+            await query.message.reply_text(
+                "❌ Tarif topilmadi."
+            )
             return
 
         days = durations[plan]
         price = prices[plan]
 
-        conn = get_db_connection()
-        cur = conn.cursor()
+        # Chek yuborilgunga qadar foydalanuvchining
+        # tanlagan Premium tarifini saqlab qo'yamiz.
+        context.user_data["pending_premium"] = {
+            "days": days,
+            "plan": plan,
+            "price": price,
+            "payment_method": payment_method,
+        }
 
-        try:
-            cur.execute(
-                """
-                INSERT INTO payments
-                    (user_id, amount, days, status)
-                VALUES
-                    (%s, %s, %s, 'pending')
-                RETURNING id
-                """,
-                (user.id, price, days)
-            )
-
-            payment_id = cur.fetchone()[0]
-            conn.commit()
-
-        except Exception as e:
-            conn.rollback()
-            print(f"Payment DB error: {e}")
-            await query.message.reply_text(
-                "❌ To'lov so'rovini saqlashda xatolik yuz berdi."
-            )
-            return
-
-        finally:
-            cur.close()
-            conn.close()
-
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    "✅ TASDIQLASH",
-                    callback_data=f"admin_approve_{payment_id}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "❌ RAD ETISH",
-                    callback_data=f"admin_reject_{payment_id}"
-                )
-            ]
-        ])
-
-        try:
-            await context.bot.send_message(
-                chat_id=ADMIN_ID,
-                text=(
-                    "💳 YANGI PREMIUM TO'LOVI\n\n"
-                    f"🧾 To'lov ID: #{payment_id}\n"
-                    f"👤 Ism: {user.first_name}\n"
-                    f"📱 Username: @{user.username or 'yoq'}\n"
-                    f"🆔 ID: {user.id}\n\n"
-                    f"📅 Tarif: {days} kun\n"
-                    f"💰 Summa: {price} so'm\n"
-                    f"💳 To'lov usuli: {payment_method}\n\n"
-                    "⚠️ To'lovni tekshirgandan keyin "
-                    "tasdiqlang yoki rad eting."
-                ),
-                reply_markup=keyboard
-            )
-
-            await query.message.reply_text(
-                "✅ To'lov so'rovingiz adminga yuborildi!\n\n"
-                f"🧾 To'lov ID: #{payment_id}\n"
-                f"💳 To'lov usuli: {payment_method}\n"
-                f"📅 Muddat: {days} kun\n"
-                f"💰 Summa: {price} so'm\n\n"
-                "⏳ Admin to'lovni tekshiradi. "
-                "Tasdiqlangandan keyin Premium avtomatik faollashadi."
-            )
-
-        except Exception as e:
-            print(f"Payment notification error: {e}")
-
-            conn = get_db_connection()
-            cur = conn.cursor()
-
-            try:
-                cur.execute(
-                    """
-                    DELETE FROM payments
-                    WHERE id = %s AND status = 'pending'
-                    """,
-                    (payment_id,)
-                )
-                conn.commit()
-            except Exception:
-                conn.rollback()
-            finally:
-                cur.close()
-                conn.close()
-
-            await query.message.reply_text(
-                "❌ To'lov so'rovini yuborishda xatolik yuz berdi."
-            )
-
+        await query.message.reply_text(
+            "📸 TO'LOV CHEKINI YUBORING\n\n"
+            f"👑 Premium: {days} kun\n"
+            f"💰 Summa: {price} so'm\n"
+            f"💳 To'lov usuli: {payment_method}\n\n"
+            "To'lov qilganingizni tasdiqlovchi "
+            "skrinshot yoki chek rasmini yuboring.\n\n"
+            "⏳ Chek yuborilgach admin tekshiradi."
+        )
         return
 
     if data.startswith("admin_approve_"):
@@ -1810,153 +1734,138 @@ async def save_edit(update, context):
     )
     return ConversationHandler.END
 
-async def handle_premium_check(update, context):
-    user = update.effective_user
-    photo = update.message.photo[-1].file_id
-    
-    if 'pending_premium' in context.user_data:
-        pending = context.user_data['pending_premium']
-        days = pending['days']
-        prices = {"premium_1w": "30 571", "premium_1m": "63 429", "premium_3m": "137 714", "premium_1y": "282 000"}
-        plan = pending['plan']
-        price = prices.get(plan, "?")
-        
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"ok_prem_{user.id}_{days}"),
-                InlineKeyboardButton("❌ Rad etish", callback_data=f"no_prem_{user.id}")
-            ]
-        ])
-        
-        try:
-            await context.bot.send_photo(
-                chat_id=ADMIN_ID,
-                photo=photo,
-                caption=f"💳 PREMIUM TO'LOV CHEKI!\n\n"
-                        f"👤 {user.first_name}\n"
-                        f"🆔 ID: {user.id}\n"
-                        f"📅 Muddat: {days} kun\n"
-                        f"💰 Summa: {price} so'm\n\n"
-                        f"Chekni tekshirib tasdiqlang.",
-                reply_markup=keyboard
-            )
-        except:
-            pass
-        
-        await update.message.reply_text("✅ Chek yuborildi! Admin tekshiradi.")
-        del context.user_data['pending_premium']
-        return ConversationHandler.END
-
 async def handle_payment_check(update, context):
     user = update.effective_user
+
+    if not update.message or not update.message.photo:
+        return
+
     photo = update.message.photo[-1].file_id
-    
-    if 'pending_sl' in context.user_data:
-        pending = context.user_data['pending_sl']
-        amount = pending['amount']
-        prices = {1: 1000, 5: 4000, 10: 7000}
-        total = prices.get(amount, amount * 1000)
-        
+
+    # PREMIUM CHEKI
+    if "pending_premium" in context.user_data:
+        pending = context.user_data["pending_premium"]
+
+        days = pending["days"]
+        plan = pending["plan"]
+
+        prices = {
+            "premium_1w": "30 571",
+            "premium_1m": "63 429",
+            "premium_3m": "137 714",
+            "premium_1y": "282 000",
+        }
+
+        price = prices.get(plan, "?")
+
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"ok_sl_{user.id}_{amount}"),
-                InlineKeyboardButton("❌ Rad etish", callback_data=f"no_sl_{user.id}")
+                InlineKeyboardButton(
+                    "✅ Tasdiqlash",
+                    callback_data=f"ok_prem_{user.id}_{days}"
+                ),
+                InlineKeyboardButton(
+                    "❌ Rad etish",
+                    callback_data=f"no_prem_{user.id}"
+                ),
             ]
         ])
-        
+
         try:
             await context.bot.send_photo(
                 chat_id=ADMIN_ID,
                 photo=photo,
-                caption=f"💳 SUPERLIKE TO'LOV CHEKI!\n\n"
-                        f"👤 {user.first_name}\n"
-                        f"🆔 ID: {user.id}\n"
-                        f"⭐ Miqdor: {amount} ta\n"
-                        f"💰 Summa: {total} so'm\n\n"
-                        f"Chekni tekshirib tasdiqlang.",
-                reply_markup=keyboard
+                caption=(
+                    "💳 PREMIUM TO'LOV CHEKI!\n\n"
+                    f"👤 {user.first_name}\n"
+                    f"🆔 ID: {user.id}\n"
+                    f"📅 Muddat: {days} kun\n"
+                    f"💰 Summa: {price} so'm\n\n"
+                    "📸 Chek yuborildi.\n"
+                    "Admin tekshirishi va tasdiqlashi mumkin."
+                ),
+                reply_markup=keyboard,
             )
-        except:
-            pass
-        
-        await update.message.reply_text("✅ Chek yuborildi! Admin tekshiradi.")
-        del context.user_data['pending_sl']
-        return ConversationHandler.END
-    
-    if 'edit_field' in context.user_data:
+
+            await update.message.reply_text(
+                "✅ To'lov cheki yuborildi!\n\n"
+                "Admin tekshiradi va tasdiqlasa Premium faollashadi."
+            )
+
+        except Exception as e:
+            print(f"❌ Premium chek yuborishda xato: {e}")
+            await update.message.reply_text(
+                "❌ Chekni yuborishda xatolik yuz berdi."
+            )
+
+        context.user_data.pop("pending_premium", None)
+        return
+
+    # SUPERLIKE CHEKI
+    if "pending_sl" in context.user_data:
+        pending = context.user_data["pending_sl"]
+
+        amount = pending["amount"]
+
+        prices = {
+            1: 1000,
+            5: 4000,
+            10: 7000,
+        }
+
+        total = prices.get(amount, amount * 1000)
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "✅ Tasdiqlash",
+                    callback_data=f"ok_sl_{user.id}_{amount}"
+                ),
+                InlineKeyboardButton(
+                    "❌ Rad etish",
+                    callback_data=f"no_sl_{user.id}"
+                ),
+            ]
+        ])
+
+        try:
+            await context.bot.send_photo(
+                chat_id=ADMIN_ID,
+                photo=photo,
+                caption=(
+                    "💳 SUPERLIKE TO'LOV CHEKI!\n\n"
+                    f"👤 {user.first_name}\n"
+                    f"🆔 ID: {user.id}\n"
+                    f"⭐ Miqdor: {amount} ta\n"
+                    f"💰 Summa: {total:,} so'm\n\n"
+                    "📸 Chek yuborildi.\n"
+                    "Admin tekshirishi va tasdiqlashi mumkin."
+                ),
+                reply_markup=keyboard,
+            )
+
+            await update.message.reply_text(
+                "✅ To'lov cheki yuborildi!\n\n"
+                "Admin tekshiradi va tasdiqlasa Superlike hisobingizga qo'shiladi."
+            )
+
+        except Exception as e:
+            print(f"❌ Superlike chek yuborishda xato: {e}")
+            await update.message.reply_text(
+                "❌ Chekni yuborishda xatolik yuz berdi."
+            )
+
+        context.user_data.pop("pending_sl", None)
+        return
+
+    # PROFIL RASMI
+    if "edit_field" in context.user_data:
         return await save_edit_photo(update, context)
 
-async def handle_payment_check(update, context):
-    user = update.effective_user
-    photo = update.message.photo[-1].file_id
-    
-    if 'pending_sl' in context.user_data:
-        pending = context.user_data['pending_sl']
-        amount = pending['amount']
-        prices = {1: 1000, 5: 4000, 10: 7000}
-        total = prices.get(amount, amount * 1000)
-        
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"ok_sl_{user.id}_{amount}"),
-                InlineKeyboardButton("❌ Rad etish", callback_data=f"no_sl_{user.id}")
-            ]
-        ])
-        
-        try:
-            await context.bot.send_photo(
-                chat_id=ADMIN_ID,
-                photo=photo,
-                caption=f"💳 SUPERLIKE TO'LOV CHEKI!\n\n"
-                        f"👤 {user.first_name}\n"
-                        f"🆔 ID: {user.id}\n"
-                        f"⭐ Miqdor: {amount} ta\n"
-                        f"💰 Summa: {total} so'm\n\n"
-                        f"Chekni tekshirib tasdiqlang.",
-                reply_markup=keyboard
-            )
-        except Exception as e:
-            print(f"Chek yuborish xato: {e}")
-        
-        await update.message.reply_text("✅ Chek yuborildi! Admin tekshiradi.")
-        del context.user_data['pending_sl']
-        return ConversationHandler.END
-    
-    if 'pending_premium' in context.user_data:
-        pending = context.user_data['pending_premium']
-        days = pending['days']
-        plan = pending['plan']
-        prices = {"premium_1w": "30 571", "premium_1m": "63 429", "premium_3m": "137 714", "premium_1y": "282 000"}
-        price = prices.get(plan, "?")
-        
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"ok_prem_{user.id}_{days}"),
-                InlineKeyboardButton("❌ Rad etish", callback_data=f"no_prem_{user.id}")
-            ]
-        ])
-        
-        try:
-            await context.bot.send_photo(
-                chat_id=ADMIN_ID,
-                photo=photo,
-                caption=f"💳 PREMIUM TO'LOV CHEKI!\n\n"
-                        f"👤 {user.first_name}\n"
-                        f"🆔 ID: {user.id}\n"
-                        f"📅 Muddat: {days} kun\n"
-                        f"💰 Summa: {price} so'm\n\n"
-                        f"Chekni tekshirib tasdiqlang.",
-                reply_markup=keyboard
-            )
-        except Exception as e:
-            print(f"Chek yuborish xato: {e}")
-        
-        await update.message.reply_text("✅ Chek yuborildi! Admin tekshiradi.")
-        del context.user_data['pending_premium']
-        return ConversationHandler.END
-    
-    if 'edit_field' in context.user_data:
-        return await save_edit_photo(update, context)
+    await update.message.reply_text(
+        "❌ Hozir to'lov cheki kutilmayapti."
+    )
+
 
 async def save_edit_photo(update, context):
     user = update.effective_user
@@ -3292,8 +3201,6 @@ def main():
             AGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_age)],
             GENDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_gender)],
             CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_city)],
-            BIO: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_bio)],
-            PHOTO: [MessageHandler(filters.PHOTO, handle_payment_check)],
             BIO: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_bio)],
         },
         fallbacks=[],
