@@ -2772,19 +2772,58 @@ async def admin(update, context):
         """)
         referral_users = cur.fetchone()[0]
 
+        # Oxirgi 7 kunda qo'shilgan foydalanuvchilar
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'
+        """)
+        week_users = cur.fetchone()[0]
+
+        # Bloklangan / nofaol profillar
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE is_active = FALSE
+        """)
+        blocked_users = cur.fetchone()[0]
+
+        # Bugungi Like
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM likes
+            WHERE created_at >= CURRENT_DATE
+        """)
+        today_likes = cur.fetchone()[0]
+
+        # Bugungi Match
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM matches
+            WHERE created_at >= CURRENT_DATE
+        """)
+        today_matches = cur.fetchone()[0]
+
     finally:
         cur.close()
         conn.close()
 
     text = (
         "📊 ADMIN PANEL\n\n"
-        f"👥 Jami foydalanuvchilar: {total_users}\n"
-        f"🟢 Aktiv foydalanuvchilar: {active_users}\n"
-        f"👑 Premium foydalanuvchilar: {premium_users}\n"
-        f"🆕 Bugun qo'shilganlar: {today_users}\n\n"
-        f"❤️ Jami like: {total_likes}\n"
-        f"💞 Jami match: {total_matches}\n\n"
-        f"🎁 Referral orqali kelganlar: {referral_users}"
+        "👥 FOYDALANUVCHILAR\n"
+        f"├ Jami: {total_users}\n"
+        f"├ 🟢 Aktiv: {active_users}\n"
+        f"├ 🚫 Nofaol: {blocked_users}\n"
+        f"├ 👑 Premium: {premium_users}\n"
+        f"├ 🆕 Bugun: {today_users}\n"
+        f"└ 📅 Oxirgi 7 kun: {week_users}\n\n"
+        "📈 FAOLLIK\n"
+        f"├ ❤️ Jami Like: {total_likes}\n"
+        f"├ ❤️ Bugungi Like: {today_likes}\n"
+        f"├ 💞 Jami Match: {total_matches}\n"
+        f"└ 💞 Bugungi Match: {today_matches}\n\n"
+        "🎁 REFERRAL\n"
+        f"└ Referral orqali kelganlar: {referral_users}"
     )
 
     await update.message.reply_text(text)
