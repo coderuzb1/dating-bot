@@ -714,10 +714,10 @@ async def handle_callback(update, context):
     
     if data == "premium_buy":
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("1 hafta - 30 571 so'm", callback_data="premium_1w")],
-            [InlineKeyboardButton("1 oy - 63 429 so'm ⭐️", callback_data="premium_1m")],
-            [InlineKeyboardButton("3 oy - 137 714 so'm", callback_data="premium_3m")],
-            [InlineKeyboardButton("1 yil - 282 000 so'm", callback_data="premium_1y")],
+            [InlineKeyboardButton("📅 1 hafta - 25 000 so'm", callback_data="premium_1w")],
+            [InlineKeyboardButton("🔥 14 kun - 39 000 so'm", callback_data="premium_2w")],
+            [InlineKeyboardButton("⭐️ 1 oy - 59 000 so'm", callback_data="premium_1m")],
+            [InlineKeyboardButton("👑 3 oy - 129 000 so'm", callback_data="premium_3m")],
             [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
         ])
 
@@ -749,16 +749,16 @@ async def handle_callback(update, context):
     if data.startswith("premium_"):
         durations = {
             "premium_1w": 7,
+            "premium_2w": 14,
             "premium_1m": 30,
-            "premium_3m": 90,
-            "premium_1y": 365
+            "premium_3m": 90
         }
 
         prices = {
-            "premium_1w": "30 571",
-            "premium_1m": "63 429",
-            "premium_3m": "137 714",
-            "premium_1y": "282 000"
+            "premium_1w": "25 000",
+            "premium_2w": "39 000",
+            "premium_1m": "59 000",
+            "premium_3m": "129 000"
         }
 
         if data not in durations:
@@ -807,16 +807,16 @@ async def handle_callback(update, context):
 
         durations = {
             "premium_1w": 7,
+            "premium_2w": 14,
             "premium_1m": 30,
-            "premium_3m": 90,
-            "premium_1y": 365
+            "premium_3m": 90
         }
 
         prices = {
-            "premium_1w": "30 571",
-            "premium_1m": "63 429",
-            "premium_3m": "137 714",
-            "premium_1y": "282 000"
+            "premium_1w": "25 000",
+            "premium_2w": "39 000",
+            "premium_1m": "59 000",
+            "premium_3m": "129 000"
         }
 
         if plan not in durations:
@@ -878,16 +878,16 @@ async def handle_callback(update, context):
 
         durations = {
             "premium_1w": 7,
+            "premium_2w": 14,
             "premium_1m": 30,
             "premium_3m": 90,
-            "premium_1y": 365,
         }
 
         prices = {
-            "premium_1w": "30 571",
-            "premium_1m": "63 429",
-            "premium_3m": "137 714",
-            "premium_1y": "282 000",
+            "premium_1w": "25 000",
+            "premium_2w": "39 000",
+            "premium_1m": "59 000",
+            "premium_3m": "129 000",
         }
 
         if plan not in durations:
@@ -2016,10 +2016,10 @@ async def handle_payment_check(update, context):
         plan = pending.get("plan")
 
         prices = {
-            "premium_1w": "30 571",
-            "premium_1m": "63 429",
-            "premium_3m": "137 714",
-            "premium_1y": "282 000",
+            "premium_1w": "25 000",
+            "premium_2w": "39 000",
+            "premium_1m": "59 000",
+            "premium_3m": "129 000",
         }
 
         price = prices.get(plan, "?")
@@ -2481,10 +2481,10 @@ async def handle_message(update, context):
         )
     elif text == "👑 Premium":
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("1 hafta - 30 571 so'm", callback_data="premium_1w")],
-            [InlineKeyboardButton("1 oy - 63 429 so'm ⭐️", callback_data="premium_1m")],
-            [InlineKeyboardButton("3 oy - 137 714 so'm", callback_data="premium_3m")],
-            [InlineKeyboardButton("1 yil - 282 000 so'm", callback_data="premium_1y")],
+            [InlineKeyboardButton("📅 1 hafta - 25 000 so'm", callback_data="premium_1w")],
+            [InlineKeyboardButton("🔥 14 kun - 39 000 so'm", callback_data="premium_2w")],
+            [InlineKeyboardButton("⭐️ 1 oy - 59 000 so'm", callback_data="premium_1m")],
+            [InlineKeyboardButton("👑 3 oy - 129 000 so'm", callback_data="premium_3m")],
             [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
         ])
 
