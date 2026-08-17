@@ -1308,6 +1308,82 @@ async def handle_callback(update, context):
             pass
         return
 
+    if data.startswith("fake_prem_"):
+        if user.id != ADMIN_ID:
+            await query.answer(
+                "⛔ Sizda bu amalni bajarish huquqi yo'q!",
+                show_alert=True
+            )
+            return
+
+        user_id = int(data.split("_")[2])
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        try:
+            cur.execute(
+                """
+                UPDATE users
+                SET is_active = FALSE,
+                    is_blocked = TRUE
+                WHERE user_id = %s
+                """,
+                (user_id,)
+            )
+
+            conn.commit()
+
+        except Exception as e:
+            conn.rollback()
+            print(f"Fake receipt block error: {e}")
+
+            await query.answer(
+                "❌ Foydalanuvchini bloklashda xatolik!",
+                show_alert=True
+            )
+
+            cur.close()
+            conn.close()
+            return
+
+        cur.close()
+        conn.close()
+
+        # Foydalanuvchiga xabar
+        try:
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=(
+                    "🚫 HISOBINGIZ BLOKLANDI!\n\n"
+                    "Soxta to'lov cheki yuborilgani sababli "
+                    "botdan foydalanish imkoniyatingiz bloklandi.\n\n"
+                    "❌ Premium berilmadi."
+                )
+            )
+        except Exception as e:
+            print(f"Fake receipt user notification error: {e}")
+
+        # Admin xabaridagi tugmalarni olib tashlash
+        try:
+            await query.message.edit_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+
+        await query.answer(
+            "🚫 Foydalanuvchi bloklandi!",
+            show_alert=True
+        )
+
+        await query.message.reply_text(
+            "🚫 SOXTA CHEK — FOYDALANUVCHI BLOKLANDI\n\n"
+            f"🆔 User ID: {user_id}\n"
+            "🔒 Status: BLOCKED\n"
+            "❌ Premium: berilmadi"
+        )
+
+        return
+
     if data.startswith("no_prem_"):
         user_id = int(data.split("_")[2])
         await query.message.reply_text("❌ Rad etildi.")
@@ -2035,6 +2111,12 @@ async def handle_payment_check(update, context):
                 InlineKeyboardButton(
                     "❌ Rad etish",
                     callback_data=f"no_prem_{user.id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "🚫 Soxta chek — BLOKLASH",
+                    callback_data=f"fake_prem_{user.id}"
                 )
             ]
         ])
@@ -3266,131 +3348,110 @@ async def approve(update, context):
 
 async def block_user(update, context):
     user = update.effective_user
+
     if user.id != ADMIN_ID:
         await update.message.reply_text("⛔ Siz admin emassiz!")
         return
+
     try:
         parts = update.message.text.split()
         user_id = int(parts[1])
+
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("UPDATE users SET is_active = FALSE, is_blocked = TRUE WHERE user_id = %s", (user_id,))
+
+        cur.execute(
+            "UPDATE users SET is_active = FALSE, is_blocked = TRUE WHERE user_id = %s",
+            (user_id,)
+        )
+
         conn.commit()
         cur.close()
         conn.close()
-        await update.message.reply_text(f"🚫 Foydalanuvchi bloklandi: {user_id}")
+
+        await update.message.reply_text(
+            f"🚫 Foydalanuvchi bloklandi: {user_id}"
+        )
+
     except:
-        await update.message.reply_text("❌ Format: /block USER_ID")
+        await update.message.reply_text(
+            "❌ Format: /block USER_ID"
+        )
+
 
 async def unblock_user(update, context):
     user = update.effective_user
-    if user.id != ADMIN_ID:
-        await update.message.reply_text("⛔ Siz admin emassiz!")
-        return
-    try:
-        parts = update.message.text.split()
-        user_id = int(parts[1])
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET is_active = TRUE, is_blocked = FALSE WHERE user_id = %s", (user_id,))
-        conn.commit()
-        cur.close()
-        conn.close()
-        await update.message.reply_text(f"✅ Foydalanuvchi blokdan chiqarildi: {user_id}")
-    except:
-        await update.message.reply_text("❌ Format: /unblock USER_ID")
 
-async def block_user(update, context):
-    user = update.effective_user
     if user.id != ADMIN_ID:
         await update.message.reply_text("⛔ Siz admin emassiz!")
         return
-    try:
-        parts = update.message.text.split()
-        user_id = int(parts[1])
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET is_active = FALSE, is_blocked = TRUE WHERE user_id = %s", (user_id,))
-        conn.commit()
-        cur.close()
-        conn.close()
-        await update.message.reply_text(f"🚫 Foydalanuvchi bloklandi: {user_id}")
-    except:
-        await update.message.reply_text("❌ Format: /block USER_ID")
 
-async def unblock_user(update, context):
-    user = update.effective_user
-    if user.id != ADMIN_ID:
-        await update.message.reply_text("⛔ Siz admin emassiz!")
-        return
     try:
         parts = update.message.text.split()
         user_id = int(parts[1])
+
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("UPDATE users SET is_active = TRUE, is_blocked = FALSE WHERE user_id = %s", (user_id,))
+
+        cur.execute(
+            "UPDATE users SET is_active = TRUE, is_blocked = FALSE WHERE user_id = %s",
+            (user_id,)
+        )
+
         conn.commit()
         cur.close()
         conn.close()
-        await update.message.reply_text(f"✅ Foydalanuvchi blokdan chiqarildi: {user_id}")
+
+        await update.message.reply_text(
+            f"✅ Foydalanuvchi blokdan chiqarildi: {user_id}"
+        )
+
     except:
-        await update.message.reply_text("❌ Format: /unblock USER_ID")
+        await update.message.reply_text(
+            "❌ Format: /unblock USER_ID"
+        )
+
 
 async def delete_user(update, context):
     user = update.effective_user
-    if user.id != ADMIN_ID:
-        await update.message.reply_text("⛔ Siz admin emassiz!")
-        return
-    try:
-        parts = update.message.text.split()
-        user_id = int(parts[1])
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
-        cur.execute("DELETE FROM likes WHERE from_user = %s OR to_user = %s", (user_id, user_id))
-        cur.execute("DELETE FROM matches WHERE user1 = %s OR user2 = %s", (user_id, user_id))
-        conn.commit()
-        cur.close()
-        conn.close()
-        await update.message.reply_text(f"✅ Foydalanuvchi o'chirildi: {user_id}")
-    except:
-        await update.message.reply_text("❌ Format: /delete USER_ID")
 
-async def block_user(update, context):
-    user = update.effective_user
     if user.id != ADMIN_ID:
         await update.message.reply_text("⛔ Siz admin emassiz!")
         return
-    try:
-        parts = update.message.text.split()
-        user_id = int(parts[1])
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET is_active = FALSE, is_blocked = TRUE WHERE user_id = %s", (user_id,))
-        conn.commit()
-        cur.close()
-        conn.close()
-        await update.message.reply_text(f"🚫 Foydalanuvchi bloklandi: {user_id}")
-    except:
-        await update.message.reply_text("❌ Format: /block USER_ID")
 
-async def unblock_user(update, context):
-    user = update.effective_user
-    if user.id != ADMIN_ID:
-        await update.message.reply_text("⛔ Siz admin emassiz!")
-        return
     try:
         parts = update.message.text.split()
         user_id = int(parts[1])
+
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("UPDATE users SET is_active = TRUE, is_blocked = FALSE WHERE user_id = %s", (user_id,))
+
+        cur.execute(
+            "DELETE FROM users WHERE user_id = %s",
+            (user_id,)
+        )
+        cur.execute(
+            "DELETE FROM likes WHERE from_user = %s OR to_user = %s",
+            (user_id, user_id)
+        )
+        cur.execute(
+            "DELETE FROM matches WHERE user1 = %s OR user2 = %s",
+            (user_id, user_id)
+        )
+
         conn.commit()
         cur.close()
         conn.close()
-        await update.message.reply_text(f"✅ Foydalanuvchi blokdan chiqarildi: {user_id}")
+
+        await update.message.reply_text(
+            f"✅ Foydalanuvchi o'chirildi: {user_id}"
+        )
+
     except:
-        await update.message.reply_text("❌ Format: /unblock USER_ID")
+        await update.message.reply_text(
+            "❌ Format: /delete USER_ID"
+        )
+
 
 async def remove_premium(update, context):
     user = update.effective_user
