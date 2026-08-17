@@ -1737,17 +1737,137 @@ async def save_edit(update, context):
 async def handle_payment_check(update, context):
     user = update.effective_user
 
-    if not update.message or not update.message.photo:
+    if not update.message:
         return
 
-    photo = update.message.photo[-1].file_id
+    # ========================================================
+    # CHEK FAQAT RASM YOKI FAYL BO'LISHI MUMKIN
+    # ========================================================
 
+    photo = None
+    document = None
+
+    if update.message.photo:
+        photo = update.message.photo[-1].file_id
+
+    elif update.message.document:
+        document = update.message.document
+
+    else:
+        if "pending_payment" in context.user_data:
+            await update.message.reply_text(
+                "❌ Chek faqat rasm yoki fayl ko'rinishida yuborilishi mumkin.\n\n"
+                "🖼 Rasm: JPG, PNG va boshqa rasm formatlari\n"
+                "📄 Fayl: PDF yoki boshqa document"
+            )
+        return
+
+    # ========================================================
+    # TO'LOV CHEKI KUTILAYAPTIMI?
+    # ========================================================
+
+    if "pending_payment" not in context.user_data:
+
+        # Agar profil rasmini o'zgartirish jarayoni bo'lsa
+        if "edit_field" in context.user_data and photo:
+            return await save_edit_photo(update, context)
+
+        await update.message.reply_text(
+            "❌ Hozir to'lov cheki kutilmayapti."
+        )
+        return
+
+    pending = context.user_data["pending_payment"]
+
+    # ========================================================
+    # SUPERLIKE CHEKI
+    # ========================================================
+
+    if pending.get("type") == "superlike":
+
+        amount = pending["amount"]
+
+        prices = {
+            1: "1 000",
+            5: "4 000",
+            10: "7 000",
+        }
+
+        price = prices.get(amount, "?")
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "✅ Tasdiqlash",
+                    callback_data=f"ok_sl_{user.id}_{amount}"
+                ),
+                InlineKeyboardButton(
+                    "❌ Rad etish",
+                    callback_data=f"no_sl_{user.id}"
+                )
+            ]
+        ])
+
+        caption = (
+            "💳 SUPERLIKE TO'LOV CHEKI\n\n"
+            f"👤 {user.first_name}\n"
+            f"🆔 ID: {user.id}\n"
+            f"⭐ Miqdor: {amount} ta\n"
+            f"💰 Summa: {price} so'm\n\n"
+            "📸/📄 Chek yuborildi.\n"
+            "Admin tekshirishi va tasdiqlashi mumkin."
+        )
+
+        try:
+
+            if photo:
+                await context.bot.send_photo(
+                    chat_id=ADMIN_ID,
+                    photo=photo,
+                    caption=caption,
+                    reply_markup=keyboard
+                )
+
+            elif document:
+                await context.bot.send_document(
+                    chat_id=ADMIN_ID,
+                    document=document.file_id,
+                    caption=caption,
+                    reply_markup=keyboard
+                )
+
+            await update.message.reply_text(
+                "✅ To'lov cheki yuborildi!\n\n"
+                "Admin tekshiradi va tasdiqlasa "
+                "Superlike hisobingizga qo'shiladi."
+            )
+
+        except Exception as e:
+
+            print(
+                f"❌ Superlike chek yuborishda xato: {e}"
+            )
+
+            await update.message.reply_text(
+                "❌ Chekni admin'ga yuborishda "
+                "xatolik yuz berdi."
+            )
+
+        context.user_data.pop(
+            "pending_payment",
+            None
+        )
+
+        return
+
+    # ========================================================
     # PREMIUM CHEKI
-    if "pending_premium" in context.user_data:
-        pending = context.user_data["pending_premium"]
+    # ========================================================
+
+    if pending.get("type") == "premium":
 
         days = pending["days"]
-        plan = pending["plan"]
+        plan = pending.get("plan")
 
         prices = {
             "premium_1w": "30 571",
@@ -1767,137 +1887,73 @@ async def handle_payment_check(update, context):
                 InlineKeyboardButton(
                     "❌ Rad etish",
                     callback_data=f"no_prem_{user.id}"
-                ),
+                )
             ]
         ])
 
+        caption = (
+            "💳 PREMIUM TO'LOV CHEKI\n\n"
+            f"👤 {user.first_name}\n"
+            f"🆔 ID: {user.id}\n"
+            f"📅 Muddat: {days} kun\n"
+            f"💰 Summa: {price} so'm\n\n"
+            "📸/📄 Chek yuborildi.\n"
+            "Admin tekshirishi va tasdiqlashi mumkin."
+        )
+
         try:
-            await context.bot.send_photo(
-                chat_id=ADMIN_ID,
-                photo=photo,
-                caption=(
-                    "💳 PREMIUM TO'LOV CHEKI!\n\n"
-                    f"👤 {user.first_name}\n"
-                    f"🆔 ID: {user.id}\n"
-                    f"📅 Muddat: {days} kun\n"
-                    f"💰 Summa: {price} so'm\n\n"
-                    "📸 Chek yuborildi.\n"
-                    "Admin tekshirishi va tasdiqlashi mumkin."
-                ),
-                reply_markup=keyboard,
-            )
+
+            if photo:
+                await context.bot.send_photo(
+                    chat_id=ADMIN_ID,
+                    photo=photo,
+                    caption=caption,
+                    reply_markup=keyboard
+                )
+
+            elif document:
+                await context.bot.send_document(
+                    chat_id=ADMIN_ID,
+                    document=document.file_id,
+                    caption=caption,
+                    reply_markup=keyboard
+                )
 
             await update.message.reply_text(
                 "✅ To'lov cheki yuborildi!\n\n"
-                "Admin tekshiradi va tasdiqlasa Premium faollashadi."
+                "Admin tekshiradi va tasdiqlasa "
+                "Premium faollashadi."
             )
 
         except Exception as e:
-            print(f"❌ Premium chek yuborishda xato: {e}")
-            await update.message.reply_text(
-                "❌ Chekni yuborishda xatolik yuz berdi."
+
+            print(
+                f"❌ Premium chek yuborishda xato: {e}"
             )
 
-        context.user_data.pop("pending_premium", None)
+            await update.message.reply_text(
+                "❌ Chekni admin'ga yuborishda "
+                "xatolik yuz berdi."
+            )
+
+        context.user_data.pop(
+            "pending_payment",
+            None
+        )
+
         return
 
-    # SUPERLIKE CHEKI
-    if "pending_sl" in context.user_data:
-        pending = context.user_data["pending_sl"]
-
-        amount = pending["amount"]
-
-        prices = {
-            1: 1000,
-            5: 4000,
-            10: 7000,
-        }
-
-        total = prices.get(amount, amount * 1000)
-
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    "✅ Tasdiqlash",
-                    callback_data=f"ok_sl_{user.id}_{amount}"
-                ),
-                InlineKeyboardButton(
-                    "❌ Rad etish",
-                    callback_data=f"no_sl_{user.id}"
-                ),
-            ]
-        ])
-
-        try:
-            await context.bot.send_photo(
-                chat_id=ADMIN_ID,
-                photo=photo,
-                caption=(
-                    "💳 SUPERLIKE TO'LOV CHEKI!\n\n"
-                    f"👤 {user.first_name}\n"
-                    f"🆔 ID: {user.id}\n"
-                    f"⭐ Miqdor: {amount} ta\n"
-                    f"💰 Summa: {total:,} so'm\n\n"
-                    "📸 Chek yuborildi.\n"
-                    "Admin tekshirishi va tasdiqlashi mumkin."
-                ),
-                reply_markup=keyboard,
-            )
-
-            await update.message.reply_text(
-                "✅ To'lov cheki yuborildi!\n\n"
-                "Admin tekshiradi va tasdiqlasa Superlike hisobingizga qo'shiladi."
-            )
-
-        except Exception as e:
-            print(f"❌ Superlike chek yuborishda xato: {e}")
-            await update.message.reply_text(
-                "❌ Chekni yuborishda xatolik yuz berdi."
-            )
-
-        context.user_data.pop("pending_sl", None)
-        return
-
-    # PROFIL RASMI
-    if "edit_field" in context.user_data:
-        return await save_edit_photo(update, context)
-
+    # Noma'lum to'lov turi
     await update.message.reply_text(
-        "❌ Hozir to'lov cheki kutilmayapti."
+        "❌ To'lov ma'lumotlari topilmadi."
+    )
+
+    context.user_data.pop(
+        "pending_payment",
+        None
     )
 
 
-async def save_edit_photo(update, context):
-    user = update.effective_user
-    photo = update.message.photo[-1].file_id
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("UPDATE users SET photo = %s WHERE user_id = %s", (photo, user.id))
-    conn.commit()
-    cur.close()
-    conn.close()
-    del context.user_data['edit_field']
-    await update.message.reply_text("✅ Rasm yangilandi!", reply_markup=await get_main_keyboard())
-    return ConversationHandler.END
-
-async def buy_superlikes(update, context):
-    query = update.callback_query
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("1 ta - 1 000 so'm", callback_data="sl_1")],
-        [InlineKeyboardButton("5 ta - 4 000 so'm (-20%)", callback_data="sl_5")],
-        [InlineKeyboardButton("10 ta - 7 000 so'm (-30%)", callback_data="sl_10")],
-        [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_sl")]
-    ])
-    await query.message.reply_text(
-        "⭐ SUPERLIKE\n\n"
-        "🔥 Superlike bilan profilingiz qarshi tomonga BIRINCHI bo'lib chiqadi!\n\n"
-        "💪 Oddiy like'dan 3x KUCHLIROQ\n"
-        "👀 Qarshi tomon sizni darhol ko'radi\n"
-        "💕 Match bo'lish ehtimoli 3x yuqori\n"
-        "⚡️ Tezroq tanishish imkoniyati\n\n"
-        "📦 Paketni tanlang:",
-        reply_markup=keyboard
-    )
 
 async def profile(update, context):
     user = update.effective_user
@@ -3244,7 +3300,12 @@ def main():
     app.add_handler(CommandHandler("matches", matches))
     app.add_handler(CommandHandler("settings", settings))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_payment_check))
+    app.add_handler(
+        MessageHandler(
+            filters.PHOTO | filters.Document.ALL,
+            handle_payment_check
+        )
+    )
     app.add_handler(CallbackQueryHandler(handle_callback))
     
     # =========================================================
