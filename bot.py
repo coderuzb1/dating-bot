@@ -815,6 +815,43 @@ async def find(update, context):
         message = update.message
         user = update.effective_user
 
+    language = get_user_language(user.id)
+
+    texts = {
+        "uz": {
+            "no_profile": "❌ Avval profil yarating. /start bosing.",
+            "limit": "🚫 Bugungi 20 ta profil limitingiz tugadi.\n\n👑 Premiumga o'tib, profillarni cheksiz ko'rishingiz mumkin.",
+            "no_profiles": "😔 Hozircha yangi profillar qolmagan.",
+            "dislike": "👎 Yoqmadi",
+            "like": "❤️ Yoqdi",
+            "superlike": "⭐ Superlike",
+            "write": "✉️ Yozish",
+            "no_bio": "Bio yozilmagan",
+        },
+        "ru": {
+            "no_profile": "❌ Сначала создайте профиль. Нажмите /start.",
+            "limit": "🚫 Вы достигли дневного лимита в 20 профилей.\n\n👑 С Премиумом вы сможете просматривать профили без ограничений.",
+            "no_profiles": "😔 Пока новых профилей нет.",
+            "dislike": "👎 Не понравилось",
+            "like": "❤️ Нравится",
+            "superlike": "⭐ Суперлайк",
+            "write": "✉️ Написать",
+            "no_bio": "Описание отсутствует",
+        },
+        "uz_cyr": {
+            "no_profile": "❌ Аввал профил яратинг. /start ни босинг.",
+            "limit": "🚫 Бугунги 20 та профиль лимитингиз тугади.\n\n👑 Премиум орқали профилларни чекловсиз кўришингиз мумкин.",
+            "no_profiles": "😔 Ҳозирча янги профиллар қолмаган.",
+            "dislike": "👎 Ёқмади",
+            "like": "❤️ Ёқди",
+            "superlike": "⭐ Суперлайк",
+            "write": "✉️ Ёзиш",
+            "no_bio": "Био ёзилмаган",
+        },
+    }
+
+    t = texts.get(language, texts["uz"])
+
     conn = get_db_connection()
     cur = conn.cursor()
 
@@ -825,9 +862,9 @@ async def find(update, context):
     user_data = cur.fetchone()
 
     if not user_data:
-        await message.reply_text("❌ Avval profil yarating. /start bosing.")
         cur.close()
         conn.close()
+        await message.reply_text(t["no_profile"])
         return
 
     my_gender, my_city, premium_until = user_data
@@ -835,8 +872,7 @@ async def find(update, context):
     cur.execute(
         """
         SELECT EXISTS(
-            SELECT 1
-            FROM users
+            SELECT 1 FROM users
             WHERE user_id = %s
               AND premium_until IS NOT NULL
               AND premium_until > NOW()
@@ -844,7 +880,6 @@ async def find(update, context):
         """,
         (user.id,),
     )
-
     is_premium = bool(cur.fetchone()[0])
 
     if not is_premium:
@@ -853,20 +888,16 @@ async def find(update, context):
             SELECT COUNT(*)
             FROM profile_views
             WHERE user_id = %s
-            AND viewed_at >= CURRENT_DATE
+              AND viewed_at >= CURRENT_DATE
             """,
             (user.id,),
         )
-
         today_count = cur.fetchone()[0]
 
         if today_count >= 20:
             cur.close()
             conn.close()
-            await message.reply_text(
-                "🚫 Bugungi 20 ta profil limitingiz tugadi.\n\n"
-                "👑 Premiumga o'tib, profillarni cheksiz ko'rishingiz mumkin."
-            )
+            await message.reply_text(t["limit"])
             return
 
     cur.execute(
@@ -876,35 +907,24 @@ async def find(update, context):
             photo, city, is_active, premium_until, created_at
         FROM users
         WHERE user_id != %s
-        AND is_active = TRUE
-
-        AND user_id NOT IN (
-            SELECT to_user FROM likes WHERE from_user = %s
-        )
-
-        AND user_id NOT IN (
-            SELECT to_user FROM skips WHERE from_user = %s
-        )
-
-        AND user_id NOT IN (
-            SELECT viewed_user_id
-            FROM profile_views
-            WHERE user_id = %s
-        )
-
+          AND is_active = TRUE
+          AND user_id NOT IN (
+              SELECT to_user FROM likes WHERE from_user = %s
+          )
+          AND user_id NOT IN (
+              SELECT to_user FROM skips WHERE from_user = %s
+          )
+          AND user_id NOT IN (
+              SELECT viewed_user_id
+              FROM profile_views
+              WHERE user_id = %s
+          )
         ORDER BY
             CASE WHEN city = %s THEN 0 ELSE 1 END,
             created_at DESC
-
         LIMIT 1
         """,
-        (
-            user.id,
-            user.id,
-            user.id,
-            user.id,
-            my_city,
-        ),
+        (user.id, user.id, user.id, user.id, my_city),
     )
 
     target = cur.fetchone()
@@ -912,9 +932,7 @@ async def find(update, context):
     if not target:
         cur.close()
         conn.close()
-        await message.reply_text(
-            f"😔 Hozircha {target_gender} profillar qolmagan."
-        )
+        await message.reply_text(t["no_profiles"])
         return
 
     (
@@ -950,27 +968,25 @@ async def find(update, context):
 
     premium_badge = " ⭐" if target_is_premium else ""
 
-    buttons = [
-        [
-            InlineKeyboardButton(
-                "👎 Yoqmadi",
-                callback_data=f"skip_{target_id}"
-            ),
-            InlineKeyboardButton(
-                "❤️ Yoqdi",
-                callback_data=f"like_{target_id}"
-            ),
-            InlineKeyboardButton(
-                "⭐ Superlike",
-                callback_data=f"superlike_{target_id}"
-            ),
-        ]
-    ]
+    buttons = [[
+        InlineKeyboardButton(
+            t["dislike"],
+            callback_data=f"skip_{target_id}"
+        ),
+        InlineKeyboardButton(
+            t["like"],
+            callback_data=f"like_{target_id}"
+        ),
+        InlineKeyboardButton(
+            t["superlike"],
+            callback_data=f"superlike_{target_id}"
+        ),
+    ]]
 
     if is_premium:
         buttons.append([
             InlineKeyboardButton(
-                "✉️ Yozish",
+                t["write"],
                 callback_data=f"write_{target_id}"
             )
         ])
@@ -983,7 +999,7 @@ async def find(update, context):
             f"👤 {first_name}, {age}{premium_badge}\n"
             f"👤 {gender}\n"
             f"📍 {city}\n"
-            f"📝 {bio or 'Bio yozilmagan'}"
+            f"📝 {bio or t['no_bio']}"
         ),
         reply_markup=keyboard,
     )
