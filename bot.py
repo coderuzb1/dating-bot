@@ -1008,6 +1008,7 @@ async def handle_callback(update, context):
     query = update.callback_query
     await query.answer()
     user = query.from_user
+    language = get_user_language(user.id)
     data = query.data
     
     if data == "change_language":
@@ -1161,6 +1162,32 @@ async def handle_callback(update, context):
         days = durations[data]
         price = prices[data]
 
+        payment_texts = {
+            "uz": {
+                "title": "💳 TO'LOV USULINI TANLANG",
+                "duration": "📅 Muddat",
+                "price": "💰 Summa",
+                "choose": "Quyidagi to'lov usullaridan birini tanlang:",
+                "cancel": "❌ Bekor qilish",
+            },
+            "ru": {
+                "title": "💳 ВЫБЕРИТЕ СПОСОБ ОПЛАТЫ",
+                "duration": "📅 Срок",
+                "price": "💰 Сумма",
+                "choose": "Выберите один из способов оплаты:",
+                "cancel": "❌ Отмена",
+            },
+            "uz_cyr": {
+                "title": "💳 ТЎЛОВ УСУЛИНИ ТАНЛАНГ",
+                "duration": "📅 Муддат",
+                "price": "💰 Сумма",
+                "choose": "Қуйидаги тўлов усулларидан бирини танланг:",
+                "cancel": "❌ Бекор қилиш",
+            },
+        }
+
+        pt = payment_texts.get(language, payment_texts["uz"])
+
         keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
@@ -1174,17 +1201,17 @@ async def handle_callback(update, context):
             ],
             [
                 InlineKeyboardButton(
-                    "❌ Bekor qilish",
+                    pt["cancel"],
                     callback_data="cancel_premium"
                 )
             ]
         ])
 
         await query.message.reply_text(
-            "💳 TO'LOV USULINI TANLANG\n\n"
-            f"📅 Muddat: {days} kun\n"
-            f"💰 Summa: {price} so'm\n\n"
-            "Quyidagi to'lov usullaridan birini tanlang:",
+            f'{pt["title"]}\n\n'
+            f'{pt["duration"]}: {days} kun\n'
+            f'{pt["price"]}: {price} so\'m\n\n'
+            f'{pt["choose"]}',
             reply_markup=keyboard
         )
         return
@@ -1231,29 +1258,63 @@ async def handle_callback(update, context):
             )
             return
 
+        payment_texts = {
+            "uz": {
+                "title": "💳 TO'LOV",
+                "method": "💳 Usul",
+                "duration": "📅 Muddat",
+                "price": "💰 Summa",
+                "card": "💳 Karta",
+                "done": "To'lovni amalga oshirgach, «✅ To'lov qildim» tugmasini bosing.",
+                "paid": "✅ To'lov qildim",
+                "cancel": "❌ Bekor qilish",
+            },
+            "ru": {
+                "title": "💳 ОПЛАТА",
+                "method": "💳 Способ",
+                "duration": "📅 Срок",
+                "price": "💰 Сумма",
+                "card": "💳 Карта",
+                "done": "После оплаты нажмите кнопку «✅ Я оплатил».",
+                "paid": "✅ Я оплатил",
+                "cancel": "❌ Отмена",
+            },
+            "uz_cyr": {
+                "title": "💳 ТЎЛОВ",
+                "method": "💳 Усул",
+                "duration": "📅 Муддат",
+                "price": "💰 Сумма",
+                "card": "💳 Карта",
+                "done": "Тўловни амалга оширгач, «✅ Тўлов қилдим» тугмасини босинг.",
+                "paid": "✅ Тўлов қилдим",
+                "cancel": "❌ Бекор қилиш",
+            },
+        }
+
+        pt = payment_texts.get(language, payment_texts["uz"])
+
         keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
-                    "✅ To'lov qildim",
+                    pt["paid"],
                     callback_data=f"confirm_{payment_method}_{plan}"
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "❌ Bekor qilish",
+                    pt["cancel"],
                     callback_data="cancel_premium"
                 )
             ]
         ])
 
         await query.message.reply_text(
-            "💳 TO'LOV\n\n"
-            f"💳 Usul: {payment_method}\n"
-            f"📅 Muddat: {days} kun\n"
-            f"💰 Summa: {price} so'm\n\n"
-            f"💳 Karta: {card}\n\n"
-            "To'lovni amalga oshirgach, "
-            "«✅ To'lov qildim» tugmasini bosing.",
+            f'{pt["title"]}\n\n'
+            f'{pt["method"]}: {payment_method}\n'
+            f'{pt["duration"]}: {days} kun\n'
+            f'{pt["price"]}: {price} so\'m\n\n'
+            f'{pt["card"]}: {card}\n\n'
+            f'{pt["done"]}',
             reply_markup=keyboard
         )
         return
@@ -1306,15 +1367,41 @@ async def handle_callback(update, context):
             "user_id": user.id,
         }
 
+        receipt_texts = {
+            "uz": (
+                "📸📄 TO'LOV CHEKINI YUBORING\n\n"
+                f"👑 Premium: {days} kun\n"
+                f"💰 Summa: {price} so'm\n"
+                f"💳 To'lov usuli: {payment_method}\n\n"
+                "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
+                "⚠️ Faqat haqiqiy to'lov chekini yuboring!\n"
+                "🚫 Soxta chek yuborsangiz, darhol botdan bloklanasiz va Premium berilmaydi.\n\n"
+                "⏳ Chek yuborilgach admin tekshiradi."
+            ),
+            "ru": (
+                "📸📄 ОТПРАВЬТЕ ЧЕК ОБ ОПЛАТЕ\n\n"
+                f"👑 Premium: {days} дней\n"
+                f"💰 Сумма: {price} сум\n"
+                f"💳 Способ оплаты: {payment_method}\n\n"
+                "🖼 Можно отправить изображение или 📄 PDF/файл.\n\n"
+                "⚠️ Отправляйте только настоящий чек об оплате!\n"
+                "🚫 За поддельный чек вы будете заблокированы, а Premium не будет выдан.\n\n"
+                "⏳ После отправки чека его проверит администратор."
+            ),
+            "uz_cyr": (
+                "📸📄 ТЎЛОВ ЧЕКИНИ ЮБОРИНГ\n\n"
+                f"👑 Premium: {days} кун\n"
+                f"💰 Сумма: {price} сўм\n"
+                f"💳 Тўлов усули: {payment_method}\n\n"
+                "🖼 Расм ёки 📄 PDF/файл юборишингиз мумкин.\n\n"
+                "⚠️ Фақат ҳақиқий тўлов чекини юборинг!\n"
+                "🚫 Сохта чек юборсангиз, дарҳол блокланасиз ва Premium берилмайди.\n\n"
+                "⏳ Чек юборилгандан сўнг администратор текширади."
+            ),
+        }
+
         await query.message.reply_text(
-            "📸📄 TO'LOV CHEKINI YUBORING\n\n"
-            f"👑 Premium: {days} kun\n"
-            f"💰 Summa: {price} so'm\n"
-            f"💳 To'lov usuli: {payment_method}\n\n"
-            "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
-            "⚠️ Faqat haqiqiy to‘lov chekini yuboring!\n"
-            "🚫 Soxta chek yuborsangiz, darhol botdan bloklanasiz va Premium berilmaydi.\n\n"
-            "⏳ Chek yuborilgach admin tekshiradi."
+            receipt_texts.get(language, receipt_texts["uz"])
         )
         return
 
@@ -2953,6 +3040,7 @@ async def change_language_menu(update, context):
 async def save_language(update, context, language):
     query = update.callback_query
     user = query.from_user
+    language = get_user_language(user.id)
 
     conn = get_db_connection()
     cur = conn.cursor()
