@@ -2581,28 +2581,106 @@ async def handle_payment_check(update, context):
 
 async def profile(update, context):
     user = update.effective_user
+    language = get_user_language(user.id)
+
+    texts = {
+        "uz": {
+            "not_found": "❌ Profil topilmadi.",
+            "edit": "✏️ Tahrirlash",
+            "premium": "👑 Premium",
+            "profile": "👤 {name}, {age}",
+            "gender": "👤 {gender}",
+            "city": "📍 {city}",
+            "bio": "📝 {bio}",
+            "likes": "❤️ {count} like",
+            "matches": "💞 {count} match",
+            "premium_status": "👑 Premium: {status}",
+        },
+        "ru": {
+            "not_found": "❌ Профиль не найден.",
+            "edit": "✏️ Редактировать",
+            "premium": "👑 Премиум",
+            "profile": "👤 {name}, {age}",
+            "gender": "👤 {gender}",
+            "city": "📍 {city}",
+            "bio": "📝 {bio}",
+            "likes": "❤️ {count} лайков",
+            "matches": "💞 {count} совпадений",
+            "premium_status": "👑 Премиум: {status}",
+        },
+        "uz_cyr": {
+            "not_found": "❌ Профиль топилмади.",
+            "edit": "✏️ Таҳрирлаш",
+            "premium": "👑 Премиум",
+            "profile": "👤 {name}, {age}",
+            "gender": "👤 {gender}",
+            "city": "📍 {city}",
+            "bio": "📝 {bio}",
+            "likes": "❤️ {count} лайк",
+            "matches": "💞 {count} мэтч",
+            "premium_status": "👑 Премиум: {status}",
+        },
+    }
+
+    t = texts.get(language, texts["uz"])
+
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE user_id = %s", (user.id,))
+
+    cur.execute(
+        "SELECT * FROM users WHERE user_id = %s",
+        (user.id,)
+    )
     user_data = cur.fetchone()
-    cur.execute("SELECT COUNT(*) FROM likes WHERE to_user = %s", (user.id,))
+
+    cur.execute(
+        "SELECT COUNT(*) FROM likes WHERE to_user = %s",
+        (user.id,)
+    )
     likes_count = cur.fetchone()[0]
-    cur.execute("SELECT COUNT(*) FROM matches WHERE user1 = %s OR user2 = %s", (user.id, user.id))
+
+    cur.execute(
+        "SELECT COUNT(*) FROM matches WHERE user1 = %s OR user2 = %s",
+        (user.id, user.id)
+    )
     matches_count = cur.fetchone()[0]
+
     cur.close()
     conn.close()
+
     if not user_data:
-        await update.message.reply_text("❌ Profil topilmadi.")
+        await update.message.reply_text(t["not_found"])
         return
-    
+
     if len(user_data) >= 11:
-        user_id, username, first_name, age, gender, bio, photo, city, is_active, premium_until, created_at = user_data[:11]
+        (
+            user_id,
+            username,
+            first_name,
+            age,
+            gender,
+            bio,
+            photo,
+            city,
+            is_active,
+            premium_until,
+            created_at
+        ) = user_data[:11]
     else:
-        user_id, username, first_name, age, gender, bio, photo, city = user_data[:8]
+        (
+            user_id,
+            username,
+            first_name,
+            age,
+            gender,
+            bio,
+            photo,
+            city
+        ) = user_data[:8]
+
         is_active = True
         premium_until = None
-    
-    # PostgreSQL ba'zan premium_until qiymatini string ko'rinishida qaytarishi mumkin
+
     if premium_until:
         try:
             if isinstance(premium_until, str):
@@ -2617,19 +2695,58 @@ async def profile(update, context):
                 now_dt = datetime.now()
 
             premium_status = "✅" if premium_until > now_dt else "❌"
+
         except Exception as e:
             print(f"Premium date parsing error: {e}")
             premium_status = "❌"
     else:
         premium_status = "❌"
+
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("✏️ Tahrirlash", callback_data="edit_menu")],
-        [InlineKeyboardButton("👑 Premium", callback_data="premium_buy")]
+        [
+            InlineKeyboardButton(
+                t["edit"],
+                callback_data="edit_menu"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                t["premium"],
+                callback_data="premium_buy"
+            )
+        ]
     ])
+
+    caption = (
+        t["profile"].format(
+            name=first_name,
+            age=age
+        )
+        + "\n"
+        + t["gender"].format(gender=gender)
+        + "\n"
+        + t["city"].format(city=city)
+        + "\n"
+        + t["bio"].format(
+            bio=bio or (
+                "Bio yozilmagan"
+                if language == "uz"
+                else "Био не заполнено"
+                if language == "ru"
+                else "Био ёзилмаган"
+            )
+        )
+        + "\n\n"
+        + t["likes"].format(count=likes_count)
+        + "\n"
+        + t["matches"].format(count=matches_count)
+        + "\n"
+        + t["premium_status"].format(status=premium_status)
+    )
+
     await update.message.reply_photo(
         photo=photo,
-        caption=f"👤 {first_name}, {age}\n👤 {gender}\n📍 {city}\n📝 {bio}\n\n"
-                f"❤️ {likes_count} like\n💞 {matches_count} match\n👑 Premium: {premium_status}",
+        caption=caption,
         reply_markup=keyboard
     )
 
