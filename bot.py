@@ -722,16 +722,27 @@ async def handle_callback(update, context):
         ])
 
         await query.message.reply_text(
-            "👑 PREMIUM\n\n"
-            "✨ Premium imkoniyatlari:\n\n"
-            "♾️ Cheksiz profil ko'rish\n"
-            "❤️ Cheksiz like\n"
-            "✉️ Match bo'lmasdan yozish\n"
-            "👀 Kim sizni yoqtirganini ko'rish\n"
-            "⭐️ Premium belgisi\n"
-            "🚀 Profilingizga ustuvorlik\n\n"
-            "📅 Muddatni tanlang:",
-            reply_markup=keyboard
+            "👑 <b>PREMIUM</b>\n\n"
+            "💎 Premium bilan tanishuv imkoniyatlaringizni "
+            "yanada kengaytiring!\n\n"
+            "♾️ <b>Cheksiz profil ko'rish</b> — "
+            "ko'proq odamlarni kashf eting\n"
+            "❤️ <b>Cheksiz Like</b> — "
+            "imkoniyatlarni o'tkazib yubormang\n"
+            "✉️ <b>Matchni kutmasdan yozing</b> — "
+            "yoqqan insoningiz bilan darhol suhbat boshlang\n"
+            "👀 <b>Sizni kim yoqtirganini ko'ring</b> — "
+            "kim sizga qiziqayotganini biling\n"
+            "⭐️ <b>Premium belgisi</b> — "
+            "profilingizni ajratib turing\n"
+            "🚀 <b>Profil ustuvorligi</b> — "
+            "ko'proq ko'rinishga ega bo'ling\n\n"
+            "🔥 <b>Ko'proq ko'rinish → ko'proq Like → "
+            "ko'proq Match!</b>\n\n"
+            "✨ O'zingizga mos Premium tarifini tanlang:\n\n"
+            "📅 <b>Muddatni tanlang:</b>",
+            reply_markup=keyboard,
+            parse_mode="HTML"
         )
         return
 
