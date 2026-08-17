@@ -2772,13 +2772,41 @@ async def admin(update, context):
         """)
         referral_users = cur.fetchone()[0]
 
-        # Oxirgi 7 kunda qo'shilgan foydalanuvchilar
+        # Foydalanuvchilar o'sishi
         cur.execute("""
             SELECT COUNT(*)
             FROM users
             WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'
         """)
         week_users = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE created_at >= CURRENT_DATE - INTERVAL '14 days'
+        """)
+        fifteen_days_users = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE created_at >= CURRENT_DATE - INTERVAL '1 month'
+        """)
+        month_users = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE created_at >= CURRENT_DATE - INTERVAL '3 months'
+        """)
+        three_months_users = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE created_at >= CURRENT_DATE - INTERVAL '6 months'
+        """)
+        six_months_users = cur.fetchone()[0]
 
         # Bloklangan / nofaol profillar
         cur.execute("""
@@ -2816,7 +2844,11 @@ async def admin(update, context):
         f"├ 🚫 Nofaol: {blocked_users}\n"
         f"├ 👑 Premium: {premium_users}\n"
         f"├ 🆕 Bugun: {today_users}\n"
-        f"└ 📅 Oxirgi 7 kun: {week_users}\n\n"
+        f"├ 📅 Oxirgi 7 kun: {week_users}\n"
+        f"├ 📅 Oxirgi 15 kun: {fifteen_days_users}\n"
+        f"├ 📅 Oxirgi 1 oy: {month_users}\n"
+        f"├ 📅 Oxirgi 3 oy: {three_months_users}\n"
+        f"└ 📅 Oxirgi 6 oy: {six_months_users}\n\n"
         "📈 FAOLLIK\n"
         f"├ ❤️ Jami Like: {total_likes}\n"
         f"├ ❤️ Bugungi Like: {today_likes}\n"
