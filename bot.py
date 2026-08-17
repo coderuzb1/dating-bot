@@ -1864,7 +1864,6 @@ async def matches(update, context):
 async def settings(update, context):
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("✏️ Profilni tahrirlash", callback_data="edit_menu")],
-        [InlineKeyboardButton("⭐ Superlike", callback_data="buy_superlikes")],
         [InlineKeyboardButton("👑 Premium", callback_data="premium_buy")],
         [InlineKeyboardButton("👻 Profilni muzlatish", callback_data="deactivate")]
     ])
