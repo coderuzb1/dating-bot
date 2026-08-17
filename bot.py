@@ -2438,9 +2438,25 @@ async def handle_message(update, context):
             [InlineKeyboardButton("1 hafta - 30 571 so'm", callback_data="premium_1w")],
             [InlineKeyboardButton("1 oy - 63 429 so'm ⭐️", callback_data="premium_1m")],
             [InlineKeyboardButton("3 oy - 137 714 so'm", callback_data="premium_3m")],
-            [InlineKeyboardButton("1 yil - 282 000 so'm", callback_data="premium_1y")]
+            [InlineKeyboardButton("1 yil - 282 000 so'm", callback_data="premium_1y")],
+            [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
         ])
-        await update.message.reply_text("👑 PREMIUM\n\nMuddatni tanlang:", reply_markup=keyboard)
+
+        await update.message.reply_text(
+            "👑 <b>PREMIUM</b>\n\n"
+            "💎 Premium bilan tanishuv imkoniyatlaringizni yanada kengaytiring!\n\n"
+            "♾️ <b>Cheksiz profil ko'rish</b> — ko'proq odamlarni kashf eting\n"
+            "❤️ <b>Cheksiz Like</b> — imkoniyatlarni o'tkazib yubormang\n"
+            "✉️ <b>Matchni kutmasdan yozing</b> — yoqqan insoningiz bilan darhol suhbat boshlang\n"
+            "👀 <b>Sizni kim yoqtirganini ko'ring</b> — kim sizga qiziqayotganini biling\n"
+            "⭐️ <b>Premium belgisi</b> — profilingizni ajratib turing\n"
+            "🚀 <b>Profil ustuvorligi</b> — ko'proq ko'rinishga ega bo'ling\n\n"
+            "🔥 <b>Ko'proq ko'rinish → ko'proq Like → ko'proq Match!</b>\n\n"
+            "✨ O'zingizga mos Premium tarifini tanlang:\n\n"
+            "📅 <b>Muddatni tanlang:</b>",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
 
 
 async def givepremium(update, context):
