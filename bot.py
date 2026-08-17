@@ -1179,6 +1179,40 @@ async def handle_callback(update, context):
         await query.message.reply_text("👻 Profil muzlatildi. /start bilan qayta faollashtiring.")
         return
     
+    if data == "buy_superlikes":
+        await buy_superlikes(update, context)
+        return
+
+    if data.startswith("sl_"):
+        amount = int(data.split("_")[1])
+        prices = {1: "1 000", 5: "4 000", 10: "7 000"}
+        price = prices[amount]
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ To'lov qildim", callback_data=f"confirmsl_{amount}")],
+            [InlineKeyboardButton("❌ Bekor", callback_data="cancel_sl")]
+        ])
+        await query.message.reply_text(
+            f"💳 TO'LOV\n\n⭐ {amount} ta Superlike\n💰 {price} so'm\n\n"
+            f"To'lov qilgach '✅' ni bosing.",
+            reply_markup=keyboard
+        )
+        return
+
+    if data.startswith("confirmsl_"):
+        amount = int(data.split("_")[1])
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET superlike_balance = COALESCE(superlike_balance, 0) + %s WHERE user_id = %s", (amount, user.id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        await query.message.reply_text(f"✅ {amount} ta Superlike qo'shildi!")
+        return
+
+    if data == "cancel_sl":
+        await query.message.reply_text("❌ Bekor qilindi.")
+        return
+
     if data == "edit_menu":
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("👤 Ismni o'zgartirish", callback_data="edit_name")],
@@ -1707,6 +1741,21 @@ async def save_edit_photo(update, context):
     await update.message.reply_text("✅ Rasm yangilandi!", reply_markup=await get_main_keyboard())
     return ConversationHandler.END
 
+async def buy_superlikes(update, context):
+    query = update.callback_query
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("1 ta - 1 000 so'm", callback_data="sl_1")],
+        [InlineKeyboardButton("5 ta - 4 000 so'm", callback_data="sl_5")],
+        [InlineKeyboardButton("10 ta - 7 000 so'm", callback_data="sl_10")],
+        [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_sl")]
+    ])
+    await query.message.reply_text(
+        "⭐ SUPERLIKE\n\n"
+        "Superlike - profilingiz birinchi chiqadi!\n\n"
+        "Paketni tanlang:",
+        reply_markup=keyboard
+    )
+
 async def profile(update, context):
     user = update.effective_user
     conn = get_db_connection()
@@ -1800,6 +1849,7 @@ async def matches(update, context):
 async def settings(update, context):
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("✏️ Profilni tahrirlash", callback_data="edit_menu")],
+        [InlineKeyboardButton("⭐ Superlike", callback_data="buy_superlikes")],
         [InlineKeyboardButton("👑 Premium", callback_data="premium_buy")],
         [InlineKeyboardButton("👻 Profilni muzlatish", callback_data="deactivate")]
     ])
