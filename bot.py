@@ -611,6 +611,10 @@ async def find(update, context):
                 "❤️ Yoqdi",
                 callback_data=f"like_{target_id}"
             ),
+            InlineKeyboardButton(
+                "⭐ Superlike",
+                callback_data=f"superlike_{target_id}"
+            ),
         ]
     ]
 
