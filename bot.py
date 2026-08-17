@@ -3159,20 +3159,55 @@ async def handle_message(update, context):
     if 'edit_field' in context.user_data:
         return await save_edit(update, context)
     
-    if text == "🔍 Qidirish":
+    language = get_user_language(update.effective_user.id)
+
+    if text in {
+        tr("uz", "search"),
+        tr("ru", "search"),
+        tr("uz_cyr", "search"),
+    }:
         await find(update, context)
-    elif text == "👤 Profil":
+
+    elif text in {
+        tr("uz", "profile"),
+        tr("ru", "profile"),
+        tr("uz_cyr", "profile"),
+    }:
         await profile(update, context)
-    elif text == "❤️ Yoqtirganlarim":
+
+    elif text in {
+        tr("uz", "likes"),
+        tr("ru", "likes"),
+        tr("uz_cyr", "likes"),
+    }:
         await likes(update, context)
-    elif text == "💞 Matchlarim":
+
+    elif text in {
+        tr("uz", "matches"),
+        tr("ru", "matches"),
+        tr("uz_cyr", "matches"),
+    }:
         await matches(update, context)
-    elif text == "⚙️ Sozlamalar":
+
+    elif text in {
+        tr("uz", "settings"),
+        tr("ru", "settings"),
+        tr("uz_cyr", "settings"),
+    }:
         await settings(update, context)
-    elif text == "🎁 Referal":
+
+    elif text in {
+        tr("uz", "referral"),
+        tr("ru", "referral"),
+        tr("uz_cyr", "referral"),
+    }:
         await referral_panel(update, context)
 
-    elif text == "⭐ Superlike":
+    elif text in {
+        tr("uz", "superlike"),
+        tr("ru", "superlike"),
+        tr("uz_cyr", "superlike"),
+    }:
         user = update.effective_user
         conn = get_db_connection()
         cur = conn.cursor()
