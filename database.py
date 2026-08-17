@@ -29,6 +29,7 @@ def init_db():
             photo TEXT,
             city TEXT,
             is_active BOOLEAN DEFAULT TRUE,
+            is_blocked BOOLEAN DEFAULT FALSE,
             premium_until TIMESTAMP,
             created_at TIMESTAMP DEFAULT NOW(),
             language TEXT DEFAULT 'uz',
@@ -51,6 +52,11 @@ def init_db():
     cur.execute("""
         ALTER TABLE users
         ADD COLUMN IF NOT EXISTS premium_until TIMESTAMP
+    """)
+
+    cur.execute("""
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE
     """)
 
     cur.execute("""
