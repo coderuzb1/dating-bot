@@ -1227,20 +1227,24 @@ async def handle_callback(update, context):
         return
 
     if data.startswith("ok_sl_"):
-        parts = data.split("_")
-        user_id = int(parts[2])
-        amount = int(parts[3])
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET superlike_balance = COALESCE(superlike_balance, 0) + %s WHERE user_id = %s", (amount, user_id))
-        conn.commit()
-        cur.close()
-        conn.close()
-        await query.message.reply_text(f"✅ {amount} ta Superlike tasdiqlandi!")
         try:
-            await context.bot.send_message(chat_id=user_id, text=f"🎉 {amount} ta Superlike hisobingizga qo'shildi!")
-        except:
-            pass
+            parts = data.split("_")
+            user_id = int(parts[2])
+            amount = int(parts[3])
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS superlike_balance INTEGER DEFAULT 0")
+            cur.execute("UPDATE users SET superlike_balance = COALESCE(superlike_balance, 0) + %s WHERE user_id = %s", (amount, user_id))
+            conn.commit()
+            cur.close()
+            conn.close()
+            await query.message.reply_text(f"✅ {amount} ta Superlike tasdiqlandi!")
+            try:
+                await context.bot.send_message(chat_id=user_id, text=f"🎉 {amount} ta Superlike hisobingizga qo'shildi!")
+            except:
+                pass
+        except Exception as e:
+            await query.message.reply_text(f"❌ Xato: {e}")
         return
 
     if data.startswith("no_sl_"):
