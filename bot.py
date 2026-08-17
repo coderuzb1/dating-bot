@@ -91,7 +91,70 @@ TRANSLATIONS = {
         "premium": "👑 Premium",
         "settings": "⚙️ Sozlamalar",
         "referral": "🎁 Referal",
+
+        "step": "{step}/7",
+        "enter_name": "Ismingizni kiriting:",
+        "name_error": "❌ Ism 2-30 ta belgidan iborat bo'lishi kerak.",
+        "name_letter_error": "❌ Ismda harflar bo'lishi kerak.",
+        "enter_age": "Yoshingizni kiriting (16-60):",
+        "age_error": "❌ Iltimos, to'g'ri yosh kiriting (16-60):",
+        "choose_gender": "Jinsingizni tanlang:",
+        "gender_error": "❌ Iltimos, tugmalardan birini tanlang:",
+        "male": "👨 Erkak",
+        "female": "👩 Ayol",
+        "choose_city": "Yashash shahringizni tanlang:",
+        "other": "Boshqa",
+        "enter_city": "📍 Shahringiz nomini yozing:",
+        "city_error": "❌ Shahar nomi 2-50 ta belgidan iborat bo'lishi kerak.",
+        "city_choose_error": "❌ Iltimos, shaharni tugmalardan tanlang yoki «Boshqa» tugmasini bosing.",
+        "enter_bio": "O'zingiz haqingizda qisqacha yozing:",
+        "send_photo": "Profil rasmingizni yuboring:",
+        "profile_created": "✅ Profil yaratildi!",
+
+        "not_found_profile": "❌ Avval profil yarating. /start bosing.",
+        "limit_reached": "🚫 Bugungi 20 ta profil limitingiz tugadi.\n\n👑 Premiumga o'tib, profillarni cheksiz ko'rishingiz mumkin.",
+        "no_profiles": "😔 Hozircha boshqa profillar qolmagan.",
+        "dislike": "👎 Yoqmadi",
+        "like": "❤️ Yoqdi",
+        "write": "✉️ Yozish",
+        "bio_empty": "Bio yozilmagan",
+
+        "premium_title": "👑 <b>PREMIUM</b>",
+        "premium_intro": "💎 Premium bilan tanishuv imkoniyatlaringizni yanada kengaytiring!",
+        "premium_unlimited_profiles": "♾️ <b>Cheksiz profil ko'rish</b> — ko'proq odamlarni kashf eting",
+        "premium_unlimited_likes": "❤️ <b>Cheksiz Like</b> — imkoniyatlarni o'tkazib yubormang",
+        "premium_direct_message": "✉️ <b>Matchni kutmasdan yozing</b> — yoqqan insoningiz bilan darhol suhbat boshlang",
+        "premium_who_liked": "👀 <b>Sizni kim yoqtirganini ko'ring</b> — kim sizga qiziqayotganini biling",
+        "premium_badge": "⭐️ <b>Premium belgisi</b> — profilingizni ajratib turing",
+        "premium_priority": "🚀 <b>Profil ustuvorligi</b> — ko'proq ko'rinishga ega bo'ling",
+        "premium_more": "🔥 <b>Ko'proq ko'rinish → ko'proq Like → ko'proq Match!</b>",
+        "premium_choose": "✨ O'zingizga mos Premium tarifini tanlang:",
+        "choose_duration": "📅 <b>Muddatni tanlang:</b>",
+
+        "plan_1w": "📅 1 hafta - 25 000 so'm • QULAY",
+        "plan_2w": "🔥 14 kun - 39 000 so'm • ENG QULAY",
+        "plan_1m": "⭐️ 1 oy - 59 000 so'm • OMMABOP",
+        "plan_3m": "👑 3 oy - 129 000 so'm • TEJAMKOR",
+        "cancel": "❌ Bekor qilish",
+
+        "payment_method": "💳 TO'LOV USULINI TANLANG",
+        "period": "📅 Muddat: {days} kun",
+        "amount": "💰 Summa: {price} so'm",
+        "choose_payment": "Quyidagi to'lov usullaridan birini tanlang:",
+        "payment_error": "❌ To'lov ma'lumotlari xato.",
+        "plan_not_found": "❌ Tarif topilmadi.",
+        "payment_not_configured": "❌ Ushbu to'lov usuli hozircha sozlanmagan.",
+        "payment": "💳 TO'LOV",
+        "method": "💳 Usul: {method}",
+        "card": "💳 Karta: {card}",
+        "payment_done": "To'lovni amalga oshirgach, «✅ To'lov qildim» tugmasini bosing.",
+        "paid": "✅ To'lov qildim",
+        "send_receipt": "📸📄 TO'LOV CHEKINI YUBORING",
+        "receipt_info": "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.",
+        "receipt_warning": "⚠️ Faqat haqiqiy to‘lov chekini yuboring!\n🚫 Soxta chek yuborsangiz, darhol botdan bloklanasiz va Premium berilmaydi.",
+        "receipt_wait": "⏳ Chek yuborilgach admin tekshiradi.",
     },
+
     "ru": {
         "search": "🔍 Поиск",
         "profile": "👤 Профиль",
@@ -101,7 +164,70 @@ TRANSLATIONS = {
         "premium": "👑 Премиум",
         "settings": "⚙️ Настройки",
         "referral": "🎁 Реферал",
+
+        "step": "{step}/7",
+        "enter_name": "Введите ваше имя:",
+        "name_error": "❌ Имя должно содержать от 2 до 30 символов.",
+        "name_letter_error": "❌ Имя должно содержать буквы.",
+        "enter_age": "Введите ваш возраст (16-60):",
+        "age_error": "❌ Пожалуйста, введите правильный возраст (16-60):",
+        "choose_gender": "Выберите ваш пол:",
+        "gender_error": "❌ Пожалуйста, выберите один из вариантов:",
+        "male": "👨 Мужчина",
+        "female": "👩 Женщина",
+        "choose_city": "Выберите город проживания:",
+        "other": "Другой",
+        "enter_city": "📍 Введите название вашего города:",
+        "city_error": "❌ Название города должно содержать от 2 до 50 символов.",
+        "city_choose_error": "❌ Пожалуйста, выберите город из кнопок или нажмите «Другой».",
+        "enter_bio": "Кратко расскажите о себе:",
+        "send_photo": "Отправьте фотографию профиля:",
+        "profile_created": "✅ Профиль создан!",
+
+        "not_found_profile": "❌ Сначала создайте профиль. Нажмите /start.",
+        "limit_reached": "🚫 Вы достигли дневного лимита в 20 профилей.\n\n👑 С Премиумом вы сможете просматривать профили без ограничений.",
+        "no_profiles": "😔 Пока других профилей нет.",
+        "dislike": "👎 Не нравится",
+        "like": "❤️ Нравится",
+        "write": "✉️ Написать",
+        "bio_empty": "Биография не указана",
+
+        "premium_title": "👑 <b>ПРЕМИУМ</b>",
+        "premium_intro": "💎 С Премиумом ваши возможности для знакомств станут намного шире!",
+        "premium_unlimited_profiles": "♾️ <b>Безлимитный просмотр профилей</b> — находите больше людей",
+        "premium_unlimited_likes": "❤️ <b>Безлимитные лайки</b> — не упускайте возможности",
+        "premium_direct_message": "✉️ <b>Пишите без ожидания совпадения</b> — начинайте общение сразу",
+        "premium_who_liked": "👀 <b>Узнавайте, кто вас лайкнул</b> — знайте, кто вами интересуется",
+        "premium_badge": "⭐️ <b>Значок Премиум</b> — выделяйте свой профиль",
+        "premium_priority": "🚀 <b>Приоритет профиля</b> — получайте больше просмотров",
+        "premium_more": "🔥 <b>Больше просмотров → больше лайков → больше совпадений!</b>",
+        "premium_choose": "✨ Выберите подходящий тариф Премиум:",
+        "choose_duration": "📅 <b>Выберите срок:</b>",
+
+        "plan_1w": "📅 1 неделя - 25 000 сум • ВЫГОДНО",
+        "plan_2w": "🔥 14 дней - 39 000 сум • ЛУЧШИЙ ВЫБОР",
+        "plan_1m": "⭐️ 1 месяц - 59 000 сум • ПОПУЛЯРНЫЙ",
+        "plan_3m": "👑 3 месяца - 129 000 сум • ЭКОНОМНЫЙ",
+        "cancel": "❌ Отмена",
+
+        "payment_method": "💳 ВЫБЕРИТЕ СПОСОБ ОПЛАТЫ",
+        "period": "📅 Срок: {days} дней",
+        "amount": "💰 Сумма: {price} сум",
+        "choose_payment": "Выберите один из способов оплаты:",
+        "payment_error": "❌ Ошибка в данных платежа.",
+        "plan_not_found": "❌ Тариф не найден.",
+        "payment_not_configured": "❌ Этот способ оплаты пока не настроен.",
+        "payment": "💳 ОПЛАТА",
+        "method": "💳 Способ: {method}",
+        "card": "💳 Карта: {card}",
+        "payment_done": "После оплаты нажмите кнопку «✅ Я оплатил».",
+        "paid": "✅ Я оплатил",
+        "send_receipt": "📸📄 ОТПРАВЬТЕ ЧЕК ОБ ОПЛАТЕ",
+        "receipt_info": "🖼 Можно отправить изображение или 📄 PDF/файл.",
+        "receipt_warning": "⚠️ Отправляйте только настоящий чек об оплате!\n🚫 За поддельный чек вы будете заблокированы, а Премиум не будет выдан.",
+        "receipt_wait": "⏳ После отправки чек проверит администратор.",
     },
+
     "uz_cyr": {
         "search": "🔍 Қидириш",
         "profile": "👤 Профил",
@@ -111,9 +237,70 @@ TRANSLATIONS = {
         "premium": "👑 Премиум",
         "settings": "⚙️ Созламалар",
         "referral": "🎁 Реферал",
+
+        "step": "{step}/7",
+        "enter_name": "Исмингизни киритинг:",
+        "name_error": "❌ Исм 2-30 та белгидан иборат бўлиши керак.",
+        "name_letter_error": "❌ Исмда ҳарфлар бўлиши керак.",
+        "enter_age": "Ёшингизни киритинг (16-60):",
+        "age_error": "❌ Илтимос, тўғри ёш киритинг (16-60):",
+        "choose_gender": "Жинсингизни танланг:",
+        "gender_error": "❌ Илтимос, тугмалардан бирини танланг:",
+        "male": "👨 Эркак",
+        "female": "👩 Аёл",
+        "choose_city": "Яшаш шаҳарингизни танланг:",
+        "other": "Бошқа",
+        "enter_city": "📍 Шаҳрингиз номини ёзинг:",
+        "city_error": "❌ Шаҳар номи 2-50 та белгидан иборат бўлиши керак.",
+        "city_choose_error": "❌ Илтимос, шаҳарни тугмалардан танланг ёки «Бошқа» тугмасини босинг.",
+        "enter_bio": "Ўзингиз ҳақингизда қисқача ёзинг:",
+        "send_photo": "Профил расмингизни юборинг:",
+        "profile_created": "✅ Профил яратилди!",
+
+        "not_found_profile": "❌ Аввал профил яратинг. /start ни босинг.",
+        "limit_reached": "🚫 Бугунги 20 та профиль лимитингиз тугади.\n\n👑 Премиум орқали профилларни чекловсиз кўришингиз мумкин.",
+        "no_profiles": "😔 Ҳозирча бошқа профиллар қолмаган.",
+        "dislike": "👎 Ёқмади",
+        "like": "❤️ Ёқди",
+        "write": "✉️ Ёзиш",
+        "bio_empty": "Био ёзилмаган",
+
+        "premium_title": "👑 <b>ПРЕМИУМ</b>",
+        "premium_intro": "💎 Премиум билан танишув имкониятларингизни янада кенгайтиринг!",
+        "premium_unlimited_profiles": "♾️ <b>Чексиз профиль кўриш</b> — кўпроқ одамларни кашф этинг",
+        "premium_unlimited_likes": "❤️ <b>Чексиз лайк</b> — имкониятларни ўтказиб юборманг",
+        "premium_direct_message": "✉️ <b>Мэтчни кутмасдан ёзинг</b> — ёққан инсонгиз билан дарҳол суҳбат бошланг",
+        "premium_who_liked": "👀 <b>Сизни ким ёқтирганини кўринг</b> — ким сизга қизиқayotganини билинг",
+        "premium_badge": "⭐️ <b>Премиум белгиси</b> — профилингизни ажратиб туринг",
+        "premium_priority": "🚀 <b>Профиль устуворлиги</b> — кўпроқ кўринишга эга бўлинг",
+        "premium_more": "🔥 <b>Кўпроқ кўриниш → кўпроқ лайк → кўпроқ мэтч!</b>",
+        "premium_choose": "✨ Ўзингизга мос Премиум тарифини танланг:",
+        "choose_duration": "📅 <b>Муддатни танланг:</b>",
+
+        "plan_1w": "📅 1 ҳафта - 25 000 сўм • ҚУЛАЙ",
+        "plan_2w": "🔥 14 кун - 39 000 сўм • ЭНГ ҚУЛАЙ",
+        "plan_1m": "⭐️ 1 ой - 59 000 сўм • ОММАБОП",
+        "plan_3m": "👑 3 ой - 129 000 сўм • ТЕЖАМКОР",
+        "cancel": "❌ Бекор қилиш",
+
+        "payment_method": "💳 ТЎЛОВ УСУЛИНИ ТАНЛАНГ",
+        "period": "📅 Муддат: {days} кун",
+        "amount": "💰 Сумма: {price} сўм",
+        "choose_payment": "Қуйидаги тўлов усулларидан бирини танланг:",
+        "payment_error": "❌ Тўлов маълумотлари хато.",
+        "plan_not_found": "❌ Тариф топилмади.",
+        "payment_not_configured": "❌ Ушбу тўлов усули ҳозирча созланмаган.",
+        "payment": "💳 ТЎЛОВ",
+        "method": "💳 Усул: {method}",
+        "card": "💳 Карта: {card}",
+        "payment_done": "Тўловни амалга оширгач, «✅ Тўлов қилдим» тугмасини босинг.",
+        "paid": "✅ Тўлов қилдим",
+        "send_receipt": "📸📄 ТЎЛОВ ЧЕКИНИ ЮБОРИНГ",
+        "receipt_info": "🖼 Расм ёки 📄 PDF/файл юборишингиз мумкин.",
+        "receipt_warning": "⚠️ Фақат ҳақиқий тўлов чекини юборинг!\n🚫 Сохта чек юборсангиз, дарҳол ботдан блокланасиз ва Премиум берилмайди.",
+        "receipt_wait": "⏳ Чек юборилгандан сўнг администратор текширади.",
     },
 }
-
 
 def get_user_language(user_id):
     try:
@@ -808,34 +995,97 @@ async def handle_callback(update, context):
     data = query.data
     
     if data == "premium_buy":
+        language = get_user_language(user.id)
+
+        premium_texts = {
+            "uz": {
+                "title": "👑 <b>PREMIUM</b>",
+                "intro": (
+                    "💎 Premium bilan tanishuv imkoniyatlaringizni "
+                    "yanada kengaytiring!"
+                ),
+                "features": (
+                    "♾️ <b>Cheksiz profil ko'rish</b> — ko'proq odamlarni kashf eting\n"
+                    "❤️ <b>Cheksiz Like</b> — imkoniyatlarni o'tkazib yubormang\n"
+                    "✉️ <b>Matchni kutmasdan yozing</b> — yoqqan insoningiz bilan darhol suhbat boshlang\n"
+                    "👀 <b>Sizni kim yoqtirganini ko'ring</b> — kim sizga qiziqayotganini biling\n"
+                    "⭐️ <b>Premium belgisi</b> — profilingizni ajratib turing\n"
+                    "🚀 <b>Profil ustuvorligi</b> — ko'proq ko'rinishga ega bo'ling"
+                ),
+                "reason": "🔥 <b>Ko'proq ko'rinish → ko'proq Like → ko'proq Match!</b>",
+                "choose": "✨ O'zingizga mos Premium tarifini tanlang:",
+                "duration": "📅 <b>Muddatni tanlang:</b>",
+                "week": "📅 1 hafta - 25 000 so'm • QULAY",
+                "two_weeks": "🔥 14 kun - 39 000 so'm • ENG QULAY",
+                "month": "⭐️ 1 oy - 59 000 so'm • OMMABOP",
+                "three_months": "👑 3 oy - 129 000 so'm • TEJAMKOR",
+                "cancel": "❌ Bekor qilish",
+            },
+            "ru": {
+                "title": "👑 <b>ПРЕМИУМ</b>",
+                "intro": (
+                    "💎 С Premium ваши возможности для знакомств "
+                    "становятся намного шире!"
+                ),
+                "features": (
+                    "♾️ <b>Безлимитный просмотр профилей</b> — находите больше людей\n"
+                    "❤️ <b>Безлимитные лайки</b> — не упускайте возможности\n"
+                    "✉️ <b>Пишите без ожидания взаимного лайка</b> — начинайте общение сразу\n"
+                    "👀 <b>Узнавайте, кто вас лайкнул</b> — знайте, кому вы интересны\n"
+                    "⭐️ <b>Значок Premium</b> — выделяйте свой профиль\n"
+                    "🚀 <b>Приоритет профиля</b> — получайте больше просмотров"
+                ),
+                "reason": "🔥 <b>Больше просмотров → больше лайков → больше совпадений!</b>",
+                "choose": "✨ Выберите подходящий тариф Premium:",
+                "duration": "📅 <b>Выберите срок:</b>",
+                "week": "📅 1 неделя - 25 000 сум • ВЫГОДНО",
+                "two_weeks": "🔥 14 дней - 39 000 сум • ЛУЧШИЙ ВЫБОР",
+                "month": "⭐️ 1 месяц - 59 000 сум • ПОПУЛЯРНЫЙ",
+                "three_months": "👑 3 месяца - 129 000 сум • ЭКОНОМНО",
+                "cancel": "❌ Отмена",
+            },
+            "uz_cyr": {
+                "title": "👑 <b>ПРЕМИУМ</b>",
+                "intro": (
+                    "💎 Premium билан танишув имкониятларингизни "
+                    "янада кенгайтиринг!"
+                ),
+                "features": (
+                    "♾️ <b>Чексиз профиль кўриш</b> — кўпроқ одамларни кашф этинг\n"
+                    "❤️ <b>Чексиз Like</b> — имкониятларни ўтказиб юборманг\n"
+                    "✉️ <b>Matchни кутмасдан ёзиш</b> — ёққан инсонгиз билан дарҳол суҳбат бошланг\n"
+                    "👀 <b>Сизни ким ёқтирганини кўриш</b> — ким сизга қизиқиш билдирганини билинг\n"
+                    "⭐️ <b>Premium белгиси</b> — профилингизни ажратиб туринг\n"
+                    "🚀 <b>Профиль устуворлиги</b> — кўпроқ кўринишга эга бўлинг"
+                ),
+                "reason": "🔥 <b>Кўпроқ кўриниш → кўпроқ Like → кўпроқ Match!</b>",
+                "choose": "✨ Ўзингизга мос Premium тарифини танланг:",
+                "duration": "📅 <b>Муддатни танланг:</b>",
+                "week": "📅 1 ҳафта - 25 000 сўм • ҚУЛАЙ",
+                "two_weeks": "🔥 14 кун - 39 000 сўм • ЭНГ ҚУЛАЙ",
+                "month": "⭐️ 1 ой - 59 000 сўм • ОММАБОП",
+                "three_months": "👑 3 ой - 129 000 сўм • ТЕЖАМКОР",
+                "cancel": "❌ Бекор қилиш",
+            },
+        }
+
+        t = premium_texts.get(language, premium_texts["uz"])
+
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📅 1 hafta - 25 000 so'm • QULAY", callback_data="premium_1w")],
-            [InlineKeyboardButton("🔥 14 kun - 39 000 so'm • ENG QULAY", callback_data="premium_2w")],
-            [InlineKeyboardButton("⭐️ 1 oy - 59 000 so'm • OMMABOP", callback_data="premium_1m")],
-            [InlineKeyboardButton("👑 3 oy - 129 000 so'm • TEJAMKOR", callback_data="premium_3m")],
-            [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premium")]
+            [InlineKeyboardButton(t["week"], callback_data="premium_1w")],
+            [InlineKeyboardButton(t["two_weeks"], callback_data="premium_2w")],
+            [InlineKeyboardButton(t["month"], callback_data="premium_1m")],
+            [InlineKeyboardButton(t["three_months"], callback_data="premium_3m")],
+            [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")]
         ])
 
         await query.message.reply_text(
-            "👑 <b>PREMIUM</b>\n\n"
-            "💎 Premium bilan tanishuv imkoniyatlaringizni "
-            "yanada kengaytiring!\n\n"
-            "♾️ <b>Cheksiz profil ko'rish</b> — "
-            "ko'proq odamlarni kashf eting\n"
-            "❤️ <b>Cheksiz Like</b> — "
-            "imkoniyatlarni o'tkazib yubormang\n"
-            "✉️ <b>Matchni kutmasdan yozing</b> — "
-            "yoqqan insoningiz bilan darhol suhbat boshlang\n"
-            "👀 <b>Sizni kim yoqtirganini ko'ring</b> — "
-            "kim sizga qiziqayotganini biling\n"
-            "⭐️ <b>Premium belgisi</b> — "
-            "profilingizni ajratib turing\n"
-            "🚀 <b>Profil ustuvorligi</b> — "
-            "ko'proq ko'rinishga ega bo'ling\n\n"
-            "🔥 <b>Ko'proq ko'rinish → ko'proq Like → "
-            "ko'proq Match!</b>\n\n"
-            "✨ O'zingizga mos Premium tarifini tanlang:\n\n"
-            "📅 <b>Muddatni tanlang:</b>",
+            f'{t["title"]}\n\n'
+            f'{t["intro"]}\n\n'
+            f'{t["features"]}\n\n'
+            f'{t["reason"]}\n\n'
+            f'{t["choose"]}\n\n'
+            f'{t["duration"]}',
             reply_markup=keyboard,
             parse_mode="HTML"
         )
