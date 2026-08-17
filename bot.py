@@ -81,13 +81,89 @@ async def scheduled_notifications(context):
 async def check_bad_words(text):
     return any(word in text.lower() for word in BAD_WORDS)
 
-async def get_main_keyboard():
+TRANSLATIONS = {
+    "uz": {
+        "search": "🔍 Qidirish",
+        "profile": "👤 Profil",
+        "likes": "❤️ Yoqtirganlarim",
+        "matches": "💞 Matchlarim",
+        "superlike": "⭐ Superlike",
+        "premium": "👑 Premium",
+        "settings": "⚙️ Sozlamalar",
+        "referral": "🎁 Referal",
+    },
+    "ru": {
+        "search": "🔍 Поиск",
+        "profile": "👤 Профиль",
+        "likes": "❤️ Мои лайки",
+        "matches": "💞 Мои совпадения",
+        "superlike": "⭐ Суперлайк",
+        "premium": "👑 Премиум",
+        "settings": "⚙️ Настройки",
+        "referral": "🎁 Реферал",
+    },
+    "uz_cyr": {
+        "search": "🔍 Қидириш",
+        "profile": "👤 Профил",
+        "likes": "❤️ Ёқтирганларим",
+        "matches": "💞 Мэтчларим",
+        "superlike": "⭐ Суперлайк",
+        "premium": "👑 Премиум",
+        "settings": "⚙️ Созламалар",
+        "referral": "🎁 Реферал",
+    },
+}
+
+
+def get_user_language(user_id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT language FROM users WHERE user_id = %s",
+            (user_id,)
+        )
+        result = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if result and result[0] in TRANSLATIONS:
+            return result[0]
+    except Exception as e:
+        print(f"Language error: {e}")
+
+    return "uz"
+
+
+def tr(language, key):
+    if language not in TRANSLATIONS:
+        language = "uz"
+    return TRANSLATIONS[language].get(
+        key,
+        TRANSLATIONS["uz"].get(key, key)
+    )
+
+
+async def get_main_keyboard(language="uz"):
     return ReplyKeyboardMarkup([
-        [KeyboardButton("🔍 Qidirish"), KeyboardButton("👤 Profil")],
-        [KeyboardButton("❤️ Yoqtirganlarim"), KeyboardButton("💞 Matchlarim")],
-        [KeyboardButton("⭐ Superlike"), KeyboardButton("👑 Premium")],
-        [KeyboardButton("⚙️ Sozlamalar"), KeyboardButton("🎁 Referal")]
+        [
+            KeyboardButton(tr(language, "search")),
+            KeyboardButton(tr(language, "profile"))
+        ],
+        [
+            KeyboardButton(tr(language, "likes")),
+            KeyboardButton(tr(language, "matches"))
+        ],
+        [
+            KeyboardButton(tr(language, "superlike")),
+            KeyboardButton(tr(language, "premium"))
+        ],
+        [
+            KeyboardButton(tr(language, "settings")),
+            KeyboardButton(tr(language, "referral"))
+        ]
     ], resize_keyboard=True)
+
 
 async def start(update, context):
     user = update.effective_user
@@ -195,65 +271,82 @@ async def get_language(update, context):
         )
         return LANGUAGE
 
-    context.user_data["language"] = languages[text]
+    language = languages[text]
+    context.user_data["language"] = language
 
     await update.message.reply_text(
-        "👤 <b>1/7</b>\n\n"
-        "Ismingizni kiriting:",
+        f"👤 {tr(language, 'step').format(step=1)}\n\n"
+        f"{tr(language, 'enter_name')}",
         parse_mode="HTML"
     )
     return NAME
 
 
 async def get_name(update, context):
+    language = context.user_data.get("language", "uz")
     name = update.message.text.strip()
 
     if len(name) < 2 or len(name) > 30:
-        await update.message.reply_text(
-            "❌ Ism 2-30 ta belgidan iborat bo'lishi kerak."
-        )
+        await update.message.reply_text(tr(language, "name_error"))
         return NAME
 
     if not any(ch.isalpha() for ch in name):
-        await update.message.reply_text(
-            "❌ Ismda harflar bo'lishi kerak."
-        )
+        await update.message.reply_text(tr(language, "name_letter_error"))
         return NAME
 
     context.user_data["profile_name"] = name
 
     await update.message.reply_text(
-        "🎂 <b>2/7</b>\n\n"
-        "Yoshingizni kiriting (16-60):",
+        f"🎂 {tr(language, 'step').format(step=2)}\n\n"
+        f"{tr(language, 'enter_age')}",
         parse_mode="HTML"
     )
     return AGE
 
 
 async def get_age(update, context):
-    text = update.message.text
+    language = context.user_data.get("language", "uz")
+    text = update.message.text.strip()
+
     if not text.isdigit() or int(text) < 16 or int(text) > 60:
-        await update.message.reply_text("❌ Iltimos, to'g'ri yosh kiriting (16-60):")
+        await update.message.reply_text(tr(language, "age_error"))
         return AGE
-    context.user_data['age'] = int(text)
+
+    context.user_data["age"] = int(text)
+
     keyboard = ReplyKeyboardMarkup([
-        [KeyboardButton("👨 Erkak"), KeyboardButton("👩 Ayol")]
+        [
+            KeyboardButton(tr(language, "male")),
+            KeyboardButton(tr(language, "female"))
+        ]
     ], resize_keyboard=True, one_time_keyboard=True)
+
     await update.message.reply_text(
-        "👤 <b>3/7</b>\n\n"
-        "Jinsingizni tanlang:",
+        f"👤 {tr(language, 'step').format(step=3)}\n\n"
+        f"{tr(language, 'choose_gender')}",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
     return GENDER
 
+
 async def get_gender(update, context):
+    language = context.user_data.get("language", "uz")
     text = update.message.text
-    gender = "Erkak" if "👨" in text else "Ayol" if "👩" in text else text
+
+    if "👨" in text:
+        gender = "Erkak"
+    elif "👩" in text:
+        gender = "Ayol"
+    else:
+        gender = text
+
     if gender not in ["Erkak", "Ayol"]:
-        await update.message.reply_text("❌ Iltimos, tugmalardan birini tanlang:")
+        await update.message.reply_text(tr(language, "gender_error"))
         return GENDER
-    context.user_data['gender'] = gender
+
+    context.user_data["gender"] = gender
+
     keyboard = ReplyKeyboardMarkup([
         [KeyboardButton("Toshkent"), KeyboardButton("Samarqand")],
         [KeyboardButton("Buxoro"), KeyboardButton("Andijon")],
@@ -261,17 +354,20 @@ async def get_gender(update, context):
         [KeyboardButton("Qarshi"), KeyboardButton("Nukus")],
         [KeyboardButton("Xiva"), KeyboardButton("Jizzax")],
         [KeyboardButton("Guliston"), KeyboardButton("Termiz")],
-        [KeyboardButton("Navoiy"), KeyboardButton("Boshqa")]
+        [KeyboardButton("Navoiy"), KeyboardButton(tr(language, "other"))]
     ], resize_keyboard=True, one_time_keyboard=True)
+
     await update.message.reply_text(
-        "📍 <b>4/7</b>\n\n"
-        "Yashash shahringizni tanlang:",
+        f"📍 {tr(language, 'step').format(step=4)}\n\n"
+        f"{tr(language, 'choose_city')}",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
     return CITY
 
+
 async def get_city(update, context):
+    language = context.user_data.get("language", "uz")
     city = update.message.text.strip()
 
     cities = {
@@ -290,60 +386,59 @@ async def get_city(update, context):
         "Navoiy",
     }
 
-    # Oddiy tugma orqali tanlangan shahar
     if city in cities:
-        context.user_data['city'] = city
-        context.user_data.pop('custom_city', None)
+        context.user_data["city"] = city
+        context.user_data.pop("custom_city", None)
 
         await update.message.reply_text(
-            "📝 <b>5/7</b>\n\n"
-            "O'zingiz haqingizda qisqacha yozing:",
+            f"📝 {tr(language, 'step').format(step=5)}\n\n"
+            f"{tr(language, 'enter_bio')}",
             parse_mode="HTML"
         )
         return BIO
 
-    # "Boshqa" tanlansa, keyingi xabar shahar nomi bo'ladi
-    if city == "Boshqa":
-        context.user_data['custom_city'] = True
+    if city == tr(language, "other"):
+        context.user_data["custom_city"] = True
 
         await update.message.reply_text(
-            "📍 Shahringiz nomini yozing:"
+            tr(language, "enter_city")
         )
         return CITY
 
-    # Boshqa matn faqat "Boshqa" oldin tanlangan bo'lsa qabul qilinadi
-    if context.user_data.get('custom_city'):
+    if context.user_data.get("custom_city"):
         if len(city) < 2 or len(city) > 50:
             await update.message.reply_text(
-                "❌ Shahar nomi 2-50 ta belgidan iborat bo'lishi kerak."
+                tr(language, "city_error")
             )
             return CITY
 
-        context.user_data['city'] = city
-        context.user_data.pop('custom_city', None)
+        context.user_data["city"] = city
+        context.user_data.pop("custom_city", None)
 
         await update.message.reply_text(
-            "📝 <b>5/7</b>\n\n"
-            "O'zingiz haqingizda qisqacha yozing:",
+            f"📝 {tr(language, 'step').format(step=5)}\n\n"
+            f"{tr(language, 'enter_bio')}",
             parse_mode="HTML"
         )
         return BIO
 
     await update.message.reply_text(
-        "❌ Iltimos, shaharni tugmalardan tanlang yoki "
-        "«Boshqa» tugmasini bosing."
+        tr(language, "city_choose_error")
     )
     return CITY
 
+
 async def get_bio(update, context):
-    bio = update.message.text
-    context.user_data['bio'] = bio
+    language = context.user_data.get("language", "uz")
+    context.user_data["bio"] = update.message.text
+
     await update.message.reply_text(
-        "📸 <b>6/7</b>\n\n"
-        "Profil rasmingizni yuboring:",
+        f"📸 {tr(language, 'step').format(step=6)}\n\n"
+        f"{tr(language, 'send_photo')}",
         parse_mode="HTML"
     )
     return PHOTO
+
 
 async def get_photo(update, context):
     user = update.effective_user
