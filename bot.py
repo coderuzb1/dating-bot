@@ -1205,6 +1205,12 @@ async def handle_callback(update, context):
         amount = int(data.split("_")[1])
         prices = {1: 1000, 5: 4000, 10: 7000}
         total = prices.get(amount, amount * 1000)
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"ok_sl_{user.id}_{amount}"),
+                InlineKeyboardButton("❌ Rad etish", callback_data=f"no_sl_{user.id}")
+            ]
+        ])
         try:
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
@@ -1212,12 +1218,38 @@ async def handle_callback(update, context):
                      f"👤 {user.first_name}\n"
                      f"🆔 ID: {user.id}\n"
                      f"⭐ Miqdor: {amount} ta\n"
-                     f"💰 Summa: {total} so'm\n\n"
-                     f"Tasdiqlash: /approvesl {user.id} {amount}"
+                     f"💰 Summa: {total} so'm",
+                reply_markup=keyboard
             )
         except:
             pass
         await query.message.reply_text("✅ To'lov so'rovi yuborildi! Admin tasdiqlagach Superlike qo'shiladi.")
+        return
+
+    if data.startswith("ok_sl_"):
+        parts = data.split("_")
+        user_id = int(parts[2])
+        amount = int(parts[3])
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET superlike_balance = COALESCE(superlike_balance, 0) + %s WHERE user_id = %s", (amount, user_id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        await query.message.reply_text(f"✅ {amount} ta Superlike tasdiqlandi!")
+        try:
+            await context.bot.send_message(chat_id=user_id, text=f"🎉 {amount} ta Superlike hisobingizga qo'shildi!")
+        except:
+            pass
+        return
+
+    if data.startswith("no_sl_"):
+        user_id = int(data.split("_")[2])
+        await query.message.reply_text("❌ Rad etildi.")
+        try:
+            await context.bot.send_message(chat_id=user_id, text="❌ To'lovingiz rad etildi.")
+        except:
+            pass
         return
 
     if data == "cancel_sl":
