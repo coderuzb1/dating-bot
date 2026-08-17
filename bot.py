@@ -3453,6 +3453,61 @@ async def delete_user(update, context):
         )
 
 
+async def blocked_users(update, context):
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(
+            """
+            SELECT user_id, first_name, username
+            FROM users
+            WHERE is_blocked = TRUE
+            ORDER BY user_id DESC
+            """
+        )
+
+        rows = cur.fetchall()
+
+    finally:
+        cur.close()
+        conn.close()
+
+    if not rows:
+        await update.message.reply_text(
+            "🚫 Bloklangan foydalanuvchilar yo'q."
+        )
+        return
+
+    lines = [
+        "🚫 BLOKLANGAN FOYDALANUVCHILAR\n"
+    ]
+
+    for i, row in enumerate(rows, 1):
+        user_id, first_name, username = row
+
+        name = first_name or "Noma'lum"
+        username_text = f"@{username}" if username else "username yo'q"
+
+        lines.append(
+            f"{i}. 👤 {name}\n"
+            f"   🆔 {user_id}\n"
+            f"   📱 {username_text}\n"
+        )
+
+    lines.append(f"\n📊 Jami: {len(rows)} ta")
+
+    await update.message.reply_text(
+        "\n".join(lines)
+    )
+
+
 async def remove_premium(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -3593,6 +3648,7 @@ def main():
     app.add_handler(CommandHandler("admin", admin))
     app.add_handler(CommandHandler("givepremium", givepremium))
     app.add_handler(CommandHandler("removepremium", removepremium))
+    app.add_handler(CommandHandler("blocked", blocked_users))
 
     app.add_handler(CommandHandler("checkpremium", checkpremium))
     app.add_handler(CommandHandler("premiumlist", premiumlist))
