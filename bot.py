@@ -160,6 +160,26 @@ async def start(update, context):
         )
         return LANGUAGE
 
+async def create_profile(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    keyboard = ReplyKeyboardMarkup([
+        [KeyboardButton("🇺🇿 O'zbek tili")],
+        [KeyboardButton("🇷🇺 Русский")],
+        [KeyboardButton("🇺🇿 Узбек (Кирилл)")]
+    ], resize_keyboard=True, one_time_keyboard=True)
+
+    await query.message.reply_text(
+        "🌐 <b>Tilni tanlang</b>\n\n"
+        "Qaysi tilda foydalanishni xohlaysiz?",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+    return LANGUAGE
+
+
 async def get_language(update, context):
     text = update.message.text
 
