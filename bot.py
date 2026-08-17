@@ -3159,20 +3159,40 @@ async def handle_message(update, context):
     if 'edit_field' in context.user_data:
         return await save_edit(update, context)
     
-    if text == "🔍 Qidirish":
-        await find(update, context)
-    elif text == "👤 Profil":
-        await profile(update, context)
-    elif text == "❤️ Yoqtirganlarim":
-        await likes(update, context)
-    elif text == "💞 Matchlarim":
-        await matches(update, context)
-    elif text == "⚙️ Sozlamalar":
-        await settings(update, context)
-    elif text == "🎁 Referal":
-        await referral_panel(update, context)
+    # Multilingual main menu
+    menu_actions = {
+        "🔍 Qidirish": find,
+        "🔍 Поиск": find,
+        "🔍 Қидириш": find,
 
-    elif text == "⭐ Superlike":
+        "👤 Profil": profile,
+        "👤 Профиль": profile,
+        "👤 Профил": profile,
+
+        "❤️ Yoqtirganlarim": likes,
+        "❤️ Мои лайки": likes,
+        "❤️ Ёқтирганларим": likes,
+
+        "💞 Matchlarim": matches,
+        "💞 Мои совпадения": matches,
+        "💞 Мэтчларим": matches,
+
+        "⚙️ Sozlamalar": settings,
+        "⚙️ Настройки": settings,
+        "⚙️ Созламалар": settings,
+
+        "🎁 Referal": referral_panel,
+        "🎁 Реферал": referral_panel,
+
+        "⭐ Superlike": superlike,
+        "⭐ Суперлайк": superlike,
+    }
+
+    action = menu_actions.get(text)
+    if action:
+        await action(update, context)
+        return
+
         user = update.effective_user
         conn = get_db_connection()
         cur = conn.cursor()
