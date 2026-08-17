@@ -1898,7 +1898,17 @@ async def matches(update, context):
     await update.message.reply_text(text)
 
 async def settings(update, context):
+    user = update.effective_user
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT superlike_balance FROM users WHERE user_id = %s", (user.id,))
+    result = cur.fetchone()
+    balance = result[0] if result and result[0] else 0
+    cur.close()
+    conn.close()
+    
     keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"⭐ Superlike: {balance} ta", callback_data="buy_superlikes")],
         [InlineKeyboardButton("✏️ Profilni tahrirlash", callback_data="edit_menu")],
         [InlineKeyboardButton("👑 Premium", callback_data="premium_buy")],
         [InlineKeyboardButton("👻 Profilni muzlatish", callback_data="deactivate")]
