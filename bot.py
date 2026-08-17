@@ -994,6 +994,39 @@ async def handle_callback(update, context):
     user = query.from_user
     data = query.data
     
+    if data == "change_language":
+        await change_language_menu(update, context)
+        return
+
+    if data == "set_language_uz":
+        await save_language(update, context, "uz")
+        return
+
+    if data == "set_language_ru":
+        await save_language(update, context, "ru")
+        return
+
+    if data == "set_language_uz_cyr":
+        await save_language(update, context, "uz_cyr")
+        return
+
+    if data == "cancel_language":
+        await query.answer()
+        await query.message.reply_text(
+            "⚙️ Sozlamalar:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(
+                    "🌐 Tilni o'zgartirish",
+                    callback_data="change_language"
+                )],
+                [InlineKeyboardButton(
+                    "👑 Premium",
+                    callback_data="premium_buy"
+                )]
+            ])
+        )
+        return
+
     if data == "premium_buy":
         language = get_user_language(user.id)
 
@@ -2622,21 +2655,142 @@ async def matches(update, context):
 
 async def settings(update, context):
     user = update.effective_user
+    language = get_user_language(user.id)
+
+    texts = {
+        "uz": {
+            "title": "⚙️ Sozlamalar:",
+            "superlike": "⭐ Superlike: {balance} ta",
+            "edit": "✏️ Profilni tahrirlash",
+            "premium": "👑 Premium",
+            "language": "🌐 Tilni o'zgartirish",
+            "deactivate": "👻 Profilni muzlatish",
+        },
+        "ru": {
+            "title": "⚙️ Настройки:",
+            "superlike": "⭐ Суперлайк: {balance} шт.",
+            "edit": "✏️ Редактировать профиль",
+            "premium": "👑 Премиум",
+            "language": "🌐 Изменить язык",
+            "deactivate": "👻 Заморозить профиль",
+        },
+        "uz_cyr": {
+            "title": "⚙️ Созламалар:",
+            "superlike": "⭐ Суперлайк: {balance} та",
+            "edit": "✏️ Профильни таҳрирлаш",
+            "premium": "👑 Премиум",
+            "language": "🌐 Тилни ўзгартириш",
+            "deactivate": "👻 Профильни музлатиш",
+        },
+    }
+
+    t = texts.get(language, texts["uz"])
+
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT superlike_balance FROM users WHERE user_id = %s", (user.id,))
+    cur.execute(
+        "SELECT superlike_balance FROM users WHERE user_id = %s",
+        (user.id,)
+    )
     result = cur.fetchone()
     balance = result[0] if result and result[0] else 0
     cur.close()
     conn.close()
-    
+
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton(f"⭐ Superlike: {balance} ta", callback_data="buy_superlikes")],
-        [InlineKeyboardButton("✏️ Profilni tahrirlash", callback_data="edit_menu")],
-        [InlineKeyboardButton("👑 Premium", callback_data="premium_buy")],
-        [InlineKeyboardButton("👻 Profilni muzlatish", callback_data="deactivate")]
+        [InlineKeyboardButton(
+            t["superlike"].format(balance=balance),
+            callback_data="buy_superlikes"
+        )],
+        [InlineKeyboardButton(
+            t["edit"],
+            callback_data="edit_menu"
+        )],
+        [InlineKeyboardButton(
+            t["premium"],
+            callback_data="premium_buy"
+        )],
+        [InlineKeyboardButton(
+            t["language"],
+            callback_data="change_language"
+        )],
+        [InlineKeyboardButton(
+            t["deactivate"],
+            callback_data="deactivate"
+        )],
     ])
-    await update.message.reply_text("⚙️ Sozlamalar:", reply_markup=keyboard)
+
+    await update.message.reply_text(
+        t["title"],
+        reply_markup=keyboard
+    )
+
+
+async def change_language_menu(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(
+            "🇺🇿 O'zbek tili",
+            callback_data="set_language_uz"
+        )],
+        [InlineKeyboardButton(
+            "🇷🇺 Русский",
+            callback_data="set_language_ru"
+        )],
+        [InlineKeyboardButton(
+            "🇺🇿 Узбек (Кирилл)",
+            callback_data="set_language_uz_cyr"
+        )],
+        [InlineKeyboardButton(
+            "❌ Bekor qilish",
+            callback_data="cancel_language"
+        )],
+    ])
+
+    await query.message.reply_text(
+        "🌐 <b>Tilni tanlang</b>\n\n"
+        "Kerakli tilni tanlang:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+
+async def save_language(update, context, language):
+    query = update.callback_query
+    user = query.from_user
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE users SET language = %s WHERE user_id = %s",
+        (language, user.id)
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    context.user_data["language"] = language
+
+    names = {
+        "uz": "🇺🇿 O'zbek tili",
+        "ru": "🇷🇺 Русский",
+        "uz_cyr": "🇺🇿 Узбек (Кирилл)",
+    }
+
+    await query.answer(
+        f"✅ Til o'zgartirildi: {names[language]}",
+        show_alert=True
+    )
+
+    await query.message.reply_text(
+        "✅ Til muvaffaqiyatli o'zgartirildi!",
+        reply_markup=await get_main_keyboard(language)
+    )
+
 
 async def referral_panel(update, context):
     user = update.effective_user
