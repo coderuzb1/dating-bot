@@ -3230,7 +3230,11 @@ async def handle_message(update, context):
             f"Paketni tanlang:",
             reply_markup=keyboard
         )
-    elif text == "👑 Premium":
+    elif text in {
+        tr("uz", "premium"),
+        tr("ru", "premium"),
+        tr("uz_cyr", "premium"),
+    }:
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("📅 1 hafta - 25 000 so'm • QULAY", callback_data="premium_1w")],
             [InlineKeyboardButton("🔥 14 kun - 39 000 so'm • ENG QULAY", callback_data="premium_2w")],
