@@ -153,7 +153,7 @@ async def notify_like(
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "👀 Kim ekanini ko‘rish",
+                "👀 Profilini ko‘rish",
                 callback_data=f"view_profile_{from_user_id}"
             )
         ]
