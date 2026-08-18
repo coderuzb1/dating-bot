@@ -1619,28 +1619,59 @@ async def handle_callback(update, context):
 
         price = prices[amount]
 
+        language = get_user_language(user.id)
+        texts = {
+            "uz": {
+                "paid": "✅ To'lov qildim",
+                "cancel": "❌ Bekor",
+                "title": "💳 TO'LOV",
+                "amount": f"⭐ {amount} ta Superlike",
+                "price": f"💰 Summa: {price} so'm",
+                "card": "💳 Karta: 9860 0866 0148 0972",
+                "hint": "To'lovni amalga oshiring va «✅ To'lov qildim» tugmasini bosing."
+            },
+            "ru": {
+                "paid": "✅ Я оплатил",
+                "cancel": "❌ Отмена",
+                "title": "💳 ОПЛАТА",
+                "amount": f"⭐ {amount} шт. Superlike",
+                "price": f"💰 Сумма: {price} сум",
+                "card": "💳 Карта: 9860 0866 0148 0972",
+                "hint": "Оплатите и нажмите «✅ Я оплатил»."
+            },
+            "uz_cyr": {
+                "paid": "✅ Тўлов қилдим",
+                "cancel": "❌ Бекор",
+                "title": "💳 ТЎЛОВ",
+                "amount": f"⭐ {amount} та Superlike",
+                "price": f"💰 Сумма: {price} сўм",
+                "card": "💳 Карта: 9860 0866 0148 0972",
+                "hint": "Тўловни амалга оширинг ва «✅ Тўлов қилдим» тугмасини босинг."
+            }
+        }
+        t = texts.get(language, texts["uz"])
+        
         keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
-                    "✅ To'lov qildim",
+                    t["paid"],
                     callback_data=f"confirmsl_{amount}"
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "❌ Bekor",
+                    t["cancel"],
                     callback_data="cancel_sl"
                 )
             ]
         ])
 
         await query.message.reply_text(
-            "💳 TO'LOV\n\n"
-            f"⭐ {amount} ta Superlike\n"
-            f"💰 Summa: {price} so'm\n\n"
-            "💳 Karta: 9860 0866 0148 0972\n\n"
-            "To'lovni amalga oshiring va "
-            "«✅ To'lov qildim» tugmasini bosing.",
+            f"{t['title']}\n\n"
+            f"{t['amount']}\n"
+            f"{t['price']}\n\n"
+            f"{t['card']}\n\n"
+            f"{t['hint']}",
             reply_markup=keyboard
         )
         return
