@@ -1491,7 +1491,7 @@ async def handle_callback(update, context):
                 [InlineKeyboardButton("3 месяца - 129 000 сум", callback_data="premium_3m")],
                 [InlineKeyboardButton("❌ Отмена", callback_data="cancel")]
             ])
-            await query.message.reply_text("👑 ПРЕМИУМ\n\n⚡️ Увеличьте возможности в 5 раз\n\n📈 Всегда наверху\n❤️ Безлимитные лайки\n👀 Видеть кто лайкнул\n💬 Сообщения без матча\n\n📅 Выберите срок:", reply_markup=keyboard)
+            await query.message.reply_text("👑 ПРЕМИУМ\n\n♾️ Безлимитный просмотр профилей\n❤️ Безлимитные лайки\n⭐ Superlike бесплатно\n💬 Сообщения без матча\n📨 Сообщения в личный Telegram\n👀 Видеть кто отправил вам Superlike\n🚀 Ваш профиль показывается одним из первых\n👀 Видеть кто вас лайкнул\n📈 Всегда наверху\n⚡️ Увеличьте возможности в 5 раз\n\n📅 Выберите срок:", reply_markup=keyboard)
         elif language == "uz_cyr":
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("1 ҳафта - 25 000 сўм", callback_data="premium_1w")],
@@ -1500,7 +1500,7 @@ async def handle_callback(update, context):
                 [InlineKeyboardButton("3 ой - 129 000 сўм", callback_data="premium_3m")],
                 [InlineKeyboardButton("❌ Бекор қилиш", callback_data="cancel")]
             ])
-            await query.message.reply_text("👑 ПРЕМИУМ\n\n⚡️ Имкониятларингизни 5× оширинг\n\n📈 Доим юқорида кўриниш\n❤️ Чексиз лайклар\n👀 Ким ёқтирганини кўриш\n💬 Матчсиз хабар ёзиш\n\n📅 Муддатни танланг:", reply_markup=keyboard)
+            await query.message.reply_text("👑 ПРЕМИУМ\n\n♾️ Чексиз профиль кўриш\n❤️ Чексиз лайк\n⭐ Superlike бепул\n💬 Матчсиз ёзиш\n📨 Telegram шахсий чатига ёзиш\n👀 Сизга ким Superlike юборганини кўриш\n🚀 Профилингиз қидирувда энг биринчи кўрсатилади\n👀 Сизни ким ёқтирганини кўриш\n📈 Доим юқорида кўриниш\n⚡️ Имкониятларингизни 5× ошириш\n\n📅 Муддатни танланг:", reply_markup=keyboard)
         else:
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("1 hafta - 25 000 so'm", callback_data="premium_1w")],
@@ -1509,7 +1509,7 @@ async def handle_callback(update, context):
                 [InlineKeyboardButton("3 oy - 129 000 so'm", callback_data="premium_3m")],
                 [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel")]
             ])
-            await query.message.reply_text("👑 PREMIUM\n\n⚡️ Imkoniyatlaringizni 5× oshiring\n\n📈 Doim yuqorida ko'rinish\n❤️ Cheksiz layklar\n👀 Kim yoqtirganini ko'rish\n💬 Match bo'lmasdan xabar yozish\n\n📅 Muddatni tanlang:", reply_markup=keyboard)
+            await query.message.reply_text("👑 PREMIUM\n\n♾️ Cheksiz profil ko‘rish\n❤️ Cheksiz layk\n⭐ Superlike bepul\n💬 Match bo‘lmasdan yozish\n📨 Telegram shaxsiy chatiga yozish\n👀 Sizga kim Superlike yuborganini ko‘rish\n🚀 Profilingiz qidiruvda eng birinchilardan ko‘rsatiladi\n👀 Sizni kim yoqtirganini ko‘rish\n📈 Doim yuqorida ko‘rinish\n⚡️ Imkoniyatlaringizni 5× oshiring\n\n📅 Muddatni tanlang:", reply_markup=keyboard)
         return
 
         premium_texts = {
