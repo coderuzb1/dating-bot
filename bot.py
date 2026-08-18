@@ -1796,12 +1796,34 @@ async def handle_callback(update, context):
             "price": price,
         }
 
+        language = get_user_language(user.id)
+
+        receipt_prompt = {
+            "uz": (
+                "📸📄 SUPERLIKE TO'LOV CHEKINI YUBORING\n\n"
+                f"⭐ Miqdor: {amount} ta Superlike\n"
+                f"💰 Summa: {price} so'm\n\n"
+                "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
+                "⏳ Chek yuborilgach admin tekshiradi."
+            ),
+            "ru": (
+                "📸📄 ОТПРАВЬТЕ ЧЕК ОБ ОПЛАТЕ SUPERLIKE\n\n"
+                f"⭐ Количество: {amount} Superlike\n"
+                f"💰 Сумма: {price} сум\n\n"
+                "🖼 Можно отправить изображение или 📄 PDF/файл.\n\n"
+                "⏳ После отправки чек проверит администратор."
+            ),
+            "uz_cyr": (
+                "📸📄 SUPERLIKE ТЎЛОВ ЧЕКИНИ ЮБОРИНГ\n\n"
+                f"⭐ Миқдор: {amount} та Superlike\n"
+                f"💰 Сумма: {price} сўм\n\n"
+                "🖼 Расм ёки 📄 PDF/файл юборишингиз мумкин.\n\n"
+                "⏳ Чек юборилгандан сўнг администратор текширади."
+            ),
+        }
+
         await query.message.reply_text(
-            "📸📄 SUPERLIKE TO'LOV CHEKINI YUBORING\n\n"
-            f"⭐ Miqdor: {amount} ta Superlike\n"
-            f"💰 Summa: {price} so'm\n\n"
-            "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
-            "⏳ Chek yuborilgach admin tekshiradi."
+            receipt_prompt.get(language, receipt_prompt["uz"])
         )
         return
 
