@@ -804,8 +804,8 @@ async def get_photo(update, context):
                  f"📍 Shahar: {context.user_data.get('city', '?')}\n"
                  f"📝 Bio: {context.user_data.get('bio', '?')}"
         )
-    except:
-        pass
+    except Exception as e:
+        print(f"❌ ADMIN NEW USER NOTIFICATION ERROR: {e}")
     # Yangi profilning hududiga mos Smart Notification
     try:
         await notify_new_user_in_city(
