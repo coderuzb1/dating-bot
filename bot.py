@@ -1297,27 +1297,16 @@ async def handle_callback(update, context):
 
             await query.answer("🎉 MATCH! ❤️", show_alert=True)
 
-            # Like qaytargan foydalanuvchiga
-            await query.message.reply_text(
-                f"🎉 <b>Yangi MATCH!</b> ❤️\n\n"
-                f"💞 Siz va <b>{target_name}</b> bir-biringizni yoqtirdingiz!\n\n"
-                f"💬 Endi suhbatni boshlashingiz mumkin.",
-                parse_mode="HTML"
+            # Ikkala tomon uchun Match xabari + "Suhbatni boshlash" tugmasi
+            await notify_new_match(
+                context.bot,
+                user.id,
+                sender_name,
+                None,
+                target_id,
+                target_name,
+                None
             )
-
-            # Qarshi tomonga
-            try:
-                await context.bot.send_message(
-                    chat_id=target_id,
-                    text=(
-                        f"🎉 <b>Yangi MATCH!</b> ❤️\n\n"
-                        f"💞 Siz va <b>{sender_name}</b> bir-biringizni yoqtirdingiz!\n\n"
-                        f"💬 Endi suhbatni boshlashingiz mumkin."
-                    ),
-                    parse_mode="HTML"
-                )
-            except Exception as e:
-                print(f"Match notification error for {target_id}: {e}")
 
         else:
             await query.answer(
@@ -1431,26 +1420,16 @@ async def handle_callback(update, context):
             # Sizga
             await query.answer("🎉 MATCH! ❤️", show_alert=True)
 
-            await query.message.reply_text(
-                f"🎉 <b>Yangi MATCH!</b> ❤️\n\n"
-                f"💞 Siz va <b>{target_name}</b> bir-biringizni yoqtirdingiz!\n\n"
-                f"💬 Endi suhbatni boshlashingiz mumkin.",
-                parse_mode="HTML"
+            # Ikkala tomon uchun Match xabari + "Suhbatni boshlash" tugmasi
+            await notify_new_match(
+                context.bot,
+                user.id,
+                sender_name,
+                None,
+                target_id,
+                target_name,
+                None
             )
-
-            # Qarshi tomonga
-            try:
-                await context.bot.send_message(
-                    chat_id=target_id,
-                    text=(
-                        f"🎉 <b>Yangi MATCH!</b> ❤️\n\n"
-                        f"💞 Siz va <b>{sender_name}</b> bir-biringizni yoqtirdingiz!\n\n"
-                        f"💬 Endi suhbatni boshlashingiz mumkin."
-                    ),
-                    parse_mode="HTML"
-                )
-            except Exception as e:
-                print(f"Match notification error for {target_id}: {e}")
 
         elif already_liked:
             await query.answer(
