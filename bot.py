@@ -460,6 +460,17 @@ async def get_language(update, context):
 
     language = languages[text]
     context.user_data["language"] = language
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'uz'")
+        cur.execute("UPDATE users SET language = %s WHERE user_id = %s", (language, update.effective_user.id))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except:
+        pass
 
     await update.message.reply_text(
         f"👤 {tr(language, 'step').format(step=1)}\n\n"
