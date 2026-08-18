@@ -476,7 +476,7 @@ async def get_language(update, context):
         print(f"Language save error: {e}")
 
     await update.message.reply_text(
-        f"👤 {tr(language, 'step').format(step=1)}\n\n"
+        f"✨ <b>1/5 — Profilni boshlaymiz</b> ✨\n\n"
         f"{tr(language, 'enter_name')}",
         parse_mode="HTML"
     )
@@ -499,7 +499,7 @@ async def get_name(update, context):
     context.user_data["profile_name"] = name
 
     await update.message.reply_text(
-        f"🎂 {tr(language, 'step').format(step=2)}\n\n"
+        f"🎂 <b>2/5 — Ismingiz</b>\n\n"
         f"{tr(language, 'enter_age')}",
         parse_mode="HTML"
     )
@@ -526,7 +526,7 @@ async def get_age(update, context):
     )
 
     await update.message.reply_text(
-        f"👤 {tr(language, 'step').format(step=3)}\n\n"
+        f"🎂 <b>3/5 — Yosh va jins</b>\n\n"
         f"{tr(language, 'choose_gender')}",
         reply_markup=keyboard,
         parse_mode="HTML"
@@ -562,7 +562,7 @@ async def get_gender(update, context):
     ], resize_keyboard=True, one_time_keyboard=True)
 
     await update.message.reply_text(
-        f"📍 {tr(language, 'step').format(step=4)}\n\n"
+        f"📍 <b>4/5 — Joylashuv</b>\n\n"
         f"{tr(language, 'choose_city')}",
         reply_markup=keyboard,
         parse_mode="HTML"
@@ -597,7 +597,7 @@ async def get_city(update, context):
         )
 
         await update.message.reply_text(
-            f"📝 {tr(language, 'step').format(step=5)}\n\n"
+            f"📝 <b>4/5 — Bio</b>\n\n"
             f"{tr(language, 'enter_bio')}\n\n"
             f"{'Ixtiyoriy — xohlasangiz o‘tkazib yuboring.' if language == 'uz' else 'Необязательно — можно пропустить.' if language == 'ru' else 'Ихтиёрий — хоҳласангиз ўтказиб юборинг.'}",
             reply_markup=keyboard,
@@ -631,7 +631,7 @@ async def get_city(update, context):
         )
 
         await update.message.reply_text(
-            f"📝 {tr(language, 'step').format(step=5)}\n\n"
+            f"📝 <b>4/5 — Bio</b>\n\n"
             f"{tr(language, 'enter_bio')}",
             reply_markup=keyboard,
             parse_mode="HTML"
@@ -670,11 +670,12 @@ async def get_bio(update, context):
     )
 
     await update.message.reply_text(
-        f"📸 5/5\n\n"
+        f"📸 <b>5/5 — Suratlar</b>\n\n"
         f"{tr(language, 'send_photo')}\n\n"
-        f"📸 1-asosiy foto — majburiy\n"
-        f"📸 2–3-qo‘shimcha foto — ixtiyoriy\n\n"
-        f"✨ Ko‘proq foto — yaxshiroq profil!",
+        f"⭐ 1-asosiy foto — <b>majburiy</b>\n"
+        f"➕ 2- va 3-foto — <b>ixtiyoriy</b>\n\n"
+        f"💡 Yaxshi surat profilga ko‘proq qiziqish olib keladi.\n"
+        f"📌 Jami 3 tagacha surat qo‘shishingiz mumkin.",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
@@ -792,14 +793,14 @@ async def get_photo(update, context):
 
         next_text = {
             2: {
-                "uz": "📸 2-qo‘shimcha foto yuboring yoki o‘tkazib yuboring.",
-                "ru": "📸 Отправьте 2-е дополнительное фото или пропустите.",
-                "uz_cyr": "📸 2-қўшимча фото юборинг ёки ўтказиб юборинг.",
+                "uz": "📸 <b>2/3 — Qo‘shimcha foto</b>\n\nSurat yuboring yoki ⏭ O‘tkazib yuboring.",
+                "ru": "📸 <b>2/3 — Дополнительное фото</b>\n\nОтправьте фото или нажмите ⏭ Пропустить.",
+                "uz_cyr": "📸 <b>2/3 — Қўшимча фото</b>\n\nРасм юборинг ёки ⏭ Ўтказиб юборинг.",
             },
             3: {
-                "uz": "📸 3-qo‘shimcha foto yuboring yoki o‘tkazib yuboring.",
-                "ru": "📸 Отправьте 3-е дополнительное фото или пропустите.",
-                "uz_cyr": "📸 3-қўшимча фото юборинг ёки ўтказиб юборинг.",
+                "uz": "📸 <b>3/3 — So‘nggi foto</b>\n\nSurat yuboring yoki ⏭ O‘tkazib yuboring.",
+                "ru": "📸 <b>3/3 — Последнее фото</b>\n\nОтправьте фото или нажмите ⏭ Пропустить.",
+                "uz_cyr": "📸 <b>3/3 — Сўнгги фото</b>\n\nРасм юборинг ёки ⏭ Ўтказиб юборинг.",
             },
         }[step + 1]
 
