@@ -2528,6 +2528,94 @@ async def handle_callback(update, context):
         )
         return
 
+    # =========================================================
+    # CHAT: SUHBATNI TUGATISH
+    # =========================================================
+    if data == "end_chat":
+        context.user_data.pop("writing_to", None)
+
+        await query.answer("❌ Suhbat tugatildi.")
+        await query.message.reply_text(
+            "❌ Suhbat tugatildi.\n\n"
+            "Yana yozish uchun Matchlarim bo‘limidan suhbatni boshlashingiz mumkin."
+        )
+        return
+
+    # =========================================================
+    # CHAT: JAVOB BERISH
+    # =========================================================
+    if data.startswith("reply_"):
+        try:
+            target_id = int(data.split("_", 1)[1])
+        except (ValueError, IndexError):
+            await query.answer("❌ Xato.", show_alert=True)
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Matchni tekshirish
+        cur.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1
+                FROM matches
+                WHERE
+                    (user1 = %s AND user2 = %s)
+                    OR
+                    (user1 = %s AND user2 = %s)
+            )
+            """,
+            (user.id, target_id, target_id, user.id)
+        )
+        is_match = bool(cur.fetchone()[0])
+
+        # Premiumni tekshirish
+        cur.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1
+                FROM users
+                WHERE user_id = %s
+                  AND premium_until IS NOT NULL
+                  AND premium_until > NOW()
+            )
+            """,
+            (user.id,)
+        )
+        is_premium = bool(cur.fetchone()[0])
+
+        cur.close()
+        conn.close()
+
+        # Faqat Match yoki Premium javob bera oladi
+        if not is_match and not is_premium:
+            await query.answer(
+                "❌ Suhbat uchun Match yoki Premium kerak.",
+                show_alert=True
+            )
+            return
+
+        context.user_data["writing_to"] = target_id
+
+        await query.answer("↩️ Javob berish yoqildi.")
+
+        await query.message.reply_text(
+            "💬 <b>Suhbat davom etmoqda</b>\n\n"
+            "Xabaringizni yozing. Xabar suhbatdoshingizga yuboriladi.\n\n"
+            "❌ Tugatish uchun pastdagi tugmani bosing.",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(
+                        "❌ Suhbatni tugatish",
+                        callback_data="end_chat"
+                    )
+                ]
+            ])
+        )
+        return
+
     if data.startswith("skip_"):
         await query.message.delete()
         await find(update, context)
@@ -4439,7 +4527,12 @@ async def handle_message(update, context):
         return
 
 
-    # Premium foydalanuvchi profil egasiga xabar yozmoqda
+    # =========================================================
+    # CHAT / XABAR ALMASHISH
+    # Match -> bot ichida suhbat
+    # Premium -> Matchsiz ham yozish mumkin
+    # Username majburiy emas
+    # =========================================================
     if "writing_to" in context.user_data:
         target_id = context.user_data["writing_to"]
         sender = update.effective_user
@@ -4447,14 +4540,28 @@ async def handle_message(update, context):
         if text == "/cancel":
             context.user_data.pop("writing_to", None)
             await update.message.reply_text(
-                "❌ Xabar yuborish bekor qilindi."
+                "❌ Suhbat tugatildi."
             )
             return
 
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # 💞 Yozish uchun Premium emas, MATCH talab qilinadi
+        # Premium statusini tekshirish
+        cur.execute(
+            """
+            SELECT EXISTS(
+                SELECT 1 FROM users
+                WHERE user_id = %s
+                AND premium_until IS NOT NULL
+                AND premium_until > NOW()
+            )
+            """,
+            (sender.id,)
+        )
+        is_premium = bool(cur.fetchone()[0])
+
+        # Match statusini tekshirish
         cur.execute(
             """
             SELECT EXISTS(
@@ -4468,19 +4575,20 @@ async def handle_message(update, context):
             """,
             (sender.id, target_id, target_id, sender.id)
         )
-
         is_match = bool(cur.fetchone()[0])
 
-        if not is_match:
+        # Faqat Match yoki Premium yozishi mumkin
+        if not is_match and not is_premium:
             context.user_data.pop("writing_to", None)
             cur.close()
             conn.close()
 
             await update.message.reply_text(
-                "❌ Siz bu foydalanuvchi bilan match emassiz."
+                "❌ Bu foydalanuvchiga yozish uchun Match yoki Premium kerak."
             )
             return
 
+        # Xabarni saqlash
         cur.execute(
             """
             INSERT INTO messages (from_user, to_user, text)
@@ -4489,6 +4597,7 @@ async def handle_message(update, context):
             (sender.id, target_id, text)
         )
 
+        # Qabul qiluvchi nomi
         cur.execute(
             "SELECT first_name FROM users WHERE user_id = %s",
             (target_id,)
@@ -4499,22 +4608,39 @@ async def handle_message(update, context):
         cur.close()
         conn.close()
 
-        context.user_data.pop("writing_to", None)
-
         if not target:
+            context.user_data.pop("writing_to", None)
             await update.message.reply_text(
                 "❌ Foydalanuvchi topilmadi."
             )
             return
 
+        # Javob berish / suhbatni tugatish tugmalari
+        reply_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "↩️ Javob berish",
+                    callback_data=f"reply_{sender.id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "❌ Suhbatni tugatish",
+                    callback_data="end_chat"
+                )
+            ]
+        ])
+
         try:
             await context.bot.send_message(
                 chat_id=target_id,
                 text=(
-                    "💌 Sizga SaraMatch'dan yangi xabar!\n\n"
-                    f"👤 {sender.first_name}:\n"
+                    "💌 <b>Sizga SaraMatch'dan yangi xabar!</b>\n\n"
+                    f"👤 <b>{sender.first_name}</b>:\n"
                     f"{text}"
-                )
+                ),
+                parse_mode="HTML",
+                reply_markup=reply_keyboard
             )
 
             await update.message.reply_text(
@@ -4523,10 +4649,12 @@ async def handle_message(update, context):
 
         except Exception:
             await update.message.reply_text(
-                "⚠️ Xabarni yetkazib bo'lmadi. "
-                "Foydalanuvchi botni bloklagan bo'lishi mumkin."
+                "⚠️ Xabarni yetkazib bo‘lmadi. "
+                "Foydalanuvchi botni bloklagan bo‘lishi mumkin."
             )
 
+        # writing_to saqlanadi:
+        # foydalanuvchi ketma-ket xabar yuborishi mumkin
         return
 
 
