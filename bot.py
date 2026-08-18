@@ -1037,6 +1037,28 @@ async def handle_callback(update, context):
 
     if data == "premium_buy":
         language = get_user_language(user.id)
+        if language == "ru":
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("1 неделя - 25 000 сум", callback_data="premium_1w")],
+                [InlineKeyboardButton("14 дней - 39 000 сум", callback_data="premium_14d")],
+                [InlineKeyboardButton("1 месяц - 59 000 сум", callback_data="premium_1m")],
+                [InlineKeyboardButton("3 месяца - 129 000 сум", callback_data="premium_3m")],
+                [InlineKeyboardButton("❌ Отмена", callback_data="cancel")]
+            ])
+            await query.message.reply_text("👑 ПРЕМИУМ\n\n⚡️ Увеличьте возможности в 5 раз\n\n📈 Всегда наверху\n❤️ Безлимитные лайки\n👀 Видеть кто лайкнул\n💬 Сообщения без матча\n\n📅 Выберите срок:", reply_markup=keyboard)
+        else:
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("1 hafta - 25 000 so'm", callback_data="premium_1w")],
+                [InlineKeyboardButton("14 kun - 39 000 so'm", callback_data="premium_14d")],
+                [InlineKeyboardButton("1 oy - 59 000 so'm", callback_data="premium_1m")],
+                [InlineKeyboardButton("3 oy - 129 000 so'm", callback_data="premium_3m")],
+                [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel")]
+            ])
+            await query.message.reply_text("👑 PREMIUM\n\n⚡️ Imkoniyatlaringizni 5× oshiring\n\n📈 Doim yuqorida ko'rinish\n❤️ Cheksiz layklar\n👀 Kim yoqtirganini ko'rish\n💬 Match bo'lmasdan xabar yozish\n\n📅 Muddatni tanlang:", reply_markup=keyboard)
+        return
+
+    if data == "premium_buy_old":
+        language = get_user_language(user.id)
 
         premium_texts = {
             "uz": {
