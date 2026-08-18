@@ -1040,7 +1040,7 @@ async def handle_callback(update, context):
         if language == "ru":
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("1 неделя - 25 000 сум", callback_data="premium_1w")],
-                [InlineKeyboardButton("14 дней - 39 000 сум", callback_data="premium_14d")],
+                [InlineKeyboardButton("14 дней - 39 000 сум", callback_data="premium_2w")],
                 [InlineKeyboardButton("1 месяц - 59 000 сум", callback_data="premium_1m")],
                 [InlineKeyboardButton("3 месяца - 129 000 сум", callback_data="premium_3m")],
                 [InlineKeyboardButton("❌ Отмена", callback_data="cancel")]
@@ -1049,7 +1049,7 @@ async def handle_callback(update, context):
         elif language == "uz_cyr":
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("1 ҳафта - 25 000 сўм", callback_data="premium_1w")],
-                [InlineKeyboardButton("14 кун - 39 000 сўм", callback_data="premium_14d")],
+                [InlineKeyboardButton("14 кун - 39 000 сўм", callback_data="premium_2w")],
                 [InlineKeyboardButton("1 ой - 59 000 сўм", callback_data="premium_1m")],
                 [InlineKeyboardButton("3 ой - 129 000 сўм", callback_data="premium_3m")],
                 [InlineKeyboardButton("❌ Бекор қилиш", callback_data="cancel")]
@@ -1058,7 +1058,7 @@ async def handle_callback(update, context):
         else:
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("1 hafta - 25 000 so'm", callback_data="premium_1w")],
-                [InlineKeyboardButton("14 kun - 39 000 so'm", callback_data="premium_14d")],
+                [InlineKeyboardButton("14 kun - 39 000 so'm", callback_data="premium_2w")],
                 [InlineKeyboardButton("1 oy - 59 000 so'm", callback_data="premium_1m")],
                 [InlineKeyboardButton("3 oy - 129 000 so'm", callback_data="premium_3m")],
                 [InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel")]
