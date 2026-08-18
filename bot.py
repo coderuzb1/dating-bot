@@ -347,6 +347,7 @@ async def get_main_keyboard(language="uz"):
         ],
         [
             KeyboardButton(tr(language, "settings")),
+            KeyboardButton(tr(language, "referral")),
             KeyboardButton(tr(language, "referral"))
         ]
     ], resize_keyboard=True)
