@@ -3201,16 +3201,8 @@ async def settings(update, context):
 
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton(
-            t["superlike"].format(balance=balance),
-            callback_data="buy_superlikes"
-        )],
-        [InlineKeyboardButton(
             t["edit"],
             callback_data="edit_menu"
-        )],
-        [InlineKeyboardButton(
-            t["premium"],
-            callback_data="premium_buy"
         )],
         [InlineKeyboardButton(
             t["language"],
