@@ -674,7 +674,7 @@ async def notify_premium_promotion(bot):
             user_id,
             "premium_promotion",
             None,
-            hours=72
+            hours=168
         ):
             continue
 
@@ -728,20 +728,20 @@ async def notify_news(bot, text):
 #
 # Maqsad:
 # 1) Yangi foydalanuvchini darhol bezovta qilmaslik
-# 2) 5 kun botga kirmagan foydalanuvchini qayta jalb qilish
-# 3) Keyingi xabarlarni har 3 kunda yuborish
+# 2) 2 kun botga kirmagan foydalanuvchini qayta jalb qilish
+# 3) Keyingi xabarlarni har 2 kunda yuborish
 # 4) Yangi profillar sonini avtomatik hisoblash
 # 5) Botni bloklagan foydalanuvchini avtomatik o'chirish
 # 6) Foydalanuvchi qaytib kirsa notification siklini to'xtatish
 #
 
-RETENTION_FIRST_DAYS = 5
-RETENTION_REPEAT_DAYS = 3
+RETENTION_FIRST_DAYS = 2
+RETENTION_REPEAT_DAYS = 2
 
 
 def get_inactive_users():
     """
-    5 kundan ko'proq faol bo'lmagan foydalanuvchilarni qaytaradi.
+    2 kundan ko'proq faol bo'lmagan foydalanuvchilarni qaytaradi.
     """
     conn = get_db_connection()
     cur = conn.cursor()
@@ -755,7 +755,7 @@ def get_inactive_users():
         FROM users
         WHERE is_active = TRUE
           AND last_active IS NOT NULL
-          AND last_active <= NOW() - INTERVAL '5 days'
+          AND last_active <= NOW() - INTERVAL '2 days'
         ORDER BY last_active ASC
         """
     )
@@ -835,7 +835,7 @@ async def notify_retention_user(bot, user_id, first_name, last_active):
 
     now = datetime.now()
 
-    # Birinchi xabar: 5 kundan keyin
+    # Birinchi xabar: 2 kundan keyin
     if last_notification is None:
         if last_active > now:
             return False
@@ -845,7 +845,7 @@ async def notify_retention_user(bot, user_id, first_name, last_active):
         if inactive_days < RETENTION_FIRST_DAYS:
             return False
 
-    # Keyingi xabarlar: har 3 kunda
+    # Keyingi xabarlar: har 2 kunda
     else:
         days_since_notification = (now - last_notification).days
 
@@ -858,27 +858,66 @@ async def notify_retention_user(bot, user_id, first_name, last_active):
         last_active
     )
 
-    # Hech qanday yangi profil bo'lmasa, xabar yubormaymiz.
-    if new_profiles_count <= 0:
-        return False
-
-    # Ism bo'lmasa
+    # Foydalanuvchi nomi
     display_name = first_name or "do'stim"
 
-    # Xabar matni
-    text = (
-        f"👋 Salom, {display_name}!\n\n"
-        "Sizni SaraMatch'da ko'rmayapmiz ❤️\n"
-        "Sizni sog'indik!\n\n"
-        f"🔥 Hozir botda {new_profiles_count} ta "
-        "yangi profil sizni kutyapti!\n\n"
-        "💕 Kirib, yangi profillar bilan tanishib chiqing!"
+    # Foydalanuvchi tilini aniqlash
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT language FROM users WHERE user_id = %s",
+        (user_id,)
     )
+    language_row = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    language = language_row[0] if language_row and language_row[0] else "uz"
+
+    texts = {
+        "uz": {
+            "text": (
+                f"👋 Salom, {display_name}!\n\n"
+                "❤️ Sizni SaraMatch'da sog'indik!\n\n"
+                "✨ Yangi tanishuvlar sizni kutmoqda.\n"
+                f"🔥 Siz yo'q paytingizda {new_profiles_count} ta "
+                "yangi profil qo'shilgan.\n\n"
+                "💕 Botga qayting va tanishuvni davom ettiring!"
+            ),
+            "button": "🔥 Profillarni ko'rish"
+        },
+        "ru": {
+            "text": (
+                f"👋 Привет, {display_name}!\n\n"
+                "❤️ Мы скучаем по вам в SaraMatch!\n\n"
+                "✨ Новые знакомства уже ждут вас.\n"
+                f"🔥 Пока вас не было, появилось новых профилей: "
+                f"{new_profiles_count}.\n\n"
+                "💕 Возвращайтесь и продолжайте знакомиться!"
+            ),
+            "button": "🔥 Смотреть профили"
+        },
+        "uz_cyr": {
+            "text": (
+                f"👋 Салом, {display_name}!\n\n"
+                "❤️ Сизни SaraMatch'да соғиндик!\n\n"
+                "✨ Янги танишувлар сизни кутмоқда.\n"
+                f"🔥 Сиз йўқ пайтингизда {new_profiles_count} та "
+                "янги профиль қўшилди.\n\n"
+                "💕 Ботга қайтинг ва танишувни давом эттиринг!"
+            ),
+            "button": "🔥 Профилларни кўриш"
+        }
+    }
+
+    t = texts.get(language, texts["uz"])
+
+    text = t["text"]
 
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "🔥 Yangi profillarni ko'rish",
+                t["button"],
                 callback_data="find_profiles"
             )
         ]
