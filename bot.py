@@ -2882,6 +2882,13 @@ async def handle_callback(update, context):
     # =========================================================
     # CHAT: JAVOB BERISH
     # =========================================================
+    # =========================================================
+    # CHAT: MATCHDAN SUHBATNI OCHISH
+    # =========================================================
+    if data.startswith("open_chat_"):
+        await open_match_chat(update, context)
+        return
+
     if data.startswith("reply_"):
         try:
             target_id = int(data.split("_", 1)[1])
@@ -4573,17 +4580,17 @@ async def matches(update, context):
         "uz": {
             "empty": "💞 Hozircha matchlar yo'q.",
             "title": "💞 Matchlaringiz:",
-            "unread": "🔴 {count} ta yangi xabar",
+            "unread": " 🔴 {count}",
         },
         "ru": {
             "empty": "💞 Пока совпадений нет.",
             "title": "💞 Ваши совпадения:",
-            "unread": "🔴 {count} новых сообщений",
+            "unread": " 🔴 {count}",
         },
         "uz_cyr": {
             "empty": "💞 Ҳозирча мэтчлар йўқ.",
             "title": "💞 Мэтчларингиз:",
-            "unread": "🔴 {count} та янги хабар",
+            "unread": " 🔴 {count}",
         },
     }
 
@@ -4627,17 +4634,196 @@ async def matches(update, context):
         await update.message.reply_text(t["empty"])
         return
 
-    text = t["title"] + "\n\n"
+    keyboard = []
 
     for target_id, first_name, age, unread_count in matches_list:
-        text += f"• {first_name}, {age}"
+        unread = t["unread"].format(count=unread_count) if unread_count else ""
 
-        if unread_count:
-            text += f"\n  {t['unread'].format(count=unread_count)}"
+        keyboard.append([
+            InlineKeyboardButton(
+                f"💬 {first_name}, {age}{unread}",
+                callback_data=f"open_chat_{target_id}"
+            )
+        ])
 
-        text += "\n"
+    await update.message.reply_text(
+        t["title"],
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
-    await update.message.reply_text(text)
+
+async def open_match_chat(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    user = query.from_user
+    data = query.data
+
+    try:
+        target_id = int(data.split("_", 2)[2])
+    except (ValueError, IndexError):
+        await query.answer("❌ Xato.", show_alert=True)
+        return
+
+    if target_id == user.id:
+        await query.answer("❌ Xato.", show_alert=True)
+        return
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Matchni tekshirish
+    cur.execute("""
+        SELECT EXISTS(
+            SELECT 1
+            FROM matches
+            WHERE
+                (user1 = %s AND user2 = %s)
+                OR
+                (user1 = %s AND user2 = %s)
+        )
+    """, (
+        user.id,
+        target_id,
+        target_id,
+        user.id
+    ))
+
+    is_match = bool(cur.fetchone()[0])
+
+    # Premiumni tekshirish
+    cur.execute("""
+        SELECT EXISTS(
+            SELECT 1
+            FROM users
+            WHERE user_id = %s
+              AND premium_until IS NOT NULL
+              AND premium_until > NOW()
+        )
+    """, (user.id,))
+
+    is_premium = bool(cur.fetchone()[0])
+
+    if not is_match and not is_premium:
+        cur.close()
+        conn.close()
+
+        await query.answer(
+            "❌ Suhbat uchun Match yoki Premium kerak.",
+            show_alert=True
+        )
+        return
+
+    # Qarshi tomon ma'lumotlari
+    cur.execute("""
+        SELECT first_name, age
+        FROM users
+        WHERE user_id = %s
+    """, (target_id,))
+
+    target = cur.fetchone()
+
+    if not target:
+        cur.close()
+        conn.close()
+        await query.answer(
+            "❌ Foydalanuvchi topilmadi.",
+            show_alert=True
+        )
+        return
+
+    target_name, target_age = target
+
+    # Oxirgi 20 ta xabar
+    cur.execute("""
+        SELECT from_user, text
+        FROM messages
+        WHERE
+            (from_user = %s AND to_user = %s)
+            OR
+            (from_user = %s AND to_user = %s)
+        ORDER BY id DESC
+        LIMIT 20
+    """, (
+        user.id,
+        target_id,
+        target_id,
+        user.id
+    ))
+
+    messages = cur.fetchall()
+    messages.reverse()
+
+    # Kelgan o'qilmagan xabarlarni o'qilgan qilish
+    cur.execute("""
+        UPDATE messages
+        SET is_read = TRUE
+        WHERE from_user = %s
+          AND to_user = %s
+          AND is_read = FALSE
+    """, (
+        target_id,
+        user.id
+    ))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    language = get_user_language(user.id)
+
+    if language == "ru":
+        title = f"💬 <b>Чат с {target_name}, {target_age}</b>"
+        empty = "Пока сообщений нет."
+        reply_text = "↩️ Ответить"
+        end_text = "❌ Завершить разговор"
+    elif language == "uz_cyr":
+        title = f"💬 <b>{target_name}, {target_age} билан суҳбат</b>"
+        empty = "Ҳозирча хабарлар йўқ."
+        reply_text = "↩️ Жавоб бериш"
+        end_text = "❌ Суҳбатни тугатиш"
+    else:
+        title = f"💬 <b>{target_name}, {target_age} bilan suhbat</b>"
+        empty = "Hozircha xabarlar yo'q."
+        reply_text = "↩️ Javob berish"
+        end_text = "❌ Suhbatni tugatish"
+
+    chat_text = title + "\n\n"
+
+    if messages:
+        for from_user, message_text in messages:
+            if from_user == user.id:
+                sender_name = "Siz" if language == "uz" else (
+                    "Вы" if language == "ru" else "Сиз"
+                )
+            else:
+                sender_name = target_name
+
+            chat_text += f"<b>{sender_name}:</b> {message_text}\n\n"
+    else:
+        chat_text += empty
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                reply_text,
+                callback_data=f"reply_{target_id}"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                end_text,
+                callback_data="end_chat"
+            )
+        ]
+    ])
+
+    await query.message.reply_text(
+        chat_text,
+        parse_mode="HTML",
+        reply_markup=keyboard
+    )
+
 
 
 async def settings(update, context):
