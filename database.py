@@ -46,6 +46,16 @@ def init_db():
 
     cur.execute("""
         ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS photo2 TEXT
+    """)
+
+    cur.execute("""
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS photo3 TEXT
+    """)
+
+    cur.execute("""
+        ALTER TABLE users
         ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE
     """)
 
@@ -79,6 +89,20 @@ def init_db():
         UPDATE users
         SET last_active = COALESCE(last_active, created_at, NOW())
         WHERE last_active IS NULL
+    """)
+
+    # =========================
+    # USER PHOTOS
+    # =========================
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_photos (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            photo TEXT NOT NULL,
+            position INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(user_id, position)
+        )
     """)
 
     # =========================
