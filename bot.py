@@ -85,7 +85,7 @@ TRANSLATIONS = {
     "uz": {
         "search": "🔍 Qidirish",
         "profile": "👤 Profil",
-        "likes": "❤️ Yoqtirganlarim",
+        "likes": "👀 Meni yoqtirganlar",
         "matches": "💞 Matchlarim",
         "superlike": "⭐ Superlike",
         "premium": "👑 Premium",
@@ -158,7 +158,7 @@ TRANSLATIONS = {
     "ru": {
         "search": "🔍 Поиск",
         "profile": "👤 Профиль",
-        "likes": "❤️ Мои лайки",
+        "likes": "👀 Кто меня лайкнул",
         "matches": "💞 Мои совпадения",
         "superlike": "⭐ Суперлайк",
         "premium": "👑 Премиум",
@@ -434,8 +434,7 @@ async def create_profile(update, context):
     ], resize_keyboard=True, one_time_keyboard=True)
 
     await query.message.reply_text(
-        "🌐 <b>Tilni tanlang</b>\n\n"
-        "Qaysi tilda foydalanishni xohlaysiz?",
+        "🌐 <b>Tilni tanlang / Выберите язык / Тилни танланг</b>",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
@@ -444,39 +443,44 @@ async def create_profile(update, context):
 
 
 async def get_language(update, context):
-    text = update.message.text
+    text = update.message.text.strip()
 
     languages = {
         "🇺🇿 O'zbek tili": "uz",
-        
-        
+        "🇷🇺 Русский": "ru",
+        "🇺🇿 Узбек (Кирилл)": "uz_cyr",
     }
 
     if text not in languages:
         await update.message.reply_text(
-            "🌐 Iltimos, tilni tanlang / Пожалуйста, выберите язык:"
+            "🌐 Iltimos, tilni tanlang / Выберите язык / Тилни танланг:"
         )
         return LANGUAGE
 
     language = languages[text]
     context.user_data["language"] = language
-    
+
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'uz'")
-        cur.execute("UPDATE users SET language = %s WHERE user_id = %s", (language, update.effective_user.id))
+
+        cur.execute(
+            "UPDATE users SET language = %s WHERE user_id = %s",
+            (language, update.effective_user.id)
+        )
+
         conn.commit()
         cur.close()
         conn.close()
-    except:
-        pass
+    except Exception as e:
+        print(f"Language save error: {e}")
 
     await update.message.reply_text(
         f"👤 {tr(language, 'step').format(step=1)}\n\n"
         f"{tr(language, 'enter_name')}",
         parse_mode="HTML"
     )
+
     return NAME
 
 
@@ -512,12 +516,14 @@ async def get_age(update, context):
 
     context.user_data["age"] = int(text)
 
-    keyboard = ReplyKeyboardMarkup([
-        [
+    keyboard = ReplyKeyboardMarkup(
+        [[
             KeyboardButton(tr(language, "male")),
             KeyboardButton(tr(language, "female"))
-        ]
-    ], resize_keyboard=True, one_time_keyboard=True)
+        ]],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
 
     await update.message.reply_text(
         f"👤 {tr(language, 'step').format(step=3)}\n\n"
@@ -569,254 +575,426 @@ async def get_city(update, context):
     city = update.message.text.strip()
 
     cities = {
-        "Toshkent",
-        "Samarqand",
-        "Buxoro",
-        "Andijon",
-        "Farg'ona",
-        "Namangan",
-        "Qarshi",
-        "Nukus",
-        "Xiva",
-        "Jizzax",
-        "Guliston",
-        "Termiz",
-        "Navoiy",
+        "Toshkent", "Samarqand", "Buxoro", "Andijon",
+        "Farg'ona", "Namangan", "Qarshi", "Nukus",
+        "Xiva", "Jizzax", "Guliston", "Termiz", "Navoiy",
     }
 
     if city in cities:
         context.user_data["city"] = city
         context.user_data.pop("custom_city", None)
 
+        skip_text = {
+            "uz": "⏭ O'tkazib yuborish",
+            "ru": "⏭ Пропустить",
+            "uz_cyr": "⏭ Ўтказиб юбориш",
+        }[language]
+
+        keyboard = ReplyKeyboardMarkup(
+            [[KeyboardButton(skip_text)]],
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
         await update.message.reply_text(
             f"📝 {tr(language, 'step').format(step=5)}\n\n"
-            f"{tr(language, 'enter_bio')}",
+            f"{tr(language, 'enter_bio')}\n\n"
+            f"{'Ixtiyoriy — xohlasangiz o‘tkazib yuboring.' if language == 'uz' else 'Необязательно — можно пропустить.' if language == 'ru' else 'Ихтиёрий — хоҳласангиз ўтказиб юборинг.'}",
+            reply_markup=keyboard,
             parse_mode="HTML"
         )
         return BIO
 
     if city == tr(language, "other"):
         context.user_data["custom_city"] = True
-
-        await update.message.reply_text(
-            tr(language, "enter_city")
-        )
+        await update.message.reply_text(tr(language, "enter_city"))
         return CITY
 
     if context.user_data.get("custom_city"):
         if len(city) < 2 or len(city) > 50:
-            await update.message.reply_text(
-                tr(language, "city_error")
-            )
+            await update.message.reply_text(tr(language, "city_error"))
             return CITY
 
         context.user_data["city"] = city
         context.user_data.pop("custom_city", None)
 
+        skip_text = {
+            "uz": "⏭ O'tkazib yuborish",
+            "ru": "⏭ Пропустить",
+            "uz_cyr": "⏭ Ўтказиб юбориш",
+        }[language]
+
+        keyboard = ReplyKeyboardMarkup(
+            [[KeyboardButton(skip_text)]],
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
         await update.message.reply_text(
             f"📝 {tr(language, 'step').format(step=5)}\n\n"
             f"{tr(language, 'enter_bio')}",
+            reply_markup=keyboard,
             parse_mode="HTML"
         )
         return BIO
 
-    await update.message.reply_text(
-        tr(language, "city_choose_error")
-    )
+    await update.message.reply_text(tr(language, "city_choose_error"))
     return CITY
 
 
 async def get_bio(update, context):
     language = context.user_data.get("language", "uz")
-    context.user_data["bio"] = update.message.text
+    text = update.message.text.strip()
+
+    skip_texts = {
+        "uz": "⏭ O'tkazib yuborish",
+        "ru": "⏭ Пропустить",
+        "uz_cyr": "⏭ Ўтказиб юбориш",
+    }
+
+    if text == skip_texts[language]:
+        context.user_data["bio"] = None
+    else:
+        context.user_data["bio"] = text[:500]
+
+    photo_skip_text = {
+        "uz": "⏭ O'tkazib yuborish",
+        "ru": "⏭ Пропустить",
+        "uz_cyr": "⏭ Ўтказиб юбориш",
+    }[language]
+
+    keyboard = ReplyKeyboardMarkup(
+        [[KeyboardButton(photo_skip_text)]],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
 
     await update.message.reply_text(
-        f"📸 {tr(language, 'step').format(step=6)}\n\n"
-        f"{tr(language, 'send_photo')}",
+        f"📸 5/5\n\n"
+        f"{tr(language, 'send_photo')}\n\n"
+        f"📸 1-asosiy foto — majburiy\n"
+        f"📸 2–3-qo‘shimcha foto — ixtiyoriy\n\n"
+        f"✨ Ko‘proq foto — yaxshiroq profil!",
+        reply_markup=keyboard,
         parse_mode="HTML"
     )
+
+    context.user_data["photo_step"] = 1
     return PHOTO
 
 
 async def get_photo(update, context):
     user = update.effective_user
+    language = context.user_data.get("language", "uz")
+    step = context.user_data.get("photo_step", 1)
+
+    skip_texts = {
+        "uz": "⏭ O'tkazib yuborish",
+        "ru": "⏭ Пропустить",
+        "uz_cyr": "⏭ Ўтказиб юбориш",
+    }
+
+    # 1-asosiy foto majburiy
+    if step == 1:
+        if not update.message.photo:
+            await update.message.reply_text(
+                {
+                    "uz": "📸 Asosiy foto majburiy. Iltimos, rasmingizni yuboring.",
+                    "ru": "📸 Основная фотография обязательна. Отправьте фотографию.",
+                    "uz_cyr": "📸 Асосий фото мажбурий. Илтимос, расмингизни юборинг.",
+                }[language]
+            )
+            return PHOTO
+
+    # 2/3-foto ixtiyoriy
+    if step > 1 and not update.message.photo:
+        if update.message.text and update.message.text.strip() == skip_texts[language]:
+            await finish_registration(update, context)
+            return ConversationHandler.END
+
+        await update.message.reply_text(
+            {
+                "uz": "📸 Iltimos, foto yuboring yoki «O'tkazib yuborish»ni bosing.",
+                "ru": "📸 Отправьте фото или нажмите «Пропустить».",
+                "uz_cyr": "📸 Илтимос, фото юборинг ёки «Ўтказиб юбориш»ни босинг.",
+            }[language]
+        )
+        return PHOTO
+
     photo = update.message.photo[-1].file_id
+
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO users (
-            user_id, username, first_name, age, gender, bio, photo, city, language
-        )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (user_id) DO UPDATE SET
-            first_name = %s,
-            age = %s,
-            gender = %s,
-            bio = %s,
-            photo = %s,
-            city = %s,
-            language = %s
-    """, (
-        user.id,
-        user.username,
-        context.user_data.get('profile_name', user.first_name),
-        context.user_data['age'],
-        context.user_data['gender'],
-        context.user_data['bio'],
-        photo,
-        context.user_data['city'],
-        context.user_data.get('language', 'uz'),
-        context.user_data.get('profile_name', user.first_name),
-        context.user_data['age'],
-        context.user_data['gender'],
-        context.user_data['bio'],
-        photo,
-        context.user_data['city'],
-        context.user_data.get('language', 'uz')
-    ))
-    # =========================
-    # REFERAL TIZIMI
-    # =========================
-    referrer_id = context.user_data.get("referrer_id")
 
-    if referrer_id and referrer_id != user.id:
-        cur.execute(
-            """
-            SELECT user_id
-            FROM users
-            WHERE user_id = %s
-            """,
-            (referrer_id,)
-        )
-        referrer_exists = cur.fetchone()
+    try:
+        # Birinchi foto users.photo ga ham yoziladi — eski tizim buzilmasligi uchun
+        if step == 1:
+            cur.execute("""
+                INSERT INTO users (
+                    user_id, username, first_name, age, gender,
+                    bio, photo, city, language
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    first_name = EXCLUDED.first_name,
+                    age = EXCLUDED.age,
+                    gender = EXCLUDED.gender,
+                    bio = EXCLUDED.bio,
+                    photo = EXCLUDED.photo,
+                    city = EXCLUDED.city,
+                    language = EXCLUDED.language
+            """, (
+                user.id,
+                user.username,
+                context.user_data.get("profile_name", user.first_name),
+                context.user_data["age"],
+                context.user_data["gender"],
+                context.user_data.get("bio"),
+                photo,
+                context.user_data["city"],
+                language,
+            ))
 
-        if referrer_exists:
+            # Oldingi rasmlarni tozalaymiz
             cur.execute(
-                """
-                UPDATE users
-                SET referred_by = %s
-                WHERE user_id = %s
-                  AND referred_by IS NULL
-                """,
-                (referrer_id, user.id)
+                "DELETE FROM user_photos WHERE user_id = %s",
+                (user.id,)
             )
 
-            # Faqat yangi referal biriktirilgan bo'lsa mukofot hisoblanadi
-            if cur.rowcount > 0:
-                cur.execute(
-                    """
-                    SELECT COUNT(*)
-                    FROM users
-                    WHERE referred_by = %s
-                    """,
-                    (referrer_id,)
-                )
-                referral_count = cur.fetchone()[0]
+        # Foto tartibi: 1 asosiy, 2 qo‘shimcha, 3 qo‘shimcha
+        cur.execute("""
+            INSERT INTO user_photos (user_id, photo, position)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (user_id, position)
+            DO UPDATE SET photo = EXCLUDED.photo
+        """, (user.id, photo, step))
 
-                rewards = {
-                    5: 1,
-                    10: 7,
-                    25: 30,
-                    50: 90,
-                    100: 365
-                }
+        conn.commit()
 
-                if referral_count in rewards:
-                    premium_days = rewards[referral_count]
+    except Exception as e:
+        conn.rollback()
+        print(f"Photo save error: {e}")
+        await update.message.reply_text(
+            {
+                "uz": "❌ Rasmni saqlashda xatolik yuz berdi. Qaytadan urinib ko‘ring.",
+                "ru": "❌ Ошибка сохранения фотографии. Попробуйте ещё раз.",
+                "uz_cyr": "❌ Расмни сақлашда хатолик юз берди. Қайтадан уриниб кўринг.",
+            }[language]
+        )
+        return PHOTO
 
+    finally:
+        cur.close()
+        conn.close()
+
+    if step < 3:
+        context.user_data["photo_step"] = step + 1
+
+        next_text = {
+            2: {
+                "uz": "📸 2-qo‘shimcha foto yuboring yoki o‘tkazib yuboring.",
+                "ru": "📸 Отправьте 2-е дополнительное фото или пропустите.",
+                "uz_cyr": "📸 2-қўшимча фото юборинг ёки ўтказиб юборинг.",
+            },
+            3: {
+                "uz": "📸 3-qo‘shimcha foto yuboring yoki o‘tkazib yuboring.",
+                "ru": "📸 Отправьте 3-е дополнительное фото или пропустите.",
+                "uz_cyr": "📸 3-қўшимча фото юборинг ёки ўтказиб юборинг.",
+            },
+        }[step + 1]
+
+        keyboard = ReplyKeyboardMarkup(
+            [[KeyboardButton(skip_texts[language])]],
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+        await update.message.reply_text(
+            next_text,
+            reply_markup=keyboard
+        )
+        return PHOTO
+
+    await finish_registration(update, context)
+    return ConversationHandler.END
+
+
+async def finish_registration(update, context):
+    user = update.effective_user
+    language = context.user_data.get("language", "uz")
+
+    # Referral tizimi eski get_photo funksiyasidan saqlanadi
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        referrer_id = context.user_data.get("referrer_id")
+
+        if referrer_id and referrer_id != user.id:
+            cur.execute(
+                "SELECT user_id FROM users WHERE user_id = %s",
+                (referrer_id,)
+            )
+            referrer_exists = cur.fetchone()
+
+            if referrer_exists:
+                cur.execute("""
+                    UPDATE users
+                    SET referred_by = %s
+                    WHERE user_id = %s
+                      AND referred_by IS NULL
+                """, (referrer_id, user.id))
+
+                if cur.rowcount > 0:
                     cur.execute(
-                        """
-                        INSERT INTO referral_rewards
-                        (user_id, referrals_count, premium_days)
-                        VALUES (%s, %s, %s)
-                        ON CONFLICT (user_id, referrals_count)
-                        DO NOTHING
-                        """,
-                        (referrer_id, referral_count, premium_days)
+                        "SELECT COUNT(*) FROM users WHERE referred_by = %s",
+                        (referrer_id,)
                     )
+                    referral_count = cur.fetchone()[0]
 
-                    if cur.rowcount > 0:
-                        cur.execute(
-                            "SELECT premium_until FROM users WHERE user_id = %s",
-                            (referrer_id,)
-                        )
-                        old_premium_until = cur.fetchone()[0]
+                    rewards = {
+                        5: 1,
+                        10: 7,
+                        25: 30,
+                        50: 90,
+                        100: 365
+                    }
 
-                        cur.execute(
-                            """
-                            UPDATE users
-                            SET premium_until =
-                                CASE
-                                    WHEN premium_until IS NOT NULL
-                                         AND premium_until > NOW()
-                                    THEN premium_until + (%s * INTERVAL '1 day')
-                                    ELSE NOW() + (%s * INTERVAL '1 day')
-                                END
-                            WHERE user_id = %s
-                            """,
-                            (premium_days, premium_days, referrer_id)
-                        )
+                    if referral_count in rewards:
+                        premium_days = rewards[referral_count]
 
-                        cur.execute(
-                            "SELECT premium_until FROM users WHERE user_id = %s",
-                            (referrer_id,)
-                        )
-                        new_premium_until = cur.fetchone()[0]
+                        cur.execute("""
+                            INSERT INTO referral_rewards
+                            (user_id, referrals_count, premium_days)
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (user_id, referrals_count)
+                            DO NOTHING
+                        """, (referrer_id, referral_count, premium_days))
 
-                        save_premium_history(
-                            cur,
-                            referrer_id,
-                            action="add",
-                            days=premium_days,
-                            source="referral",
-                            admin_id=None,
-                            old_premium_until=old_premium_until,
-                            new_premium_until=new_premium_until
-                        )
-
-                        try:
-                            await context.bot.send_message(
-                                chat_id=referrer_id,
-                                text=(
-                                    "🎉 REFERAL MUKOFOTI!\n\n"
-                                    f"👥 Referallaringiz: {referral_count} ta\n"
-                                    f"🎁 Mukofot: {premium_days} kun Premium\n\n"
-                                    "👑 Premium avtomatik faollashtirildi!"
-                                )
+                        if cur.rowcount > 0:
+                            cur.execute(
+                                "SELECT premium_until FROM users WHERE user_id = %s",
+                                (referrer_id,)
                             )
-                        except:
-                            pass
+                            old_premium_until = cur.fetchone()[0]
 
-    context.user_data.pop("referrer_id", None)
+                            cur.execute("""
+                                UPDATE users
+                                SET premium_until =
+                                    CASE
+                                        WHEN premium_until IS NOT NULL
+                                             AND premium_until > NOW()
+                                        THEN premium_until + (%s * INTERVAL '1 day')
+                                        ELSE NOW() + (%s * INTERVAL '1 day')
+                                    END
+                                WHERE user_id = %s
+                            """, (
+                                premium_days,
+                                premium_days,
+                                referrer_id
+                            ))
 
-    conn.commit()
-    cur.close()
-    conn.close()
+                            cur.execute(
+                                "SELECT premium_until FROM users WHERE user_id = %s",
+                                (referrer_id,)
+                            )
+                            new_premium_until = cur.fetchone()[0]
+
+                            save_premium_history(
+                                cur,
+                                referrer_id,
+                                action="add",
+                                days=premium_days,
+                                source="referral",
+                                admin_id=None,
+                                old_premium_until=old_premium_until,
+                                new_premium_until=new_premium_until
+                            )
+
+                            try:
+                                await context.bot.send_message(
+                                    chat_id=referrer_id,
+                                    text=(
+                                        "🎉 REFERAL MUKOFOTI!\n\n"
+                                        f"👥 Referallaringiz: {referral_count} ta\n"
+                                        f"🎁 Mukofot: {premium_days} kun Premium\n\n"
+                                        "👑 Premium avtomatik faollashtirildi!"
+                                    )
+                                )
+                            except Exception:
+                                pass
+
+        context.user_data.pop("referrer_id", None)
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        print(f"Referral finish error: {e}")
+
+    finally:
+        cur.close()
+        conn.close()
+
+    # Admin notification
     try:
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"🆕 YANGI FOYDALANUVCHI\n\n"
-                 f"👤 Ism: {user.first_name}\n"
-                 f"📱 Username: @{user.username or 'yoq'}\n"
-                 f"🆔 ID: {user.id}\n"
-                 f"🎂 Yosh: {context.user_data.get('age', '?')}\n"
-                 f"👤 Jins: {context.user_data.get('gender', '?')}\n"
-                 f"📍 Shahar: {context.user_data.get('city', '?')}\n"
-                 f"📝 Bio: {context.user_data.get('bio', '?')}"
+            text=(
+                "🆕 YANGI FOYDALANUVCHI\n\n"
+                f"👤 Ism: {context.user_data.get('profile_name', user.first_name)}\n"
+                f"📱 Username: @{user.username or 'yoq'}\n"
+                f"🆔 ID: {user.id}\n"
+                f"🎂 Yosh: {context.user_data.get('age', '?')}\n"
+                f"👤 Jins: {context.user_data.get('gender', '?')}\n"
+                f"📍 Shahar: {context.user_data.get('city', '?')}\n"
+                f"📝 Bio: {context.user_data.get('bio') or 'yoq'}"
+            )
         )
     except Exception as e:
         print(f"❌ ADMIN NEW USER NOTIFICATION ERROR: {e}")
-    # Yangi profilning hududiga mos Smart Notification
+
     try:
-        await notify_new_user_in_city(
-            context.bot,
-            user.id
-        )
+        await notify_new_user_in_city(context.bot, user.id)
     except Exception as e:
         print(f"Smart city notification error: {e}")
 
-    await update.message.reply_text("✅ Profil yaratildi!", reply_markup=await get_main_keyboard())
-    return ConversationHandler.END
+    welcome = {
+        "uz": (
+            "💫 <b>SaraMatchBot'ga xush kelibsiz!</b>\n\n"
+            "Bu yerda siz yangi insonlar bilan tanishishingiz mumkin.\n\n"
+            "❤️ Layk bosing — agar siz ham yoqsangiz, match bo‘ladi.\n"
+            "👎 Yoqmasa — o‘tkazib yuboring.\n\n"
+            "✨ <b>Tanishuvni hoziroq boshlang 👇</b>"
+        ),
+        "ru": (
+            "💫 <b>Добро пожаловать в SaraMatchBot!</b>\n\n"
+            "Здесь вы можете знакомиться с новыми людьми.\n\n"
+            "❤️ Ставьте лайк — если симпатия взаимна, будет match.\n"
+            "👎 Не нравится — пропускайте.\n\n"
+            "✨ <b>Начните знакомство прямо сейчас 👇</b>"
+        ),
+        "uz_cyr": (
+            "💫 <b>SaraMatchBot'га хуш келибсиз!</b>\n\n"
+            "Бу ерда сиз янги инсонлар билан танишишингиз мумкин.\n\n"
+            "❤️ Лайк босинг — агар сиз ҳам ёқсангиз, матч бўлади.\n"
+            "👎 Ёқмаса — ўтказиб юборинг.\n\n"
+            "✨ <b>Танишувни ҳозироқ бошланг 👇</b>"
+        ),
+    }
+
+    await update.message.reply_text(
+        welcome.get(language, welcome["uz"]),
+        reply_markup=await get_main_keyboard(language),
+        parse_mode="HTML"
+    )
+
+    # vaqtinchalik registration ma'lumotlarini tozalash
+    for key in [
+        "profile_name", "age", "gender", "city", "bio",
+        "language", "custom_city", "photo_step"
+    ]:
+        context.user_data.pop(key, None)
+
 
 async def find(update, context):
     if update.callback_query:
@@ -1022,6 +1200,89 @@ async def handle_callback(update, context):
     language = get_user_language(user.id)
     data = query.data
     
+    if data.startswith("who_like:"):
+        try:
+            target_id = int(data.split(":", 1)[1])
+        except (ValueError, IndexError):
+            await query.answer("❌ Xato.", show_alert=True)
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        try:
+            # Qarshi Like mavjudligini tekshiramiz
+            cur.execute("""
+                SELECT EXISTS(
+                    SELECT 1
+                    FROM likes
+                    WHERE from_user = %s
+                      AND to_user = %s
+                )
+            """, (user.id, target_id))
+
+            mutual = bool(cur.fetchone()[0])
+
+            if not mutual:
+                cur.execute("""
+                    INSERT INTO likes (from_user, to_user)
+                    VALUES (%s, %s)
+                    ON CONFLICT DO NOTHING
+                """, (user.id, target_id))
+
+            # Match mavjudligini tekshirish
+            cur.execute("""
+                SELECT EXISTS(
+                    SELECT 1
+                    FROM matches
+                    WHERE
+                        (user1 = %s AND user2 = %s)
+                        OR
+                        (user1 = %s AND user2 = %s)
+                )
+            """, (user.id, target_id, target_id, user.id))
+
+            match_exists = bool(cur.fetchone()[0])
+
+            if not match_exists:
+                cur.execute("""
+                    SELECT EXISTS(
+                        SELECT 1
+                        FROM likes
+                        WHERE from_user = %s
+                          AND to_user = %s
+                    )
+                """, (target_id, user.id))
+
+                other_like = bool(cur.fetchone()[0])
+
+                if other_like:
+                    cur.execute("""
+                        INSERT INTO matches (user1, user2)
+                        VALUES (%s, %s)
+                    """, (user.id, target_id))
+
+            conn.commit()
+
+        except Exception:
+            conn.rollback()
+            raise
+
+        finally:
+            cur.close()
+            conn.close()
+
+        if mutual or not match_exists:
+            await query.answer("❤️ Like yuborildi!", show_alert=False)
+        else:
+            await query.answer("🎉 MATCH!", show_alert=True)
+
+        return
+
+    if data == "who_liked_menu":
+        await who_liked_me(update, context)
+        return
+
     if data == "change_language":
         await change_language_menu(update, context)
         return
@@ -2638,7 +2899,7 @@ async def save_edit(update, context):
             "⚙️ Sozlamalar",
             "👤 Profil",
             "🔍 Qidirish",
-            "❤️ Yoqtirganlarim",
+            "👀 Meni yoqtirganlar",
             "💞 Matchlarim",
             "🎁 Referal",
             "✏️ Tahrirlash",
@@ -3195,36 +3456,155 @@ async def profile(update, context):
         reply_markup=keyboard
     )
 
-async def likes(update, context):
+
+async def who_liked_me(update, context):
     user = update.effective_user
     language = get_user_language(user.id)
 
     texts = {
         "uz": {
-            "empty": "❤️ Hozircha yoqtirganlaringiz yo'q.",
-            "title": "❤️ Siz yoqtirganlar:",
+            "title": "👀 <b>SIZNI YOQTIRGANLAR</b>",
+            "empty": "👀 Hozircha sizni hech kim yoqtirmagan.",
         },
         "ru": {
-            "empty": "❤️ Вы пока никого не лайкнули.",
-            "title": "❤️ Понравившиеся вам:",
+            "title": "👀 <b>КТО ВАС ЛАЙКНУЛ</b>",
+            "empty": "👀 Пока никто вас не лайкнул.",
+
         },
         "uz_cyr": {
-            "empty": "❤️ Ҳозирча ёқтирганларингиз йўқ.",
-            "title": "❤️ Сиз ёқтирганлар:",
+            "title": "👀 <b>СИЗНИ ЁҚТИРГАНЛАР</b>",
+            "empty": "👀 Ҳозирча сизни ҳеч ким ёқтирмаган.",
         },
-        }
+    }
 
     t = texts.get(language, texts["uz"])
 
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # Sizga like bosganlar
+    cur.execute("""
+        SELECT
+            u.user_id,
+            u.first_name,
+            u.age,
+            u.photo,
+            u.city
+        FROM likes l
+        JOIN users u ON u.user_id = l.from_user
+        WHERE l.to_user = %s
+          AND u.is_active = TRUE
+        ORDER BY l.created_at DESC
+    """, (user.id,))
+
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    if not rows:
+        await update.message.reply_text(t["empty"], parse_mode="HTML")
+        return
+
+    await update.message.reply_text(t["title"], parse_mode="HTML")
+
+    for liker_id, first_name, age, photo, city in rows:
+        caption = (
+            f"👤 <b>{first_name}</b>, {age}\n"
+            f"📍 {city or '—'}\n\n"
+            "❤️ <b>Sizga Like bosgan</b>"
+        )
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "❤️ Like",
+                    callback_data=f"who_like:{liker_id}"
+                )
+            ]
+        ])
+
+        if photo:
+            try:
+                await update.message.reply_photo(
+                    photo=photo,
+                    caption=caption,
+                    reply_markup=keyboard,
+                    parse_mode="HTML"
+                )
+            except Exception:
+                await update.message.reply_text(
+                    caption,
+                    reply_markup=keyboard,
+                    parse_mode="HTML"
+                )
+        else:
+            await update.message.reply_text(
+                caption,
+                reply_markup=keyboard,
+                parse_mode="HTML"
+            )
+
+
+async def likes(update, context):
+    """
+    Foydalanuvchiga KIMLAR LIKE BOSGANINI ko'rsatadi.
+    """
+    user = update.effective_user
+    language = get_user_language(user.id)
+
+    texts = {
+        "uz": {
+            "empty": "❤️ Hozircha sizga hech kim Like bosmagan.",
+            "title": "❤️ SIZNI YOQTIRGANLAR",
+            "like_back": "❤️ Like qaytarish",
+            "skip": "👎 O'tkazib yuborish",
+            "bio_empty": "Bio yozilmagan",
+        },
+        "ru": {
+            "empty": "❤️ Пока вас никто не лайкнул.",
+            "title": "❤️ ВАС ЛАЙКНУЛИ",
+            "like_back": "❤️ Ответить лайком",
+            "skip": "👎 Пропустить",
+            "bio_empty": "Биография не указана",
+        },
+        "uz_cyr": {
+            "empty": "❤️ Ҳозирча сизга ҳеч ким Like босмаган.",
+            "title": "❤️ СИЗНИ ЁҚТИРГАНЛАР",
+            "like_back": "❤️ Лайк қайтариш",
+            "skip": "👎 Ўтказиб юбориш",
+            "bio_empty": "Био ёзилмаган",
+        },
+    }
+
+    t = texts.get(language, texts["uz"])
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # KIMLAR MENGA LIKE BOSGAN?
     cur.execute(
-        "SELECT u.first_name, u.age FROM users u "
-        "JOIN likes l ON u.user_id = l.to_user "
-        "WHERE l.from_user = %s",
+        """
+        SELECT
+            u.user_id,
+            u.first_name,
+            u.age,
+            u.gender,
+            u.bio,
+            u.photo,
+            u.city,
+            u.premium_until
+        FROM likes l
+        JOIN users u ON u.user_id = l.from_user
+        WHERE l.to_user = %s
+          AND u.is_active = TRUE
+        ORDER BY l.created_at DESC
+        """,
         (user.id,)
     )
+
     likes_list = cur.fetchall()
+
     cur.close()
     conn.close()
 
@@ -3232,12 +3612,67 @@ async def likes(update, context):
         await update.message.reply_text(t["empty"])
         return
 
-    text = t["title"] + "\n\n"
+    await update.message.reply_text(
+        t["title"] + f"\n\n👥 {len(likes_list)} ta odam sizga qiziqmoqda."
+    )
 
-    for like in likes_list:
-        text += f"• {like[0]}, {like[1]}\n"
+    for profile in likes_list:
+        (
+            target_id,
+            first_name,
+            age,
+            gender,
+            bio,
+            photo,
+            city,
+            premium_until,
+        ) = profile
 
-    await update.message.reply_text(text)
+        premium_badge = ""
+        if premium_until:
+            try:
+                if premium_until > datetime.now():
+                    premium_badge = " 👑"
+            except Exception:
+                pass
+
+        caption = (
+            f"👤 <b>{first_name}</b>{premium_badge}, {age}\n"
+            f"📍 {city or '—'}\n"
+            f"📝 {bio or t['bio_empty']}"
+        )
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    t["like_back"],
+                    callback_data=f"like_back_{target_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    t["skip"],
+                    callback_data=f"skip_liker_{target_id}"
+                )
+            ]
+        ])
+
+        try:
+            if photo:
+                await update.message.reply_photo(
+                    photo=photo,
+                    caption=caption,
+                    reply_markup=keyboard,
+                    parse_mode="HTML"
+                )
+            else:
+                await update.message.reply_text(
+                    caption,
+                    reply_markup=keyboard,
+                    parse_mode="HTML"
+                )
+        except Exception as e:
+            print(f"Like profile display error: {e}")
 
 
 async def matches(update, context):
@@ -3595,6 +4030,20 @@ async def activity_callback_handler(update, context):
 
 async def handle_message(update, context):
     text = update.message.text
+    user = update.effective_user
+    language = get_user_language(user.id)
+
+    # 👀 Meni yoqtirganlar
+    who_liked_buttons = {
+        "uz": "👀 Meni yoqtirganlar",
+        "ru": "👀 Кто меня лайкнул",
+        "uz_cyr": "👀 Сизни ёқтирганлар",
+    }
+
+    if text == who_liked_buttons.get(language):
+        await who_liked_me(update, context)
+        return
+
 
     # Premium foydalanuvchi profil egasiga xabar yozmoqda
     if "writing_to" in context.user_data:
@@ -4925,6 +5374,12 @@ def main():
             GENDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_gender)],
             CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_city)],
             BIO: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_bio)],
+            PHOTO: [
+                MessageHandler(
+                    filters.PHOTO | (filters.TEXT & ~filters.COMMAND),
+                    get_photo
+                )
+            ],
         },
         fallbacks=[],
     )
@@ -4973,7 +5428,6 @@ def main():
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("find", find))
     app.add_handler(CommandHandler("profile", profile))
-    app.add_handler(CommandHandler("likes", likes))
     app.add_handler(CommandHandler("matches", matches))
     app.add_handler(CommandHandler("settings", settings))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
