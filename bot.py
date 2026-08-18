@@ -1156,7 +1156,7 @@ async def find(update, context):
         and target_premium_until > datetime.now()
     )
 
-    premium_badge = " ⭐" if target_is_premium else ""
+    premium_badge = "\n👑 PREMIUM" if target_is_premium else ""
 
     buttons = [[
         InlineKeyboardButton(
@@ -3816,7 +3816,22 @@ async def profile(update, context):
     cur = conn.cursor()
 
     cur.execute(
-        "SELECT * FROM users WHERE user_id = %s",
+        """
+        SELECT
+            user_id,
+            username,
+            first_name,
+            age,
+            gender,
+            bio,
+            photo,
+            city,
+            is_active,
+            premium_until,
+            created_at
+        FROM users
+        WHERE user_id = %s
+        """,
         (user.id,)
     )
     user_data = cur.fetchone()
@@ -3905,11 +3920,14 @@ async def profile(update, context):
         ]
     ])
 
+    profile_badge = " ⭐" if premium_status == "✅" else ""
+
     caption = (
         t["profile"].format(
             name=first_name,
             age=age
         )
+        + profile_badge
         + "\n"
         + t["gender"].format(gender=gender)
         + "\n"
