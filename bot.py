@@ -4246,25 +4246,30 @@ async def handle_message(update, context):
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # 💞 Yozish uchun Premium emas, MATCH talab qilinadi
         cur.execute(
-            "SELECT premium_until FROM users WHERE user_id = %s",
-            (sender.id,)
+            """
+            SELECT EXISTS(
+                SELECT 1
+                FROM matches
+                WHERE
+                    (user1 = %s AND user2 = %s)
+                    OR
+                    (user1 = %s AND user2 = %s)
+            )
+            """,
+            (sender.id, target_id, target_id, sender.id)
         )
-        row = cur.fetchone()
 
-        is_premium = (
-            row
-            and row[0] is not None
-            and row[0] > datetime.now()
-        )
+        is_match = bool(cur.fetchone()[0])
 
-        if not is_premium:
+        if not is_match:
             context.user_data.pop("writing_to", None)
             cur.close()
             conn.close()
 
             await update.message.reply_text(
-                "❌ Premium muddati tugagan."
+                "❌ Siz bu foydalanuvchi bilan match emassiz."
             )
             return
 
