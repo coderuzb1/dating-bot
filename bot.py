@@ -408,7 +408,7 @@ async def start(update, context):
             "💞 Matchlarim - o'zaro matchlar\n"
             "⚙️ Sozlamalar - profilni tahrirlash\n"
             "👑 Premium - pullik obuna",
-            reply_markup=await get_main_keyboard()
+            reply_markup=await get_main_keyboard(get_user_language(user.id))
         )
     else:
         keyboard = ReplyKeyboardMarkup([
