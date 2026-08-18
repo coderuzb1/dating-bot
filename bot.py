@@ -3212,6 +3212,14 @@ async def handle_payment_check(update, context):
         return
 
     # ========================================================
+    # PROFIL RASMI VA TO'LOV CHEKINI AJRATISH
+    # ========================================================
+    # Ro'yxatdan o'tishdagi 1-3 ta profil rasmi
+    # hech qachon to'lov cheki sifatida ishlanmasin.
+    if context.user_data.get("photo_step") in (1, 2, 3):
+        return
+
+    # ========================================================
     # TO'LOV CHEKI KUTILAYAPTIMI?
     # ========================================================
 
