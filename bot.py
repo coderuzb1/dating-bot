@@ -10,6 +10,7 @@ from notifications import (
     notify_inactive_users_3_days,
     notify_inactive_users_7_days,
     notify_premium_promotion,
+    notify_premium_expiring_1_day,
     notify_new_user_in_city,
     retention_job,
 )
@@ -74,6 +75,11 @@ async def scheduled_notifications(context):
         await notify_premium_promotion(context.bot)
     except Exception as e:
         print(f"Premium notification error: {e}")
+
+    try:
+        await notify_premium_expiring_1_day(context.bot)
+    except Exception as e:
+        print(f"Premium expiring notification error: {e}")
 
     print("✅ Notification scheduler tugadi")
 
@@ -1600,6 +1606,183 @@ async def handle_callback(update, context):
         )
         return
 
+    if data == "premium_expiring_discount":
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT premium_until
+            FROM users
+            WHERE user_id = %s
+              AND premium_until IS NOT NULL
+              AND premium_until > NOW()
+              AND premium_until <= NOW() + INTERVAL '24 hours'
+            """,
+            (user.id,)
+        )
+        valid = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if not valid:
+            texts = {
+                "uz": "❌ 20% chegirma faqat Premium tugashiga 1 kun qolganda amal qiladi.",
+                "ru": "❌ Скидка 20% действует только в последний день Premium.",
+                "uz_cyr": "❌ 20% чегирма фақат Premiumнинг охирги куни амал қилади."
+            }
+            await query.message.reply_text(
+                texts.get(language, texts["uz"])
+            )
+            return
+
+        if language == "ru":
+            text = (
+                "🔥 20% СКИДКА — ТОЛЬКО СЕГОДНЯ!\n\n"
+                "👑 Ваш Premium заканчивается в течение 1 дня.\n"
+                "💎 Успейте продлить Premium со скидкой 20%!\n\n"
+                "📅 Выберите срок:"
+            )
+            buttons = [
+                ["1 неделя - 20 000 сум 🔥", "discount_premium_1w"],
+                ["14 дней - 31 200 сум 🔥", "discount_premium_2w"],
+                ["1 месяц - 47 200 сум 🔥", "discount_premium_1m"],
+                ["3 месяца - 103 200 сум 🔥", "discount_premium_3m"],
+            ]
+            cancel = "❌ Отмена"
+
+        elif language == "uz_cyr":
+            text = (
+                "🔥 20% ЧЕГИРМА — ФАҚАТ БУГУН!\n\n"
+                "👑 Premiumингиз 1 кун ичида тугайди.\n"
+                "💎 Premiumни 20% чегирма билан узайтиришга улгуринг!\n\n"
+                "📅 Муддатни танланг:"
+            )
+            buttons = [
+                ["1 ҳафта - 20 000 сўм 🔥", "discount_premium_1w"],
+                ["14 кун - 31 200 сўм 🔥", "discount_premium_2w"],
+                ["1 ой - 47 200 сўм 🔥", "discount_premium_1m"],
+                ["3 ой - 103 200 сўм 🔥", "discount_premium_3m"],
+            ]
+            cancel = "❌ Бекор қилиш"
+
+        else:
+            text = (
+                "🔥 20% CHEGIRMA — FAQAT BUGUN!\n\n"
+                "👑 Premiumingiz 1 kun ichida tugaydi.\n"
+                "💎 Premiumni 20% chegirma bilan uzaytirishga ulgurib qoling!\n\n"
+                "📅 Muddatni tanlang:"
+            )
+            buttons = [
+                ["1 hafta - 20 000 so'm 🔥", "discount_premium_1w"],
+                ["14 kun - 31 200 so'm 🔥", "discount_premium_2w"],
+                ["1 oy - 47 200 so'm 🔥", "discount_premium_1m"],
+                ["3 oy - 103 200 so'm 🔥", "discount_premium_3m"],
+            ]
+            cancel = "❌ Bekor qilish"
+
+        keyboard = InlineKeyboardMarkup(
+            [[InlineKeyboardButton(label, callback_data=data)] for label, data in buttons]
+            + [[InlineKeyboardButton(cancel, callback_data="cancel_premium")]]
+        )
+
+        await query.message.reply_text(
+            text,
+            reply_markup=keyboard
+        )
+        return
+
+    if data.startswith("discount_premium_"):
+        plan = data.replace("discount_", "", 1)
+
+        durations = {
+            "premium_1w": 7,
+            "premium_2w": 14,
+            "premium_1m": 30,
+            "premium_3m": 90
+        }
+
+        prices = {
+            "premium_1w": "20 000",
+            "premium_2w": "31 200",
+            "premium_1m": "47 200",
+            "premium_3m": "103 200"
+        }
+
+        if plan not in durations:
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT premium_until
+            FROM users
+            WHERE user_id = %s
+              AND premium_until IS NOT NULL
+              AND premium_until > NOW()
+              AND premium_until <= NOW() + INTERVAL '24 hours'
+            """,
+            (user.id,)
+        )
+        valid = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if not valid:
+            texts = {
+                "uz": "❌ 20% chegirma faqat Premiumning oxirgi kunida amal qiladi.",
+                "ru": "❌ Скидка 20% действует только в последний день Premium.",
+                "uz_cyr": "❌ 20% чегирма фақат Premiumнинг охирги куни амал қилади."
+            }
+            await query.message.reply_text(
+                texts.get(language, texts["uz"])
+            )
+            return
+
+        days = durations[plan]
+        price = prices[plan]
+
+        payment_texts = {
+            "uz": ("💳 TO‘LOV USULINI TANLANG", "📅 Muddat", "💰 Chegirmali summa",
+                   "Quyidagi to‘lov usullaridan birini tanlang:", "❌ Bekor qilish"),
+            "ru": ("💳 ВЫБЕРИТЕ СПОСОБ ОПЛАТЫ", "📅 Срок", "💰 Сумма со скидкой",
+                   "Выберите способ оплаты:", "❌ Отмена"),
+            "uz_cyr": ("💳 ТЎЛОВ УСУЛИНИ ТАНЛАНГ", "📅 Муддат", "💰 Чегирмали сумма",
+                       "Қуйидаги тўлов усулларидан бирини танланг:", "❌ Бекор қилиш")
+        }
+
+        title, duration_text, price_text, choose_text, cancel_text = payment_texts.get(
+            language, payment_texts["uz"]
+        )
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "💳 HUMO",
+                    callback_data=f"discount_pay_humo_{plan}"
+                ),
+                InlineKeyboardButton(
+                    "💳 VISA",
+                    callback_data=f"discount_pay_visa_{plan}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    cancel_text,
+                    callback_data="cancel_premium"
+                )
+            ]
+        ])
+
+        await query.message.reply_text(
+            f"{title}\n\n"
+            f"{duration_text}: {days} kun\n"
+            f"{price_text}: {price} so'm\n\n"
+            f"{choose_text}",
+            reply_markup=keyboard
+        )
+        return
+
     if data.startswith("premium_"):
         durations = {
             "premium_1w": 7,
@@ -1672,6 +1855,128 @@ async def handle_callback(update, context):
             f'{pt["price"]}: {price} so\'m\n\n'
             f'{pt["choose"]}',
             reply_markup=keyboard
+        )
+        return
+
+    if data.startswith("discount_pay_humo_") or data.startswith("discount_pay_visa_"):
+        parts = data.split("_", 3)
+
+        if len(parts) != 4:
+            await query.message.reply_text("❌ To‘lov ma’lumotlari xato.")
+            return
+
+        payment_method = parts[2].upper()
+        plan = parts[3]
+
+        durations = {
+            "premium_1w": 7,
+            "premium_2w": 14,
+            "premium_1m": 30,
+            "premium_3m": 90
+        }
+
+        prices = {
+            "premium_1w": "20 000",
+            "premium_2w": "31 200",
+            "premium_1m": "47 200",
+            "premium_3m": "103 200"
+        }
+
+        if plan not in durations:
+            await query.message.reply_text("❌ Tarif topilmadi.")
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT premium_until
+            FROM users
+            WHERE user_id = %s
+              AND premium_until IS NOT NULL
+              AND premium_until > NOW()
+              AND premium_until <= NOW() + INTERVAL '24 hours'
+            """,
+            (user.id,)
+        )
+
+        valid = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if not valid:
+            texts = {
+                "uz": "❌ 20% chegirma faqat Premium tugashiga 1 kun qolganda amal qiladi.",
+                "ru": "❌ Скидка 20% действует только в последние 24 часа Premium.",
+                "uz_cyr": "❌ 20% чегирма фақат Premium тугашига 1 кун қолганда амал қилади."
+            }
+
+            await query.message.reply_text(
+                texts.get(language, texts["uz"])
+            )
+            return
+
+        days = durations[plan]
+        price = prices[plan]
+
+        card = HUMO_CARD if payment_method == "HUMO" else VISA_CARD
+
+        if not card:
+            await query.message.reply_text(
+                "❌ Ushbu to‘lov usuli hozircha sozlanmagan."
+            )
+            return
+
+        context.user_data["pending_payment"] = {
+            "type": "premium",
+            "days": days,
+            "plan": plan,
+            "price": price,
+            "payment_method": payment_method,
+            "user_id": user.id,
+            "discount": 20,
+            "discounted": True,
+        }
+
+        receipt_texts = {
+            "uz": (
+                "🔥 20% CHEGIRMALI PREMIUM\n\n"
+                f"👑 Premium: {days} kun\n"
+                f"💰 Chegirmali summa: {price} so'm\n"
+                f"💳 To‘lov usuli: {payment_method}\n\n"
+                f"💳 Karta: {card}\n\n"
+                "📸📄 To‘lov chekini yuboring.\n\n"
+                "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
+                "⚠️ Faqat haqiqiy to‘lov chekini yuboring!\n"
+                "⏳ Chek yuborilgach admin tekshiradi."
+            ),
+            "ru": (
+                "🔥 PREMIUM СО СКИДКОЙ 20%\n\n"
+                f"👑 Premium: {days} дней\n"
+                f"💰 Сумма со скидкой: {price} сум\n"
+                f"💳 Способ оплаты: {payment_method}\n\n"
+                f"💳 Карта: {card}\n\n"
+                "📸📄 Отправьте чек об оплате.\n\n"
+                "🖼 Можно отправить изображение или 📄 PDF/файл.\n\n"
+                "⚠️ Отправляйте только настоящий чек!\n"
+                "⏳ После отправки чек проверит администратор."
+            ),
+            "uz_cyr": (
+                "🔥 20% ЧЕГИРМАЛИ PREMIUM\n\n"
+                f"👑 Premium: {days} кун\n"
+                f"💰 Чегирмали сумма: {price} сўм\n"
+                f"💳 Тўлов усули: {payment_method}\n\n"
+                f"💳 Карта: {card}\n\n"
+                "📸📄 Тўлов чекини юборинг.\n\n"
+                "🖼 Расм ёки 📄 PDF/файл юборишингиз мумкин.\n\n"
+                "⚠️ Фақат ҳақиқий тўлов чекини юборинг!\n"
+                "⏳ Чек юборилгандан сўнг администратор текширади."
+            )
+        }
+
+        await query.message.reply_text(
+            receipt_texts.get(language, receipt_texts["uz"])
         )
         return
 
@@ -3682,7 +3987,12 @@ async def handle_payment_check(update, context):
             "premium_3m": "129 000",
         }
 
-        price = prices.get(plan, "?")
+        # Chegirmali Premium bo‘lsa, pending_payment ichidagi
+        # chegirmali summani ishlatamiz.
+        if pending.get("discounted"):
+            price = pending.get("price", "?")
+        else:
+            price = prices.get(plan, "?")
 
         keyboard = InlineKeyboardMarkup([
             [

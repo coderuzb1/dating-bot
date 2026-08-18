@@ -397,21 +397,6 @@ async def notify_new_user_in_city(
         conn.close()
         return
 
-    # Oxirgi 24 soatdagi yangi profillar soni
-    cur.execute(
-        """
-        SELECT COUNT(*)
-        FROM users
-        WHERE city = %s
-          AND user_id != %s
-          AND is_active = TRUE
-          AND created_at >= NOW() - INTERVAL '24 hours'
-        """,
-        (city, new_user_id)
-    )
-
-    count = cur.fetchone()[0]
-
     # Yangi profil ayol bo'lsa erkaklarga,
     # erkak bo'lsa ayollarga.
     if new_gender == "Ayol":
@@ -469,12 +454,25 @@ async def notify_new_user_in_city(
         ]
     ])
 
-    text = (
-        "🔥 Sizning hududingizda yangi profil!\n\n"
-        f"💕 {city} hududida yangi tanishuv sizni kutmoqda.\n\n"
-        f"👥 {count} ta yangi profil qo‘shildi.\n\n"
-        "🔍 Ko‘rish"
-    )
+    # Foydalanuvchi tiliga qarab notification
+    texts = {
+        "uz": (
+            "🔥 <b>Shaharingizda yangi profillar paydo bo‘ldi!</b>\n\n"
+            f"💕 {city} shahrida yangi tanishuv sizni kutmoqda.\n\n"
+            "🔍 Yangi profillarni ko‘rish"
+        ),
+        "ru": (
+            "🔥 <b>В вашем городе появились новые профили!</b>\n\n"
+            f"💕 В городе {city} вас ждёт новое знакомство.\n\n"
+            "🔍 Посмотреть новые профили"
+        ),
+        "uz_cyr": (
+            "🔥 <b>Шаҳрингизда янги профиллар пайдо бўлди!</b>\n\n"
+            f"💕 {city} шаҳрида янги танишув сизни кутмоқда.\n\n"
+            "🔍 Янги профилларни кўриш"
+        ),
+    }
+
 
     for row in target_users:
         user_id = row[0]
@@ -486,6 +484,25 @@ async def notify_new_user_in_city(
             hours=24
         ):
             continue
+
+        # Har bir foydalanuvchiga uning tilida yuborish
+        user_conn = get_db_connection()
+        user_cur = user_conn.cursor()
+        user_cur.execute(
+            "SELECT language FROM users WHERE user_id = %s",
+            (user_id,)
+        )
+        language_row = user_cur.fetchone()
+        user_cur.close()
+        user_conn.close()
+
+        language = (
+            language_row[0]
+            if language_row and language_row[0] in texts
+            else "uz"
+        )
+
+        text = texts[language]
 
         sent = await safe_send_message(
             bot,
@@ -1051,3 +1068,116 @@ async def retention_job(context):
     await run_retention_notifications(
         context.bot
     )
+
+
+# =========================================================
+# PREMIUM TUGASHIGA 1 KUN QOLGANDA
+# FAQAT OXIRGI KUN — 20% CHEGIRMA
+# =========================================================
+
+async def notify_premium_expiring_1_day(bot):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT user_id, language, premium_until
+        FROM users
+        WHERE is_active = TRUE
+          AND premium_until IS NOT NULL
+          AND premium_until > NOW()
+          AND premium_until <= NOW() + INTERVAL '24 hours'
+        """
+    )
+
+    users = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    texts = {
+        "uz": (
+            "🚨 <b>Premiumingiz ertaga tugaydi!</b>\n\n"
+            "👑 Premium imkoniyatlaringizni yo‘qotib qo‘ymang.\n\n"
+            "🔥 <b>Faqat BUGUN — 20% CHEGIRMA!</b>\n\n"
+            "♾️ Cheksiz profil ko‘rish\n"
+            "❤️ Cheksiz like\n"
+            "⭐ Bepul Superlike\n"
+            "👀 Kim Superlike bosganini ko‘rish\n"
+            "📨 Telegram shaxsiy chatiga yozish\n"
+            "💬 Match bo‘lmasdan xabar yozish\n"
+            "🚀 Qidiruvda ustuvor ko‘rinish\n\n"
+            "⏰ <b>Chegirma faqat bugun amal qiladi!</b>"
+        ),
+        "ru": (
+            "🚨 <b>Ваш Premium заканчивается завтра!</b>\n\n"
+            "👑 Не теряйте возможности Premium.\n\n"
+            "🔥 <b>ТОЛЬКО СЕГОДНЯ — СКИДКА 20%!</b>\n\n"
+            "♾️ Безлимитный просмотр профилей\n"
+            "❤️ Безлимитные лайки\n"
+            "⭐ Бесплатный Superlike\n"
+            "👀 Видеть кто поставил Superlike\n"
+            "📨 Писать в личный Telegram\n"
+            "💬 Писать без взаимного матча\n"
+            "🚀 Приоритет в поиске\n\n"
+            "⏰ <b>Скидка действует только сегодня!</b>"
+        ),
+        "uz_cyr": (
+            "🚨 <b>Premium’ингиз эртага тугайди!</b>\n\n"
+            "👑 Premium имкониятларингизни йўқотиб қўйманг.\n\n"
+            "🔥 <b>ФАҚАТ БУГУН — 20% ЧЕГИРМА!</b>\n\n"
+            "♾️ Чексиз профил кўриш\n"
+            "❤️ Чексиз лайк\n"
+            "⭐ Бепул Superlike\n"
+            "👀 Ким Superlike босганини кўриш\n"
+            "📨 Telegram шахсий чатига ёзиш\n"
+            "💬 Match бўлмасдан хабар ёзиш\n"
+            "🚀 Қидирувда устувор кўриниш\n\n"
+            "⏰ <b>Чегирма фақат бугун амал қилади!</b>"
+        ),
+    }
+
+    keyboards = {
+        "uz": InlineKeyboardMarkup([
+            [InlineKeyboardButton(
+                "🔥 20% chegirma bilan Premium",
+                callback_data="premium_expiring_discount"
+            )]
+        ]),
+        "ru": InlineKeyboardMarkup([
+            [InlineKeyboardButton(
+                "🔥 Premium со скидкой 20%",
+                callback_data="premium_expiring_discount"
+            )]
+        ]),
+        "uz_cyr": InlineKeyboardMarkup([
+            [InlineKeyboardButton(
+                "🔥 20% чегирма билан Premium",
+                callback_data="premium_expiring_discount"
+            )]
+        ]),
+    }
+
+    for user_id, language, premium_until in users:
+        if notification_already_sent(
+            user_id,
+            "premium_expiring_1_day",
+            None,
+            hours=30
+        ):
+            continue
+
+        language = language if language in texts else "uz"
+
+        sent = await safe_send_message(
+            bot,
+            user_id,
+            texts[language],
+            keyboards[language]
+        )
+
+        if sent:
+            save_notification(
+                user_id,
+                "premium_expiring_1_day"
+            )
