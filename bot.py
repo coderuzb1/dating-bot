@@ -4183,16 +4183,19 @@ async def matches(update, context):
         "uz": {
             "empty": "💞 Hozircha matchlar yo'q.",
             "title": "💞 Matchlaringiz:",
+            "unread": "🔴 {count} ta yangi xabar",
         },
         "ru": {
             "empty": "💞 Пока совпадений нет.",
             "title": "💞 Ваши совпадения:",
+            "unread": "🔴 {count} новых сообщений",
         },
         "uz_cyr": {
             "empty": "💞 Ҳозирча мэтчлар йўқ.",
             "title": "💞 Мэтчларингиз:",
+            "unread": "🔴 {count} та янги хабар",
         },
-        }
+    }
 
     t = texts.get(language, texts["uz"])
 
@@ -4200,17 +4203,33 @@ async def matches(update, context):
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT u.first_name, u.age
+        SELECT
+            u.user_id,
+            u.first_name,
+            u.age,
+            COUNT(msg.id) AS unread_count
         FROM users u
         JOIN matches m
           ON u.user_id = CASE
               WHEN m.user1 = %s THEN m.user2
               ELSE m.user1
           END
+        LEFT JOIN messages msg
+          ON msg.from_user = u.user_id
+         AND msg.to_user = %s
+         AND msg.is_read = FALSE
         WHERE m.user1 = %s OR m.user2 = %s
-    """, (user.id, user.id, user.id))
+        GROUP BY u.user_id, u.first_name, u.age, m.created_at
+        ORDER BY m.created_at DESC
+    """, (
+        user.id,
+        user.id,
+        user.id,
+        user.id
+    ))
 
     matches_list = cur.fetchall()
+
     cur.close()
     conn.close()
 
@@ -4220,8 +4239,13 @@ async def matches(update, context):
 
     text = t["title"] + "\n\n"
 
-    for match in matches_list:
-        text += f"• {match[0]}, {match[1]}\n"
+    for target_id, first_name, age, unread_count in matches_list:
+        text += f"• {first_name}, {age}"
+
+        if unread_count:
+            text += f"\n  {t['unread'].format(count=unread_count)}"
+
+        text += "\n"
 
     await update.message.reply_text(text)
 

@@ -168,6 +168,14 @@ def init_db():
     """)
 
     # =========================
+    # UNREAD MESSAGES
+    # =========================
+    cur.execute("""
+        ALTER TABLE messages
+        ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE
+    """)
+
+    # =========================
     # PAYMENTS
     # =========================
     cur.execute("""
