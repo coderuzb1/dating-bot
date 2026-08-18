@@ -1046,6 +1046,15 @@ async def handle_callback(update, context):
                 [InlineKeyboardButton("❌ Отмена", callback_data="cancel")]
             ])
             await query.message.reply_text("👑 ПРЕМИУМ\n\n⚡️ Увеличьте возможности в 5 раз\n\n📈 Всегда наверху\n❤️ Безлимитные лайки\n👀 Видеть кто лайкнул\n💬 Сообщения без матча\n\n📅 Выберите срок:", reply_markup=keyboard)
+        elif language == "uz_cyr":
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("1 ҳафта - 25 000 сўм", callback_data="premium_1w")],
+                [InlineKeyboardButton("14 кун - 39 000 сўм", callback_data="premium_14d")],
+                [InlineKeyboardButton("1 ой - 59 000 сўм", callback_data="premium_1m")],
+                [InlineKeyboardButton("3 ой - 129 000 сўм", callback_data="premium_3m")],
+                [InlineKeyboardButton("❌ Бекор қилиш", callback_data="cancel")]
+            ])
+            await query.message.reply_text("👑 ПРЕМИУМ\n\n⚡️ Имкониятларингизни 5× оширинг\n\n📈 Доим юқорида кўриниш\n❤️ Чексиз лайклар\n👀 Ким ёқтирганини кўриш\n💬 Матчсиз хабар ёзиш\n\n📅 Муддатни танланг:", reply_markup=keyboard)
         else:
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("1 hafta - 25 000 so'm", callback_data="premium_1w")],
