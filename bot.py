@@ -3146,7 +3146,6 @@ async def change_language_menu(update, context):
 async def save_language(update, context, language):
     query = update.callback_query
     user = query.from_user
-    language = get_user_language(user.id)
 
     conn = get_db_connection()
     cur = conn.cursor()
