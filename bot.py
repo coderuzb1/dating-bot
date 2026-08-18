@@ -2775,28 +2775,96 @@ async def handle_payment_check(update, context):
 
         price = prices.get(amount, "?")
 
+        language = get_user_language(user.id)
+
+        superlike_receipt_texts = {
+            "uz": {
+                "approve": "✅ Tasdiqlash",
+                "reject": "❌ Rad etish",
+                "caption": (
+                    "💳 SUPERLIKE TO'LOV CHEKI\\n\\n"
+                    f"👤 {user.first_name}\\n"
+                    f"🆔 ID: {user.id}\\n"
+                    f"⭐ Miqdor: {amount} ta\\n"
+                    f"💰 Summa: {price} so'm\\n\\n"
+                    "📸/📄 Chek yuborildi.\\n"
+                    "Admin tekshirishi va tasdiqlashi mumkin."
+                ),
+                "sent": (
+                    "✅ To'lov cheki yuborildi!\\n\\n"
+                    "Admin tekshiradi va tasdiqlasa "
+                    "Superlike hisobingizga qo'shiladi."
+                ),
+                "error": (
+                    "❌ Chekni admin'ga yuborishda "
+                    "xatolik yuz berdi."
+                ),
+            },
+            "ru": {
+                "approve": "✅ Подтвердить",
+                "reject": "❌ Отклонить",
+                "caption": (
+                    "💳 ЧЕК ОБ ОПЛАТЕ SUPERLIKE\\n\\n"
+                    f"👤 {user.first_name}\\n"
+                    f"🆔 ID: {user.id}\\n"
+                    f"⭐ Количество: {amount} шт.\\n"
+                    f"💰 Сумма: {price} сум\\n\\n"
+                    "📸/📄 Чек отправлен.\\n"
+                    "Администратор проверит и подтвердит оплату."
+                ),
+                "sent": (
+                    "✅ Чек об оплате отправлен!\\n\\n"
+                    "Администратор проверит его и после подтверждения "
+                    "Superlike будут добавлены на ваш баланс."
+                ),
+                "error": (
+                    "❌ Произошла ошибка при отправке "
+                    "чека администратору."
+                ),
+            },
+            "uz_cyr": {
+                "approve": "✅ Тасдиқлаш",
+                "reject": "❌ Рад этиш",
+                "caption": (
+                    "💳 SUPERLIKE ТЎЛОВ ЧЕКИ\\n\\n"
+                    f"👤 {user.first_name}\\n"
+                    f"🆔 ID: {user.id}\\n"
+                    f"⭐ Миқдор: {amount} та\\n"
+                    f"💰 Сумма: {price} сўм\\n\\n"
+                    "📸/📄 Чек юборилди.\\n"
+                    "Администратор текшириши ва тасдиқлаши мумкин."
+                ),
+                "sent": (
+                    "✅ Тўлов чеки юборилди!\\n\\n"
+                    "Администратор текширади ва тасдиқласа, "
+                    "Superlike ҳисобингизга қўшилади."
+                ),
+                "error": (
+                    "❌ Чекни администраторга юборишда "
+                    "хатолик юз берди."
+                ),
+            },
+        }
+
+        t = superlike_receipt_texts.get(
+            language,
+            superlike_receipt_texts["uz"]
+        )
+
         keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
-                    "✅ Tasdiqlash",
+                    t["approve"],
                     callback_data=f"ok_sl_{user.id}_{amount}"
                 ),
                 InlineKeyboardButton(
-                    "❌ Rad etish",
+                    t["reject"],
                     callback_data=f"no_sl_{user.id}"
                 )
             ]
         ])
 
-        caption = (
-            "💳 SUPERLIKE TO'LOV CHEKI\n\n"
-            f"👤 {user.first_name}\n"
-            f"🆔 ID: {user.id}\n"
-            f"⭐ Miqdor: {amount} ta\n"
-            f"💰 Summa: {price} so'm\n\n"
-            "📸/📄 Chek yuborildi.\n"
-            "Admin tekshirishi va tasdiqlashi mumkin."
-        )
+        caption = t["caption"]
 
         try:
 
@@ -2816,11 +2884,7 @@ async def handle_payment_check(update, context):
                     reply_markup=keyboard
                 )
 
-            await update.message.reply_text(
-                "✅ To'lov cheki yuborildi!\n\n"
-                "Admin tekshiradi va tasdiqlasa "
-                "Superlike hisobingizga qo'shiladi."
-            )
+            await update.message.reply_text(t["sent"])
 
         except Exception as e:
 
@@ -2828,10 +2892,7 @@ async def handle_payment_check(update, context):
                 f"❌ Superlike chek yuborishda xato: {e}"
             )
 
-            await update.message.reply_text(
-                "❌ Chekni admin'ga yuborishda "
-                "xatolik yuz berdi."
-            )
+            await update.message.reply_text(t["error"])
 
         context.user_data.pop(
             "pending_payment",
