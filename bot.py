@@ -4123,6 +4123,7 @@ async def admin(update, context):
     cur = conn.cursor()
 
     try:
+        # Foydalanuvchilar
         cur.execute("SELECT COUNT(*) FROM users")
         total_users = cur.fetchone()[0]
 
@@ -4136,11 +4137,20 @@ async def admin(update, context):
         cur.execute("""
             SELECT COUNT(*)
             FROM users
+            WHERE is_active = FALSE
+        """)
+        blocked_users = cur.fetchone()[0]
+
+        # Premium
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
             WHERE premium_until IS NOT NULL
               AND premium_until > NOW()
         """)
         premium_users = cur.fetchone()[0]
 
+        # Yangi foydalanuvchilar
         cur.execute("""
             SELECT COUNT(*)
             FROM users
@@ -4148,20 +4158,13 @@ async def admin(update, context):
         """)
         today_users = cur.fetchone()[0]
 
-        cur.execute("SELECT COUNT(*) FROM likes")
-        total_likes = cur.fetchone()[0]
-
-        cur.execute("SELECT COUNT(*) FROM matches")
-        total_matches = cur.fetchone()[0]
-
         cur.execute("""
             SELECT COUNT(*)
             FROM users
-            WHERE referred_by IS NOT NULL
+            WHERE created_at >= CURRENT_DATE - INTERVAL '2 days'
         """)
-        referral_users = cur.fetchone()[0]
+        three_days_users = cur.fetchone()[0]
 
-        # Foydalanuvchilar o'sishi
         cur.execute("""
             SELECT COUNT(*)
             FROM users
@@ -4197,15 +4200,10 @@ async def admin(update, context):
         """)
         six_months_users = cur.fetchone()[0]
 
-        # Bloklangan / nofaol profillar
-        cur.execute("""
-            SELECT COUNT(*)
-            FROM users
-            WHERE is_active = FALSE
-        """)
-        blocked_users = cur.fetchone()[0]
+        # Like va Match
+        cur.execute("SELECT COUNT(*) FROM likes")
+        total_likes = cur.fetchone()[0]
 
-        # Bugungi Like
         cur.execute("""
             SELECT COUNT(*)
             FROM likes
@@ -4213,7 +4211,9 @@ async def admin(update, context):
         """)
         today_likes = cur.fetchone()[0]
 
-        # Bugungi Match
+        cur.execute("SELECT COUNT(*) FROM matches")
+        total_matches = cur.fetchone()[0]
+
         cur.execute("""
             SELECT COUNT(*)
             FROM matches
@@ -4221,35 +4221,45 @@ async def admin(update, context):
         """)
         today_matches = cur.fetchone()[0]
 
+        # Referral
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM users
+            WHERE referred_by IS NOT NULL
+        """)
+        referral_users = cur.fetchone()[0]
+
     finally:
         cur.close()
         conn.close()
 
     text = (
         "📊 ADMIN PANEL\n\n"
+
         "👥 FOYDALANUVCHILAR\n"
         f"├ Jami: {total_users}\n"
         f"├ 🟢 Aktiv: {active_users}\n"
         f"├ 🚫 Nofaol: {blocked_users}\n"
         f"├ 👑 Premium: {premium_users}\n"
         f"├ 🆕 Bugun: {today_users}\n"
+        f"├ 📅 Oxirgi 3 kun: {three_days_users}\n"
         f"├ 📅 Oxirgi 7 kun: {week_users}\n"
         f"├ 📅 Oxirgi 15 kun: {fifteen_days_users}\n"
         f"├ 📅 Oxirgi 1 oy: {month_users}\n"
         f"├ 📅 Oxirgi 3 oy: {three_months_users}\n"
         f"└ 📅 Oxirgi 6 oy: {six_months_users}\n\n"
+
         "📈 FAOLLIK\n"
         f"├ ❤️ Jami Like: {total_likes}\n"
         f"├ ❤️ Bugungi Like: {today_likes}\n"
         f"├ 💞 Jami Match: {total_matches}\n"
         f"└ 💞 Bugungi Match: {today_matches}\n\n"
+
         "🎁 REFERRAL\n"
         f"└ Referral orqali kelganlar: {referral_users}"
     )
 
     await update.message.reply_text(text)
-
-
 
 
 async def premiumlist(update, context):
