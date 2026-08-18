@@ -1272,6 +1272,26 @@ async def handle_callback(update, context):
             return
 
         payment_texts = {
+            "ru": {
+                "title": "💳 ОПЛАТА",
+                "method": "💳 Способ",
+                "duration": "📅 Срок",
+                "price": "💰 Сумма",
+                "card": "💳 Карта",
+                "done": "После оплаты нажмите «✅ Я оплатил».",
+                "paid": "✅ Я оплатил",
+                "cancel": "❌ Отмена",
+            },
+            "uz_cyr": {
+                "title": "💳 ТЎЛОВ",
+                "method": "💳 Усул",
+                "duration": "📅 Муддат",
+                "price": "💰 Сумма",
+                "card": "💳 Карта",
+                "done": "Тўловни амалга оширгач, «✅ Тўлов қилдим» тугмасини босинг.",
+                "paid": "✅ Тўлов қилдим",
+                "cancel": "❌ Бекор қилиш",
+            },
             "uz": {
                 "title": "💳 TO'LOV",
                 "method": "💳 Usul",
