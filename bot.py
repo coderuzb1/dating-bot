@@ -163,7 +163,7 @@ TRANSLATIONS = {
         "superlike": "⭐ Суперлайк",
         "premium": "👑 Премиум",
         "settings": "⚙️ Настройки",
-        "referral": "🎁 Реферал",
+        "referral": "🎁 Referal",
 
         "step": "{step}/7",
         "enter_name": "Введите ваше имя:",
@@ -236,7 +236,7 @@ TRANSLATIONS = {
         "superlike": "⭐ Суперлайк",
         "premium": "👑 Премиум",
         "settings": "⚙️ Созламалар",
-        "referral": "🎁 Реферал",
+        "referral": "🎁 Referal",
 
         "step": "{step}/7",
         "enter_name": "Исмингизни киритинг:",
@@ -347,7 +347,6 @@ async def get_main_keyboard(language="uz"):
         ],
         [
             KeyboardButton(tr(language, "settings")),
-            KeyboardButton(tr(language, "referral")),
             KeyboardButton(tr(language, "referral"))
         ]
     ], resize_keyboard=True)
