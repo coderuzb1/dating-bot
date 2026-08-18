@@ -1519,70 +1519,73 @@ async def handle_callback(update, context):
         return
 
         premium_texts = {
+            "uz": {
+                "title": "👑 <b>PREMIUM</b>",
+                "intro": "💎 Premium bilan tanishuv imkoniyatlaringizni kengaytiring!",
+                "features": (
+                    "♾️ <b>Cheksiz profil ko‘rish</b>\n"
+                    "❤️ <b>Cheksiz Like</b>\n"
+                    "⭐ <b>Superlike bepul</b>\n"
+                    "💬 <b>Matchsiz yozish</b>\n"
+                    "📨 <b>Telegram shaxsiy chatiga yozish</b>\n"
+                    "👀 <b>Kim Like/Superlike bosganini ko‘rish</b>\n"
+                    "🚀 <b>Profilingiz birinchilardan ko‘rsatiladi</b>\n"
+                    "⭐ <b>Premium belgisi</b>"
+                ),
+                "reason": "🔥 <b>Ko‘proq ko‘rinish → ko‘proq Like → ko‘proq Match!</b>",
+                "choose": "✨ O‘zingizga mos Premium tarifini tanlang:",
+                "duration": "📅 <b>Muddatni tanlang:</b>",
+                "week": "1 hafta - 25 000 so‘m",
+                "two_weeks": "14 kun - 39 000 so‘m",
+                "month": "1 oy - 59 000 so‘m",
+                "three_months": "3 oy - 129 000 so‘m",
+                "cancel": "❌ Bekor qilish",
+            },
             "ru": {
                 "title": "👑 <b>ПРЕМИУМ</b>",
-                "intro": "💎 Расширьте свои возможности знакомств!",
+                "intro": "💎 Расширьте возможности знакомств!",
                 "features": (
-                    "♾️ <b>Безлимитный просмотр</b> — открывайте больше людей\n"
-                    "❤️ <b>Безлимитные лайки</b> — не упускайте возможности\n"
-                    "✉️ <b>Пишите без матча</b> — сразу начинайте общение\n"
-                    "👀 <b>Видеть кто лайкнул</b> — знайте кто вами интересуется\n"
-                    "⭐️ <b>Значок Premium</b> — выделяйтесь\n"
-                    "🚀 <b>Приоритет профиля</b> — больше просмотров"
+                    "♾️ <b>Безлимитный просмотр профилей</b>\n"
+                    "❤️ <b>Безлимитные Like</b>\n"
+                    "⭐ <b>Superlike бесплатно</b>\n"
+                    "💬 <b>Сообщения без Match</b>\n"
+                    "📨 <b>Сообщения в личный Telegram</b>\n"
+                    "👀 <b>Видеть, кто поставил Like/Superlike</b>\n"
+                    "🚀 <b>Ваш профиль показывается одним из первых</b>\n"
+                    "⭐ <b>Значок Premium</b>"
                 ),
-                "reason": "🔥 <b>Больше просмотров → больше лайков → больше матчей!</b>",
-                "choose": "✨ Выберите подходящий тариф:",
+                "reason": "🔥 <b>Больше просмотров → больше Like → больше Match!</b>",
+                "choose": "✨ Выберите подходящий тариф Premium:",
                 "duration": "📅 <b>Выберите срок:</b>",
-                "week": "📅 1 неделя - 25 000 сум • УДОБНО",
-                "two_weeks": "🔥 14 дней - 39 000 сум • ВЫГОДНО",
-                "month": "⭐️ 1 месяц - 59 000 сум • ПОПУЛЯРНО",
-                "three_months": "👑 3 месяца - 129 000 сум • ЭКОНОМНО",
+                "week": "1 неделя - 25 000 сум",
+                "two_weeks": "14 дней - 39 000 сум",
+                "month": "1 месяц - 59 000 сум",
+                "three_months": "3 месяца - 129 000 сум",
                 "cancel": "❌ Отмена",
             },
             "uz_cyr": {
                 "title": "👑 <b>ПРЕМИУМ</b>",
                 "intro": "💎 Танишув имкониятларингизни кенгайтиринг!",
                 "features": (
-                    "♾️ <b>Чексиз профил кўриш</b> — кўпроқ одамларни кашф этинг\n"
-                    "❤️ <b>Чексиз Like</b> — имкониятларни қўлдан бой берманг\n"
-                    "✉️ <b>Матчни кутмасдан ёзинг</b> — ёққан инсонингиз билан дарҳол суҳбат бошланг\n"
-                    "👀 <b>Сизни ким ёқтирганини кўринг</b> — ким сизга қизиқаётганини билинг\n"
-                    "⭐️ <b>Premium белгиси</b> — профилингизни ажратиб туринг\n"
-                    "🚀 <b>Профил устуворлиги</b> — кўпроқ кўринишга эга бўлинг"
+                    "♾️ <b>Чексиз профиль кўриш</b>\n"
+                    "❤️ <b>Чексиз Like</b>\n"
+                    "⭐ <b>Superlike бепул</b>\n"
+                    "💬 <b>Matchсиз ёзиш</b>\n"
+                    "📨 <b>Telegram шахсий чатига ёзиш</b>\n"
+                    "👀 <b>Ким Like/Superlike босганини кўриш</b>\n"
+                    "🚀 <b>Профилингиз биринчи кўрсатилади</b>\n"
+                    "⭐ <b>Premium белгиси</b>"
                 ),
                 "reason": "🔥 <b>Кўпроқ кўриниш → кўпроқ Like → кўпроқ Match!</b>",
                 "choose": "✨ Ўзингизга мос Premium тарифини танланг:",
                 "duration": "📅 <b>Муддатни танланг:</b>",
-                "week": "📅 1 ҳафта - 25 000 сўм • ҚУЛАЙ",
-                "two_weeks": "🔥 14 кун - 39 000 сўм • ЭНГ ҚУЛАЙ",
-                "month": "⭐️ 1 ой - 59 000 сўм • ОММАБОП",
-                "three_months": "👑 3 ой - 129 000 сўм • ТЕЖАМКОР",
+                "week": "1 ҳафта - 25 000 сўм",
+                "two_weeks": "14 кун - 39 000 сўм",
+                "month": "1 ой - 59 000 сўм",
+                "three_months": "3 ой - 129 000 сўм",
                 "cancel": "❌ Бекор қилиш",
             },
-            "uz": {
-                "title": "👑 <b>PREMIUM</b>",
-                "intro": (
-                    "💎 Premium bilan tanishuv imkoniyatlaringizni "
-                    "yanada kengaytiring!"
-                ),
-                "features": (
-                    "♾️ <b>Cheksiz profil ko'rish</b> — ko'proq odamlarni kashf eting\n"
-                    "❤️ <b>Cheksiz Like</b> — imkoniyatlarni o'tkazib yubormang\n"
-                    "✉️ <b>Matchni kutmasdan yozing</b> — yoqqan insoningiz bilan darhol suhbat boshlang\n"
-                    "👀 <b>Sizni kim yoqtirganini ko'ring</b> — kim sizga qiziqayotganini biling\n"
-                    "⭐️ <b>Premium belgisi</b> — profilingizni ajratib turing\n"
-                    "🚀 <b>Profil ustuvorligi</b> — ko'proq ko'rinishga ega bo'ling"
-                ),
-                "reason": "🔥 <b>Ko'proq ko'rinish → ko'proq Like → ko'proq Match!</b>",
-                "choose": "✨ O'zingizga mos Premium tarifini tanlang:",
-                "duration": "📅 <b>Muddatni tanlang:</b>",
-                "week": "📅 1 hafta - 25 000 so'm • QULAY",
-                "two_weeks": "🔥 14 kun - 39 000 so'm • ENG QULAY",
-                "month": "⭐️ 1 oy - 59 000 so'm • OMMABOP",
-                "three_months": "👑 3 oy - 129 000 so'm • TEJAMKOR",
-                "cancel": "❌ Bekor qilish",
-            },
-            }
+        }
 
         t = premium_texts.get(language, premium_texts["uz"])
 
