@@ -2702,6 +2702,7 @@ async def handle_callback(update, context):
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("👤 Ismni o'zgartirish", callback_data="edit_name")],
             [InlineKeyboardButton("🎂 Yoshni o'zgartirish", callback_data="edit_age")],
+            [InlineKeyboardButton("⚧️ Jinsni o'zgartirish", callback_data="edit_gender")],
             [InlineKeyboardButton("📝 Bioni o'zgartirish", callback_data="edit_bio")],
             [InlineKeyboardButton("📍 Shaharni o'zgartirish", callback_data="edit_city")],
             [InlineKeyboardButton("📸 Rasmni o'zgartirish", callback_data="edit_photo")]
@@ -2719,6 +2720,35 @@ async def handle_callback(update, context):
         await query.message.reply_text("Yangi yoshingizni kiriting (16-60):")
         return
     
+    if data == "edit_gender":
+        context.user_data['edit_field'] = 'gender'
+
+        language = get_user_language(user.id)
+
+        buttons = {
+            "uz": [["👨 Erkak", "👩 Ayol"]],
+            "ru": [["👨 Мужчина", "👩 Женщина"]],
+            "uz_cyr": [["👨 Эркак", "👩 Аёл"]],
+        }
+
+        texts = {
+            "uz": "⚧️ Yangi jinsingizni tanlang:",
+            "ru": "⚧️ Выберите новый пол:",
+            "uz_cyr": "⚧️ Янги жинсингизни танланг:",
+        }
+
+        keyboard = ReplyKeyboardMarkup(
+            [[KeyboardButton(x) for x in row] for row in buttons.get(language, buttons["uz"])],
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+
+        await query.message.reply_text(
+            texts.get(language, texts["uz"]),
+            reply_markup=keyboard
+        )
+        return
+
     if data == "edit_bio":
         context.user_data['edit_field'] = 'bio'
         await query.message.reply_text("Yangi bio yozing:")
@@ -3606,6 +3636,53 @@ async def save_edit(update, context):
             "✅ Ism yangilandi!",
             reply_markup=await get_main_keyboard()
         )
+        return ConversationHandler.END
+
+    if field == "gender":
+        language = get_user_language(user.id)
+
+        gender_map = {
+            "👨 Erkak": "Erkak",
+            "👩 Ayol": "Ayol",
+            "👨 Мужчина": "Erkak",
+            "👩 Женщина": "Ayol",
+            "👨 Эркак": "Erkak",
+            "👩 Аёл": "Ayol",
+        }
+
+        gender = gender_map.get(text)
+
+        if not gender:
+            await update.message.reply_text(
+                tr(language, "gender_error")
+            )
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "UPDATE users SET gender = %s WHERE user_id = %s",
+            (gender, user.id)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        context.user_data.pop("edit_field", None)
+
+        success = {
+            "uz": "✅ Jinsingiz muvaffaqiyatli yangilandi!",
+            "ru": "✅ Ваш пол успешно обновлён!",
+            "uz_cyr": "✅ Жинсингиз муваффақиятли янгиланди!",
+        }
+
+        await update.message.reply_text(
+            success.get(language, success["uz"]),
+            reply_markup=await get_main_keyboard(language)
+        )
+
         return ConversationHandler.END
 
     if field == "age":
