@@ -222,23 +222,81 @@ async def notify_new_match(
     user2_name,
     user2_photo
 ):
-    keyboard1 = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "💬 Suhbatni boshlash",
-                callback_data=f"write_{user2_id}"
-            )
-        ]
-    ])
+    def get_chat_options(recipient_id, target_id):
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-    keyboard2 = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "💬 Suhbatni boshlash",
-                callback_data=f"write_{user1_id}"
-            )
-        ]
-    ])
+        cur.execute(
+            """
+            SELECT
+                EXISTS(
+                    SELECT 1
+                    FROM users
+                    WHERE user_id = %s
+                      AND premium_until IS NOT NULL
+                      AND premium_until > NOW()
+                ),
+                username
+            FROM users
+            WHERE user_id = %s
+            """,
+            (recipient_id, target_id)
+        )
+
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if not row:
+            return False, None
+
+        is_premium = bool(row[0])
+        username = row[1]
+
+        if username:
+            username = str(username).strip().lstrip("@")
+
+        return is_premium, username
+
+    keyboard1_buttons = [[
+        InlineKeyboardButton(
+            "💬 Suhbatni boshlash",
+            callback_data=f"write_{user2_id}"
+        )
+    ]]
+
+    try:
+        premium1, username2 = get_chat_options(user1_id, user2_id)
+
+        if premium1 and username2:
+            keyboard1_buttons.append([InlineKeyboardButton(
+                "📨 Telegram’da yozish",
+                url=f"https://t.me/{username2}"
+            )])
+    except Exception as e:
+        print(f"⚠️ Private chat button user1 error: {e}")
+
+    keyboard1 = InlineKeyboardMarkup(keyboard1_buttons)
+
+    keyboard2_buttons = [[
+        InlineKeyboardButton(
+            "💬 Suhbatni boshlash",
+            callback_data=f"write_{user1_id}"
+        )
+    ]]
+
+    try:
+        premium2, username1 = get_chat_options(user2_id, user1_id)
+
+        if premium2 and username1:
+            keyboard2_buttons.append([InlineKeyboardButton(
+                "📨 Telegram’da yozish",
+                url=f"https://t.me/{username1}"
+            )])
+    except Exception as e:
+        print(f"⚠️ Private chat button user2 error: {e}")
+
+    keyboard2 = InlineKeyboardMarkup(keyboard2_buttons)
 
     text1 = (
         "🎉 MATCH!\n\n"
@@ -254,10 +312,7 @@ async def notify_new_match(
 
     try:
         if not notification_already_sent(
-            user1_id,
-            "match",
-            user2_id,
-            hours=24 * 30
+            user1_id, "match", user2_id, hours=24 * 30
         ):
             if user2_photo:
                 await bot.send_photo(
@@ -273,36 +328,17 @@ async def notify_new_match(
                     reply_markup=keyboard1
                 )
 
-            save_notification(
-                user1_id,
-                "match",
-                user2_id
-            )
+            save_notification(user1_id, "match", user2_id)
 
     except Forbidden:
         print(f"🚫 Match user1 blocked bot: {user1_id}")
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            cur.execute(
-                "UPDATE users SET is_active = FALSE WHERE user_id = %s",
-                (user1_id,)
-            )
-            conn.commit()
-            cur.close()
-            conn.close()
-        except Exception as db_error:
-            print(f"❌ Could not deactivate user {user1_id}: {db_error}")
 
     except Exception as e:
         print(f"Match user1 error: {e}")
 
     try:
         if not notification_already_sent(
-            user2_id,
-            "match",
-            user1_id,
-            hours=24 * 30
+            user2_id, "match", user1_id, hours=24 * 30
         ):
             if user1_photo:
                 await bot.send_photo(
@@ -318,26 +354,10 @@ async def notify_new_match(
                     reply_markup=keyboard2
                 )
 
-            save_notification(
-                user2_id,
-                "match",
-                user1_id
-            )
+            save_notification(user2_id, "match", user1_id)
 
     except Forbidden:
         print(f"🚫 Match user2 blocked bot: {user2_id}")
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            cur.execute(
-                "UPDATE users SET is_active = FALSE WHERE user_id = %s",
-                (user2_id,)
-            )
-            conn.commit()
-            cur.close()
-            conn.close()
-        except Exception as db_error:
-            print(f"❌ Could not deactivate user {user2_id}: {db_error}")
 
     except Exception as e:
         print(f"Match user2 error: {e}")
