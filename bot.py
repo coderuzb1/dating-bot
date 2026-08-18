@@ -802,7 +802,7 @@ async def get_photo(update, context):
                 "ru": "📸 <b>3/3 — Последнее фото</b>\n\nОтправьте фото или нажмите ⏭ Пропустить.",
                 "uz_cyr": "📸 <b>3/3 — Сўнгги фото</b>\n\nРасм юборинг ёки ⏭ Ўтказиб юборинг.",
             },
-        }[step + 1]
+        }[step + 1][language]
 
         keyboard = ReplyKeyboardMarkup(
             [[KeyboardButton(skip_texts[language])]],
