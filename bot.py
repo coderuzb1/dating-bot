@@ -1210,8 +1210,11 @@ async def handle_callback(update, context):
         conn = get_db_connection()
         cur = conn.cursor()
 
+        match_created = False
+        already_liked = False
+
         try:
-            # Qarshi Like mavjudligini tekshiramiz
+            # Biz targetga oldin Like bosganmizmi?
             cur.execute("""
                 SELECT EXISTS(
                     SELECT 1
@@ -1221,46 +1224,50 @@ async def handle_callback(update, context):
                 )
             """, (user.id, target_id))
 
-            mutual = bool(cur.fetchone()[0])
+            already_liked = bool(cur.fetchone()[0])
 
-            if not mutual:
+            # Agar hali Like bosmagan bo'lsak — Like qo'shamiz
+            if not already_liked:
                 cur.execute("""
                     INSERT INTO likes (from_user, to_user)
                     VALUES (%s, %s)
                     ON CONFLICT DO NOTHING
                 """, (user.id, target_id))
 
-            # Match mavjudligini tekshirish
+            # Target ham bizga Like bosganmi?
             cur.execute("""
                 SELECT EXISTS(
                     SELECT 1
-                    FROM matches
-                    WHERE
-                        (user1 = %s AND user2 = %s)
-                        OR
-                        (user1 = %s AND user2 = %s)
+                    FROM likes
+                    WHERE from_user = %s
+                      AND to_user = %s
                 )
-            """, (user.id, target_id, target_id, user.id))
+            """, (target_id, user.id))
 
-            match_exists = bool(cur.fetchone()[0])
+            other_like = bool(cur.fetchone()[0])
 
-            if not match_exists:
+            # Ikkala tomon Like bosgan bo'lsa — MATCH
+            if other_like:
                 cur.execute("""
                     SELECT EXISTS(
                         SELECT 1
-                        FROM likes
-                        WHERE from_user = %s
-                          AND to_user = %s
+                        FROM matches
+                        WHERE
+                            (user1 = %s AND user2 = %s)
+                            OR
+                            (user1 = %s AND user2 = %s)
                     )
-                """, (target_id, user.id))
+                """, (user.id, target_id, target_id, user.id))
 
-                other_like = bool(cur.fetchone()[0])
+                match_exists = bool(cur.fetchone()[0])
 
-                if other_like:
+                if not match_exists:
                     cur.execute("""
                         INSERT INTO matches (user1, user2)
                         VALUES (%s, %s)
                     """, (user.id, target_id))
+
+                    match_created = True
 
             conn.commit()
 
@@ -1272,10 +1279,62 @@ async def handle_callback(update, context):
             cur.close()
             conn.close()
 
-        if mutual or not match_exists:
-            await query.answer("❤️ Like yuborildi!", show_alert=False)
+        if match_created:
+            # Qarshi tomonning ismini olish
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            cur.execute(
+                "SELECT first_name FROM users WHERE user_id = %s",
+                (target_id,)
+            )
+            target_row = cur.fetchone()
+            target_name = target_row[0] if target_row and target_row[0] else "Foydalanuvchi"
+
+            cur.execute(
+                "SELECT first_name FROM users WHERE user_id = %s",
+                (user.id,)
+            )
+            sender_row = cur.fetchone()
+            sender_name = sender_row[0] if sender_row and sender_row[0] else "Foydalanuvchi"
+
+            cur.close()
+            conn.close()
+
+            # Sizga
+            await query.answer("🎉 MATCH! ❤️", show_alert=True)
+
+            await query.message.reply_text(
+                f"🎉 <b>Yangi MATCH!</b> ❤️\n\n"
+                f"💞 Siz va <b>{target_name}</b> bir-biringizni yoqtirdingiz!\n\n"
+                f"💬 Endi suhbatni boshlashingiz mumkin.",
+                parse_mode="HTML"
+            )
+
+            # Qarshi tomonga
+            try:
+                await context.bot.send_message(
+                    chat_id=target_id,
+                    text=(
+                        f"🎉 <b>Yangi MATCH!</b> ❤️\n\n"
+                        f"💞 Siz va <b>{sender_name}</b> bir-biringizni yoqtirdingiz!\n\n"
+                        f"💬 Endi suhbatni boshlashingiz mumkin."
+                    ),
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                print(f"Match notification error for {target_id}: {e}")
+
+        elif already_liked:
+            await query.answer(
+                "❤️ Siz allaqachon Like bosgansiz.",
+                show_alert=False
+            )
         else:
-            await query.answer("🎉 MATCH!", show_alert=True)
+            await query.answer(
+                "❤️ Like yuborildi!",
+                show_alert=False
+            )
 
         return
 
