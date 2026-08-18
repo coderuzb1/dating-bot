@@ -2458,8 +2458,32 @@ async def handle_callback(update, context):
         return
     
     if data == "edit_photo":
-        context.user_data['edit_field'] = 'photo'
-        await query.message.reply_text("Yangi rasm yuboring:")
+        context.user_data["edit_field"] = "photo"
+
+        language = get_user_language(user.id)
+
+        texts = {
+            "uz": (
+                "📸 <b>Rasmni o‘zgartirish</b>\n\n"
+                "Yangi profilingiz rasmini yuboring.\n"
+                "✨ Yangi rasm avvalgi asosiy rasm o‘rniga saqlanadi."
+            ),
+            "ru": (
+                "📸 <b>Изменение фотографии</b>\n\n"
+                "Отправьте новую фотографию профиля.\n"
+                "✨ Новая фотография заменит основную фотографию."
+            ),
+            "uz_cyr": (
+                "📸 <b>Расмни ўзгартириш</b>\n\n"
+                "Янги профил расмингизни юборинг.\n"
+                "✨ Янги расм асосий расм ўрнига сақланади."
+            ),
+        }
+
+        await query.message.reply_text(
+            texts.get(language, texts["uz"]),
+            parse_mode="HTML"
+        )
         return
     
     if data.startswith("write_"):
@@ -2978,6 +3002,203 @@ async def handle_callback(update, context):
         )
 
         return
+
+
+async def save_edit_photo(update, context):
+    user = update.effective_user
+    language = get_user_language(user.id)
+
+    texts = {
+        "uz": {
+            "send": "📸 Iltimos, yangi rasm yuboring.",
+            "success": "✅ Rasm muvaffaqiyatli o‘zgartirildi!",
+            "error": "❌ Rasmni saqlashda xatolik yuz berdi. Qaytadan urinib ko‘ring.",
+            "not_found": "❌ Profil topilmadi.",
+        },
+        "ru": {
+            "send": "📸 Пожалуйста, отправьте новое фото.",
+            "success": "✅ Фото успешно изменено!",
+            "error": "❌ Ошибка сохранения фото. Попробуйте ещё раз.",
+            "not_found": "❌ Профиль не найден.",
+        },
+        "uz_cyr": {
+            "send": "📸 Илтимос, янги расм юборинг.",
+            "success": "✅ Расм муваффақиятли ўзгартирилди!",
+            "error": "❌ Расмни сақлашда хатолик юз берди. Қайтадан уриниб кўринг.",
+            "not_found": "❌ Профиль топилмади.",
+        },
+    }
+
+    t = texts.get(language, texts["uz"])
+
+    if not update.message or not update.message.photo:
+        await update.message.reply_text(t["send"])
+        return
+
+    photo = update.message.photo[-1].file_id
+
+    conn = None
+    cur = None
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Profil mavjudligini tekshirish
+        cur.execute(
+            "SELECT user_id FROM users WHERE user_id = %s",
+            (user.id,)
+        )
+
+        if not cur.fetchone():
+            await update.message.reply_text(t["not_found"])
+            return
+
+        # Asosiy profil rasmini yangilash
+        cur.execute(
+            "UPDATE users SET photo = %s WHERE user_id = %s",
+            (photo, user.id)
+        )
+
+        # user_photos jadvali mavjud bo‘lsa, 1-rasmni ham yangilash
+        cur.execute("""
+            INSERT INTO user_photos (user_id, photo, position)
+            VALUES (%s, %s, 1)
+            ON CONFLICT (user_id, position)
+            DO UPDATE SET photo = EXCLUDED.photo
+        """, (user.id, photo))
+
+        conn.commit()
+
+        context.user_data.pop("edit_field", None)
+
+        await update.message.reply_text(
+            t["success"],
+            reply_markup=await get_main_keyboard()
+        )
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+
+        print(f"Edit photo save error: {e}")
+
+        await update.message.reply_text(t["error"])
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+
+async def save_edit_photo(update, context):
+    """Profil tahrirlash orqali asosiy rasmni almashtirish."""
+
+    user = update.effective_user
+    language = get_user_language(user.id)
+
+    if not update.message or not update.message.photo:
+        texts = {
+            "uz": "📸 Iltimos, rasm yuboring.",
+            "ru": "📸 Пожалуйста, отправьте фотографию.",
+            "uz_cyr": "📸 Илтимос, расм юборинг.",
+        }
+        await update.message.reply_text(
+            texts.get(language, texts["uz"])
+        )
+        return
+
+    photo = update.message.photo[-1].file_id
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # users jadvalidagi asosiy rasmni yangilash
+        cur.execute(
+            """
+            UPDATE users
+            SET photo = %s
+            WHERE user_id = %s
+            """,
+            (photo, user.id)
+        )
+
+        # user_photos mavjud bo‘lsa, 1-rasmni ham yangilaymiz.
+        # Jadval hali yaratilmagan bo‘lsa ham profil tahrirlash ishlashda davom etadi.
+        try:
+            cur.execute(
+                """
+                INSERT INTO user_photos (user_id, photo, position)
+                VALUES (%s, %s, 1)
+                ON CONFLICT (user_id, position)
+                DO UPDATE SET photo = EXCLUDED.photo
+                """,
+                (user.id, photo)
+            )
+        except Exception as photo_table_error:
+            print(f"⚠️ user_photos update skipped: {photo_table_error}")
+            conn.rollback()
+
+            # users.photo yangilanishini qayta bajarib commit qilamiz
+            cur.execute(
+                """
+                UPDATE users
+                SET photo = %s
+                WHERE user_id = %s
+                """,
+                (photo, user.id)
+            )
+
+        conn.commit()
+
+        context.user_data.pop("edit_field", None)
+
+        texts = {
+            "uz": (
+                "✅ <b>Rasm muvaffaqiyatli yangilandi!</b>\n\n"
+                "✨ Yangi profilingiz rasmi saqlandi."
+            ),
+            "ru": (
+                "✅ <b>Фотография успешно обновлена!</b>\n\n"
+                "✨ Новая фотография профиля сохранена."
+            ),
+            "uz_cyr": (
+                "✅ <b>Расм муваффақиятли янгиланди!</b>\n\n"
+                "✨ Янги профил расми сақланди."
+            ),
+        }
+
+        await update.message.reply_text(
+            texts.get(language, texts["uz"]),
+            reply_markup=await get_main_keyboard(),
+            parse_mode="HTML"
+        )
+
+        return ConversationHandler.END
+
+    except Exception as e:
+        conn.rollback()
+        print(f"❌ Edit photo save error: {e}")
+
+        texts = {
+            "uz": "❌ Rasmni saqlashda xatolik yuz berdi. Qaytadan urinib ko‘ring.",
+            "ru": "❌ Ошибка сохранения фотографии. Попробуйте ещё раз.",
+            "uz_cyr": "❌ Расмни сақлашда хатолик юз берди. Қайтадан уриниб кўринг.",
+        }
+
+        await update.message.reply_text(
+            texts.get(language, texts["uz"])
+        )
+
+        return
+
+    finally:
+        cur.close()
+        conn.close()
+
 
 async def save_edit(update, context):
     user = update.effective_user
