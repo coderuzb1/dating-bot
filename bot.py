@@ -839,6 +839,26 @@ async def find(update, context):
             "write": "✉️ Yozish",
             "no_bio": "Bio yozilmagan",
         },
+        "ru": {
+            "no_profile": "❌ Сначала создайте профиль. Нажмите /start.",
+            "limit": "🚫 Вы достигли дневного лимита в 20 профилей.\n\n👑 С Премиумом вы сможете просматривать профили без ограничений.",
+            "no_profiles": "😔 Новых профилей пока нет.",
+            "dislike": "👎 Не нравится",
+            "like": "❤️ Нравится",
+            "superlike": "⭐ Суперлайк",
+            "write": "✉️ Написать",
+            "no_bio": "Биография не указана",
+        },
+        "uz_cyr": {
+            "no_profile": "❌ Аввал профил яратинг. /start босинг.",
+            "limit": "🚫 Бугунги 20 та профиль лимитингиз тугади.\n\n👑 Premium билан профилларни чексиз кўришингиз мумкин.",
+            "no_profiles": "😔 Ҳозирча янги профиллар қолмаган.",
+            "dislike": "👎 Ёқмади",
+            "like": "❤️ Ёқди",
+            "superlike": "⭐ Суперлайк",
+            "write": "✉️ Ёзиш",
+            "no_bio": "Био ёзилмаган",
+        },
         }
 
     t = texts.get(language, texts["uz"])
@@ -3101,6 +3121,14 @@ async def likes(update, context):
             "empty": "❤️ Hozircha yoqtirganlaringiz yo'q.",
             "title": "❤️ Siz yoqtirganlar:",
         },
+        "ru": {
+            "empty": "❤️ Вы пока никого не лайкнули.",
+            "title": "❤️ Понравившиеся вам:",
+        },
+        "uz_cyr": {
+            "empty": "❤️ Ҳозирча ёқтирганларингиз йўқ.",
+            "title": "❤️ Сиз ёқтирганлар:",
+        },
         }
 
     t = texts.get(language, texts["uz"])
@@ -3137,6 +3165,14 @@ async def matches(update, context):
         "uz": {
             "empty": "💞 Hozircha matchlar yo'q.",
             "title": "💞 Matchlaringiz:",
+        },
+        "ru": {
+            "empty": "💞 Пока совпадений нет.",
+            "title": "💞 Ваши совпадения:",
+        },
+        "uz_cyr": {
+            "empty": "💞 Ҳозирча мэтчлар йўқ.",
+            "title": "💞 Мэтчларингиз:",
         },
         }
 
