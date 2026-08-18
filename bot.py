@@ -4870,6 +4870,105 @@ async def handle_message(update, context):
     user = update.effective_user
     language = get_user_language(user.id)
 
+    # 👑 ASOSIY PANELDAGI PREMIUM TUGMASI
+    premium_buttons = {
+        "uz": "👑 Premium",
+        "ru": "👑 Премиум",
+        "uz_cyr": "👑 Премиум",
+    }
+
+    if text == premium_buttons.get(language):
+        premium_texts = {
+            "uz": {
+                "title": "👑 <b>PREMIUM</b>",
+                "intro": "💎 Premium bilan tanishuv imkoniyatlaringizni kengaytiring!",
+                "features": (
+                    "♾️ <b>Cheksiz profil ko‘rish</b> — ko‘proq tanishuv\n"
+                    "❤️ <b>Cheksiz Like</b> — imkoniyatlarni qo‘ldan boy bermang\n"
+                    "⭐ <b>Superlike bepul</b> — ko‘proq e’tibor oling\n"
+                    "💬 <b>Matchsiz yozish</b> — suhbatni darhol boshlang\n"
+                    "📨 <b>Telegram shaxsiy chatiga yozish</b>\n"
+                    "👀 <b>Kim Like/Superlike bosganini ko‘ring</b>\n"
+                    "🚀 <b>Profil ustuvorligi</b> — ko‘proq ko‘rining\n"
+                    "⭐ <b>Premium belgisi</b>"
+                ),
+                "reason": "🔥 <b>Ko‘proq ko‘rinish → ko‘proq Like → ko‘proq Match!</b>",
+                "choose": "✨ O‘zingizga mos Premium tarifini tanlang:",
+                "duration": "📅 <b>Muddatni tanlang:</b>",
+                "week": "1 hafta - 25 000 so‘m",
+                "two_weeks": "14 kun - 39 000 so‘m",
+                "month": "1 oy - 59 000 so‘m",
+                "three_months": "3 oy - 129 000 so‘m",
+                "cancel": "❌ Bekor qilish",
+            },
+            "ru": {
+                "title": "👑 <b>ПРЕМИУМ</b>",
+                "intro": "💎 Расширьте возможности знакомств!",
+                "features": (
+                    "♾️ <b>Безлимитный просмотр профилей</b> — больше знакомств\n"
+                    "❤️ <b>Безлимитные Like</b> — не упускайте возможности\n"
+                    "⭐ <b>Superlike бесплатно</b> — больше внимания\n"
+                    "💬 <b>Сообщения без Match</b> — начинайте общение сразу\n"
+                    "📨 <b>Сообщения в личный Telegram</b>\n"
+                    "👀 <b>Видеть, кто поставил Like/Superlike</b>\n"
+                    "🚀 <b>Приоритет профиля</b> — больше просмотров\n"
+                    "⭐ <b>Значок Premium</b>"
+                ),
+                "reason": "🔥 <b>Больше просмотров → больше Like → больше Match!</b>",
+                "choose": "✨ Выберите подходящий тариф Premium:",
+                "duration": "📅 <b>Выберите срок:</b>",
+                "week": "1 неделя - 25 000 сум",
+                "two_weeks": "14 дней - 39 000 сум",
+                "month": "1 месяц - 59 000 сум",
+                "three_months": "3 месяца - 129 000 сум",
+                "cancel": "❌ Отмена",
+            },
+            "uz_cyr": {
+                "title": "👑 <b>ПРЕМИУМ</b>",
+                "intro": "💎 Танишув имкониятларингизни кенгайтиринг!",
+                "features": (
+                    "♾️ <b>Чексиз профиль кўриш</b> — кўпроқ танишув\n"
+                    "❤️ <b>Чексиз Like</b> — имкониятларни қўлдан бой берманг\n"
+                    "⭐ <b>Superlike бепул</b> — кўпроқ эътибор олинг\n"
+                    "💬 <b>Matchсиз ёзиш</b> — дарҳол суҳбат бошланг\n"
+                    "📨 <b>Telegram шахсий чатига ёзиш</b>\n"
+                    "👀 <b>Ким Like/Superlike босганини кўриш</b>\n"
+                    "🚀 <b>Профил устуворлиги</b> — кўпроқ кўриниш\n"
+                    "⭐ <b>Premium белгиси</b>"
+                ),
+                "reason": "🔥 <b>Кўпроқ кўриниш → кўпроқ Like → кўпроқ Match!</b>",
+                "choose": "✨ Ўзингизга мос Premium тарифини танланг:",
+                "duration": "📅 <b>Муддатни танланг:</b>",
+                "week": "1 ҳафта - 25 000 сўм",
+                "two_weeks": "14 кун - 39 000 сўм",
+                "month": "1 ой - 59 000 сўм",
+                "three_months": "3 ой - 129 000 сўм",
+                "cancel": "❌ Бекор қилиш",
+            },
+        }
+
+        t = premium_texts.get(language, premium_texts["uz"])
+
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton(t["week"], callback_data="premium_1w")],
+            [InlineKeyboardButton(t["two_weeks"], callback_data="premium_2w")],
+            [InlineKeyboardButton(t["month"], callback_data="premium_1m")],
+            [InlineKeyboardButton(t["three_months"], callback_data="premium_3m")],
+            [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")]
+        ])
+
+        await update.message.reply_text(
+            f'{t["title"]}\n\n'
+            f'{t["intro"]}\n\n'
+            f'{t["features"]}\n\n'
+            f'{t["reason"]}\n\n'
+            f'{t["choose"]}\n\n'
+            f'{t["duration"]}',
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        return
+
     # 👀 Meni yoqtirganlar
     who_liked_buttons = {
         "uz": "👀 Meni yoqtirganlar",
