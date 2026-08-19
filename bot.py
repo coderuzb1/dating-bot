@@ -7215,6 +7215,7 @@ def main():
     app.add_handler(CommandHandler("admin", admin))
     app.add_handler(CommandHandler("givepremium", givepremium))
     app.add_handler(CommandHandler("removepremium", removepremium))
+    app.add_handler(CommandHandler("delete", delete_user))
     app.add_handler(CommandHandler("blocked", blocked_users))
 
     app.add_handler(CommandHandler("checkpremium", checkpremium))
