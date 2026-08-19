@@ -7412,6 +7412,16 @@ def main():
         group=-1
     )
 
+    # =========================================================
+    # MUHIM: PREMIUM VA TELEGRAM CALLBACKLARI CONVERSATION'DAN OLDIN
+    # =========================================================
+    app.add_handler(
+        CallbackQueryHandler(
+            handle_callback,
+            pattern=r"^(premium_buy|telegram_chat_\d+)$"
+        )
+    )
+
     app.add_handler(conv_handler)
 
     # New user onboarding: Welcome -> Profil yaratish -> Til
