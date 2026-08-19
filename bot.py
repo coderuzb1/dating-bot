@@ -1206,6 +1206,121 @@ async def handle_callback(update, context):
     user = query.from_user
     language = get_user_language(user.id)
     data = query.data
+
+    # =========================================================
+    # PREMIUM: TELEGRAM SHAXSIY CHATIGA YOZISH
+    # Username bo'lmasa ham tugma chiqadi va shu yerda xabar beradi.
+    # =========================================================
+    if data.startswith("telegram_chat_"):
+        try:
+            target_id = int(data.split("_", 2)[2])
+        except (ValueError, IndexError):
+            await query.answer("❌ Xato.", show_alert=True)
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        try:
+            # Faqat Premium foydalanuvchi foydalanishi mumkin
+            cur.execute(
+                """
+                SELECT
+                    premium_until,
+                    username
+                FROM users
+                WHERE user_id = %s
+                """,
+                (user.id,)
+            )
+            sender_row = cur.fetchone()
+
+            if not sender_row:
+                await query.answer(
+                    "❌ Profil topilmadi.",
+                    show_alert=True
+                )
+                return
+
+            premium_until, _ = sender_row
+
+            is_premium = bool(
+                premium_until is not None
+                and premium_until > datetime.now()
+            )
+
+            if not is_premium:
+                await query.answer(
+                    "👑 Bu imkoniyat faqat Premium uchun.",
+                    show_alert=True
+                )
+                return
+
+            # Qarshi tomon username'ini tekshiramiz
+            cur.execute(
+                """
+                SELECT username
+                FROM users
+                WHERE user_id = %s
+                """,
+                (target_id,)
+            )
+            target_row = cur.fetchone()
+
+            if not target_row:
+                await query.answer(
+                    "❌ Foydalanuvchi topilmadi.",
+                    show_alert=True
+                )
+                return
+
+            username = target_row[0]
+
+            if not username:
+                if language == "ru":
+                    message = "📱 У пользователя не установлен Telegram username."
+                elif language == "uz_cyr":
+                    message = "📱 Фойдаланувчида Telegram username ўрнатилмаган."
+                else:
+                    message = "📱 Foydalanuvchida Telegram username o‘rnatilmagan."
+
+                await query.answer(
+                    message,
+                    show_alert=True
+                )
+                return
+
+            username = str(username).strip().lstrip("@")
+
+            # Username bor bo'lsa URL tugmasini shu xabarning o'zida chiqaramiz
+            if language == "ru":
+                text = "📨 Telegram личный чат готов."
+                button_text = "📨 Открыть Telegram"
+            elif language == "uz_cyr":
+                text = "📨 Telegram шахсий чати тайёр."
+                button_text = "📨 Telegram'ни очиш"
+            else:
+                text = "📨 Telegram shaxsiy chati tayyor."
+                button_text = "📨 Telegram'ni ochish"
+
+            await query.message.reply_text(
+                text,
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            button_text,
+                            url=f"https://t.me/{username}"
+                        )
+                    ]
+                ])
+            )
+
+            return
+
+        finally:
+            cur.close()
+            conn.close()
+
     
     if data.startswith("like_back_"):
         try:
@@ -3407,6 +3522,10 @@ async def handle_callback(update, context):
             await query.message.delete()
         except Exception:
             pass
+
+        # Keyingi profilni ko'rsatish
+        await find(update, context)
+        return
 
         await find(
             update,
