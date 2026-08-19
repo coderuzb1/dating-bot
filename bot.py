@@ -4945,9 +4945,7 @@ async def likes(update, context):
                 InlineKeyboardButton(
                     t["like_back"],
                     callback_data=f"like_back_{target_id}"
-                )
-            ],
-            [
+                ),
                 InlineKeyboardButton(
                     t["skip"],
                     callback_data=f"skip_liker_{target_id}"
