@@ -1,3 +1,4 @@
+from datetime import datetime
 
 import os
 import psycopg2
@@ -222,25 +223,23 @@ async def notify_new_match(
     user2_name,
     user2_photo
 ):
-    def get_chat_options(recipient_id, target_id):
+    def get_user_info(user_id):
         conn = get_db_connection()
         cur = conn.cursor()
 
         cur.execute(
             """
             SELECT
-                EXISTS(
-                    SELECT 1
-                    FROM users
-                    WHERE user_id = %s
-                      AND premium_until IS NOT NULL
-                      AND premium_until > NOW()
-                ),
-                username
+                first_name,
+                age,
+                city,
+                username,
+                premium_until,
+                language
             FROM users
             WHERE user_id = %s
             """,
-            (recipient_id, target_id)
+            (user_id,)
         )
 
         row = cur.fetchone()
@@ -248,67 +247,185 @@ async def notify_new_match(
         conn.close()
 
         if not row:
-            return False, None
+            return {
+                "name": "Foydalanuvchi",
+                "age": None,
+                "city": None,
+                "username": None,
+                "premium": False,
+                "language": "uz",
+            }
 
-        is_premium = bool(row[0])
-        username = row[1]
+        name, age, city, username, premium_until, language = row
 
         if username:
             username = str(username).strip().lstrip("@")
 
-        return is_premium, username
-
-    keyboard1_buttons = [[
-        InlineKeyboardButton(
-            "💬 Suhbatni boshlash",
-            callback_data=f"write_{user2_id}"
+        premium = bool(
+            premium_until is not None
+            and premium_until > datetime.now()
         )
-    ]]
 
-    try:
-        premium1, username2 = get_chat_options(user1_id, user2_id)
+        return {
+            "name": name or "Foydalanuvchi",
+            "age": age,
+            "city": city,
+            "username": username,
+            "premium": premium,
+            "language": language or "uz",
+        }
 
-        if premium1 and username2:
-            keyboard1_buttons.append([InlineKeyboardButton(
-                "📨 Telegram’da yozish",
-                url=f"https://t.me/{username2}"
-            )])
-    except Exception as e:
-        print(f"⚠️ Private chat button user1 error: {e}")
+    def build_text(recipient, target):
+        lang = recipient["language"]
 
-    keyboard1 = InlineKeyboardMarkup(keyboard1_buttons)
+        if lang == "ru":
+            text = (
+                "🎉 <b>MATCH! ❤️</b>\n\n"
+                "Вы понравились друг другу!\n\n"
+                f"👤 <b>{target['name']}</b>"
+            )
 
-    keyboard2_buttons = [[
-        InlineKeyboardButton(
-            "💬 Suhbatni boshlash",
-            callback_data=f"write_{user1_id}"
+            if target["age"]:
+                text += f", {target['age']}"
+
+            if target["city"]:
+                text += f"\n📍 <b>{target['city']}</b>"
+
+            text += "\n\n💬 Начните общение прямо сейчас."
+
+            if recipient["premium"]:
+                text += (
+                    "\n\n👑 <b>Вы Premium!</b>\n"
+                    "📨 Вы также можете написать этому человеку "
+                    "в личный Telegram.\n"
+                    "💡 Такой способ связи может привлечь больше внимания "
+                    "и повысить шанс получить ответ."
+                )
+            else:
+                text += (
+                    "\n\n👑 <b>Хотите больше шансов на общение?</b>\n"
+                    "📨 С Premium вы сможете писать прямо в личный "
+                    "Telegram собеседника.\n"
+                    "🔥 Это поможет привлечь больше внимания и увеличить "
+                    "шанс получить ответ."
+                )
+
+            return text
+
+        if lang == "uz_cyr":
+            text = (
+                "🎉 <b>МАТЧ! ❤️</b>\n\n"
+                "Сизлар бир-бирингизга ёқдингиз!\n\n"
+                f"👤 <b>{target['name']}</b>"
+            )
+
+            if target["age"]:
+                text += f", {target['age']} ёш"
+
+            if target["city"]:
+                text += f"\n📍 <b>{target['city']}</b>"
+
+            text += "\n\n💬 Ҳозироқ суҳбатни бошланг."
+
+            if recipient["premium"]:
+                text += (
+                    "\n\n👑 <b>Сиз Premiumсиз!</b>\n"
+                    "📨 Суҳбатдошингизга Telegram шахсий чати орқали "
+                    "ҳам ёзишингиз мумкин.\n"
+                    "💡 Бу хабарингизга кўпроқ эътибор қаратилиши ва "
+                    "жавоб олиш эҳтимолини ошириши мумкин."
+                )
+            else:
+                text += (
+                    "\n\n👑 <b>Кўпроқ имконият хоҳлайсизми?</b>\n"
+                    "📨 Premium билан Telegram шахсий чатига тўғридан-тўғри "
+                    "ёзишингиз мумкин.\n"
+                    "🔥 Бу кўпроқ эътибор ва жавоб олиш эҳтимолини ошириши мумкин."
+                )
+
+            return text
+
+        text = (
+            "🎉 <b>MATCH! ❤️</b>\n\n"
+            "Sizlar bir-biringizga yoqdingiz!\n\n"
+            f"👤 <b>{target['name']}</b>"
         )
-    ]]
 
-    try:
-        premium2, username1 = get_chat_options(user2_id, user1_id)
+        if target["age"]:
+            text += f", {target['age']} yosh"
 
-        if premium2 and username1:
-            keyboard2_buttons.append([InlineKeyboardButton(
-                "📨 Telegram’da yozish",
-                url=f"https://t.me/{username1}"
-            )])
-    except Exception as e:
-        print(f"⚠️ Private chat button user2 error: {e}")
+        if target["city"]:
+            text += f"\n📍 <b>{target['city']}</b>"
 
-    keyboard2 = InlineKeyboardMarkup(keyboard2_buttons)
+        text += "\n\n💬 Hozir suhbatni boshlang."
 
-    text1 = (
-        "🎉 MATCH!\n\n"
-        "Sizlar bir-biringizga yoqdingiz ❤️\n\n"
-        f"👤 {user2_name}"
-    )
+        if recipient["premium"]:
+            text += (
+                "\n\n👑 <b>Siz Premiumsiz!</b>\n"
+                "📨 Bu odamga Telegram shaxsiy chatiga to‘g‘ridan-to‘g‘ri "
+                "yozishingiz mumkin.\n"
+                "💡 Bu xabaringizga ko‘proq e’tibor berilishiga va "
+                "javob olish ehtimolini oshirishga yordam berishi mumkin."
+            )
+        else:
+            text += (
+                "\n\n👑 <b>Ko‘proq e’tibor va javob olishni xohlaysizmi?</b>\n"
+                "📨 Premium bilan Telegram shaxsiy chatiga to‘g‘ridan-to‘g‘ri "
+                "yozishingiz mumkin.\n"
+                "🔥 Bu xabaringizni ko‘rish va javob olish ehtimolini oshirishi mumkin."
+            )
 
-    text2 = (
-        "🎉 MATCH!\n\n"
-        "Sizlar bir-biringizga yoqdingiz ❤️\n\n"
-        f"👤 {user1_name}"
-    )
+        return text
+
+    def build_keyboard(recipient, target):
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    "💬 Suhbatni boshlash",
+                    callback_data=f"write_{target['id']}"
+                )
+            ]
+        ]
+
+        if recipient["premium"]:
+            if target["username"]:
+                buttons.append([
+                    InlineKeyboardButton(
+                        "📨 Telegram chatiga yozish",
+                        url=f"https://t.me/{target['username']}"
+                    )
+                ])
+            else:
+                buttons.append([
+                    InlineKeyboardButton(
+                        "📨 Telegram chatiga yozish",
+                        callback_data=f"telegram_chat_{target['id']}"
+                    )
+                ])
+        else:
+            buttons.append([
+                InlineKeyboardButton(
+                    "👑 Premium olish",
+                    callback_data="premium_buy"
+                )
+            ])
+
+        return InlineKeyboardMarkup(buttons)
+
+    recipient1 = get_user_info(user1_id)
+    target1 = get_user_info(user2_id)
+
+    recipient2 = get_user_info(user2_id)
+    target2 = get_user_info(user1_id)
+
+    target1["id"] = user2_id
+    target2["id"] = user1_id
+
+    keyboard1 = build_keyboard(recipient1, target1)
+    keyboard2 = build_keyboard(recipient2, target2)
+
+    text1 = build_text(recipient1, target1)
+    text2 = build_text(recipient2, target2)
 
     try:
         if not notification_already_sent(
@@ -319,12 +436,14 @@ async def notify_new_match(
                     chat_id=user1_id,
                     photo=user2_photo,
                     caption=text1,
+                    parse_mode="HTML",
                     reply_markup=keyboard1
                 )
             else:
                 await bot.send_message(
                     chat_id=user1_id,
                     text=text1,
+                    parse_mode="HTML",
                     reply_markup=keyboard1
                 )
 
@@ -345,12 +464,14 @@ async def notify_new_match(
                     chat_id=user2_id,
                     photo=user1_photo,
                     caption=text2,
+                    parse_mode="HTML",
                     reply_markup=keyboard2
                 )
             else:
                 await bot.send_message(
                     chat_id=user2_id,
                     text=text2,
+                    parse_mode="HTML",
                     reply_markup=keyboard2
                 )
 
