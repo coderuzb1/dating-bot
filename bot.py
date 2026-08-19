@@ -1480,10 +1480,11 @@ async def handle_callback(update, context):
             cur = conn.cursor()
 
             cur.execute(
-                "SELECT first_name FROM users WHERE user_id = %s",
+                "SELECT first_name, photo FROM users WHERE user_id = %s",
                 (target_id,)
             )
             target_row = cur.fetchone()
+            target_photo = target_row[1] if target_row else None
             target_name = (
                 target_row[0]
                 if target_row and target_row[0]
@@ -1491,10 +1492,11 @@ async def handle_callback(update, context):
             )
 
             cur.execute(
-                "SELECT first_name FROM users WHERE user_id = %s",
+                "SELECT first_name, photo FROM users WHERE user_id = %s",
                 (user.id,)
             )
             sender_row = cur.fetchone()
+            sender_photo = sender_row[1] if sender_row else None
             sender_name = (
                 sender_row[0]
                 if sender_row and sender_row[0]
@@ -1511,10 +1513,10 @@ async def handle_callback(update, context):
                 context.bot,
                 user.id,
                 sender_name,
-                None,
+                sender_photo,
                 target_id,
                 target_name,
-                None
+                target_photo
             )
 
         else:
@@ -1610,17 +1612,19 @@ async def handle_callback(update, context):
             cur = conn.cursor()
 
             cur.execute(
-                "SELECT first_name FROM users WHERE user_id = %s",
+                "SELECT first_name, photo FROM users WHERE user_id = %s",
                 (target_id,)
             )
             target_row = cur.fetchone()
+            target_photo = target_row[1] if target_row else None
             target_name = target_row[0] if target_row and target_row[0] else "Foydalanuvchi"
 
             cur.execute(
-                "SELECT first_name FROM users WHERE user_id = %s",
+                "SELECT first_name, photo FROM users WHERE user_id = %s",
                 (user.id,)
             )
             sender_row = cur.fetchone()
+            sender_photo = sender_row[1] if sender_row else None
             sender_name = sender_row[0] if sender_row and sender_row[0] else "Foydalanuvchi"
 
             cur.close()
@@ -1634,10 +1638,10 @@ async def handle_callback(update, context):
                 context.bot,
                 user.id,
                 sender_name,
-                None,
+                sender_photo,
                 target_id,
                 target_name,
-                None
+                  target_photo
             )
 
         elif already_liked:
