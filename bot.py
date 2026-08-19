@@ -1202,7 +1202,6 @@ async def find(update, context):
 
 async def handle_callback(update, context):
     query = update.callback_query
-    await query.answer()
     user = query.from_user
     language = get_user_language(user.id)
     data = query.data
