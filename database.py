@@ -117,6 +117,15 @@ def init_db():
         )
     """)
 
+    # =========================================================
+    # SUPERLIKE UCHUN MIGRATION
+    # Eski Like'lar saqlanadi va is_superlike = FALSE bo'ladi.
+    # =========================================================
+    cur.execute("""
+        ALTER TABLE likes
+        ADD COLUMN IF NOT EXISTS is_superlike BOOLEAN DEFAULT FALSE
+    """)
+
     # =========================
     # MATCHES
     # =========================
@@ -126,6 +135,22 @@ def init_db():
             user1 BIGINT,
             user2 BIGINT,
             created_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
+
+    # =========================
+    # CHAT SESSIONS
+    # =========================
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS chat_sessions (
+            id SERIAL PRIMARY KEY,
+            user1 BIGINT NOT NULL,
+            user2 BIGINT NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE,
+            closed_by BIGINT,
+            created_at TIMESTAMP DEFAULT NOW(),
+            closed_at TIMESTAMP,
+            UNIQUE(user1, user2)
         )
     """)
 

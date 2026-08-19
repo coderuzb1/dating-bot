@@ -3042,15 +3042,87 @@ async def handle_callback(update, context):
     # =========================================================
     # CHAT: SUHBATNI TUGATISH
     # =========================================================
-    if data == "end_chat":
+    if data == "end_chat" or data.startswith("end_chat_"):
+        user = query.from_user
+
+        try:
+            if data.startswith("end_chat_"):
+                target_id = int(data.split("_", 2)[2])
+            else:
+                target_id = context.user_data.get("writing_to")
+        except (ValueError, IndexError):
+            target_id = context.user_data.get("writing_to")
+
         context.user_data.pop("writing_to", None)
 
+        if target_id:
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            a, b = sorted([user.id, int(target_id)])
+
+            cur.execute(
+                """
+                INSERT INTO chat_sessions
+                    (user1, user2, is_active, closed_by, closed_at)
+                VALUES (%s, %s, FALSE, %s, NOW())
+                ON CONFLICT (user1, user2)
+                DO UPDATE SET
+                    is_active = FALSE,
+                    closed_by = EXCLUDED.closed_by,
+                    closed_at = NOW()
+                """,
+                (a, b, user.id)
+            )
+
+            conn.commit()
+            cur.close()
+            conn.close()
+
         await query.answer("❌ Suhbat tugatildi.")
+
+        language = get_user_language(user.id)
+
+        if language == "ru":
+            msg = (
+                "❌ <b>Разговор завершён</b>\n\n"
+                "Этот разговор закрыт.\n"
+                "Match сохранён.\n\n"
+                "👑 С Premium вы сможете связаться через личный Telegram."
+            )
+        elif language == "uz_cyr":
+            msg = (
+                "❌ <b>Суҳбат тугатилди</b>\n\n"
+                "Ушбу суҳбат ёпилди.\n"
+                "Match сақланиб қолди.\n\n"
+                "👑 Premium орқали Telegram шахсий чатида "
+                "мулоқотни давом эттириш мумкин."
+            )
+        else:
+            msg = (
+                "❌ <b>Suhbat tugatildi</b>\n\n"
+                "Ushbu suhbat yopildi.\n"
+                "Match saqlanib qoldi.\n\n"
+                "👑 Premium orqali Telegram shaxsiy chatida "
+                "muloqotni davom ettirish mumkin."
+            )
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "👑 Premium olish",
+                    callback_data="premium"
+                )
+            ]
+        ])
+
         await query.message.reply_text(
-            "❌ Suhbat tugatildi.\n\n"
-            "Yana yozish uchun Matchlarim bo‘limidan suhbatni boshlashingiz mumkin."
+            msg,
+            parse_mode="HTML",
+            reply_markup=keyboard
         )
         return
+
 
     # =========================================================
     # CHAT: JAVOB BERISH
@@ -3103,31 +3175,153 @@ async def handle_callback(update, context):
         )
         is_premium = bool(cur.fetchone()[0])
 
-        cur.close()
-        conn.close()
-
-        # Faqat Match yoki Premium javob bera oladi
         if not is_match and not is_premium:
+            cur.close()
+            conn.close()
             await query.answer(
                 "❌ Suhbat uchun Match yoki Premium kerak.",
                 show_alert=True
             )
             return
 
+        # =====================================================
+        # CHAT SESSION HOLATI
+        # =====================================================
+        a, b = sorted([user.id, target_id])
+
+        cur.execute(
+            """
+            SELECT is_active, closed_by
+            FROM chat_sessions
+            WHERE user1 = %s AND user2 = %s
+            """,
+            (a, b)
+        )
+
+        session = cur.fetchone()
+
+        # =====================================================
+        # YOPILGAN SUHBAT
+        # Bot ichida qayta ochilmaydi.
+        # Premium bo'lsa Telegram shaxsiy chatiga o'tadi.
+        # =====================================================
+        if session and not session[0]:
+            cur.execute(
+                """
+                SELECT username
+                FROM users
+                WHERE user_id = %s
+                """,
+                (target_id,)
+            )
+            target_row = cur.fetchone()
+
+            cur.close()
+            conn.close()
+
+            language = get_user_language(user.id)
+
+            if language == "ru":
+                msg = (
+                    "❌ <b>Разговор завершён</b>\n\n"
+                    "Собеседник завершил этот разговор.\n"
+                    "Match сохранён.\n\n"
+                    "💬 Через бота продолжить этот разговор нельзя.\n"
+                    "👑 Premium позволяет связаться через личный Telegram."
+                )
+                premium_btn = "👑 Купить Premium"
+                telegram_btn = "📨 Открыть Telegram"
+                no_username = "📱 У пользователя нет Telegram username."
+            elif language == "uz_cyr":
+                msg = (
+                    "❌ <b>Суҳбат тугатилган</b>\n\n"
+                    "Суҳбатдош ушбу суҳбатни тугатган.\n"
+                    "Match сақланиб қолган.\n\n"
+                    "💬 Бот орқали бу суҳбатни давом эттириб бўлмайди.\n"
+                    "👑 Premium орқали Telegram шахсий чатида боғланиш мумкин."
+                )
+                premium_btn = "👑 Premium олиш"
+                telegram_btn = "📨 Telegram'ни очиш"
+                no_username = "📱 Фойдаланувчида Telegram username мавжуд эмас."
+            else:
+                msg = (
+                    "❌ <b>Suhbat tugatilgan</b>\n\n"
+                    "Suhbatdosh ushbu suhbatni tugatgan.\n"
+                    "Match saqlanib qolgan.\n\n"
+                    "💬 Bot orqali bu suhbatni davom ettirib bo'lmaydi.\n"
+                    "👑 Premium orqali Telegram shaxsiy chatida bog'lanish mumkin."
+                )
+                premium_btn = "👑 Premium olish"
+                telegram_btn = "📨 Telegram'ni ochish"
+                no_username = "📱 Foydalanuvchida Telegram username mavjud emas."
+
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        premium_btn,
+                        callback_data="premium"
+                    )
+                ]
+            ]
+
+            # Faqat Premium + username mavjud bo'lsa Telegram tugmasi
+            if is_premium:
+                if target_row and target_row[0]:
+                    username = str(target_row[0]).strip().lstrip("@")
+                    keyboard.append([
+                        InlineKeyboardButton(
+                            telegram_btn,
+                            url=f"https://t.me/{username}"
+                        )
+                    ])
+                else:
+                    msg += f"\n\n{no_username}"
+
+            await query.answer()
+
+            await query.message.reply_text(
+                msg,
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+            return
+
+        cur.close()
+        conn.close()
+
+        # =====================================================
+        # FAOL SUHBATNI DAVOM ETTIRISH
+        # =====================================================
         context.user_data["writing_to"] = target_id
 
         await query.answer("↩️ Javob berish yoqildi.")
 
+        language = get_user_language(user.id)
+
+        if language == "ru":
+            chat_msg = (
+                "💬 <b>Разговор продолжается</b>\n\n"
+                "Напишите сообщение. Оно будет отправлено собеседнику."
+            )
+        elif language == "uz_cyr":
+            chat_msg = (
+                "💬 <b>Суҳбат давом этмоқда</b>\n\n"
+                "Хабарингизни ёзинг. У суҳбатдошингизга юборилади."
+            )
+        else:
+            chat_msg = (
+                "💬 <b>Suhbat davom etmoqda</b>\n\n"
+                "Xabaringizni yozing. U suhbatdoshingizga yuboriladi."
+            )
+
         await query.message.reply_text(
-            "💬 <b>Suhbat davom etmoqda</b>\n\n"
-            "Xabaringizni yozing. Xabar suhbatdoshingizga yuboriladi.\n\n"
-            "❌ Tugatish uchun pastdagi tugmani bosing.",
+            chat_msg,
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton(
                         "❌ Suhbatni tugatish",
-                        callback_data="end_chat"
+                        callback_data=f"end_chat_{target_id}"
                     )
                 ]
             ])
@@ -3243,11 +3437,24 @@ async def handle_callback(update, context):
         )
         already_liked = bool(cur.fetchone()[0])
 
+        # Superlike oddiy Like'dan ustun.
+        # Agar oldin oddiy Like bosilgan bo'lsa ham,
+        # uni Superlike sifatida belgilaymiz.
         if not already_liked:
             cur.execute(
                 """
-                INSERT INTO likes (from_user, to_user)
-                VALUES (%s, %s)
+                INSERT INTO likes (from_user, to_user, is_superlike)
+                VALUES (%s, %s, TRUE)
+                """,
+                (user.id, target_id)
+            )
+        else:
+            cur.execute(
+                """
+                UPDATE likes
+                SET is_superlike = TRUE
+                WHERE from_user = %s
+                  AND to_user = %s
                 """,
                 (user.id, target_id)
             )
@@ -4568,7 +4775,9 @@ async def who_liked_me(update, context):
         JOIN users u ON u.user_id = l.from_user
         WHERE l.to_user = %s
           AND u.is_active = TRUE
-        ORDER BY l.created_at DESC
+        ORDER BY
+            COALESCE(l.is_superlike, FALSE) DESC,
+            l.created_at DESC
     """, (user.id,))
 
     rows = cur.fetchall()
@@ -4667,7 +4876,8 @@ async def likes(update, context):
             u.bio,
             u.photo,
             u.city,
-            u.premium_until
+            u.premium_until,
+            COALESCE(l.is_superlike, FALSE) AS is_superlike
         FROM likes l
         JOIN users u ON u.user_id = l.from_user
         WHERE l.to_user = %s
@@ -4711,6 +4921,7 @@ async def likes(update, context):
             photo,
             city,
             premium_until,
+            is_superlike,
         ) = profile
 
         premium_badge = ""
@@ -4721,8 +4932,10 @@ async def likes(update, context):
             except Exception:
                 pass
 
+        superlike_badge = " ⭐ SUPERLIKE" if is_superlike else ""
+
         caption = (
-            f"👤 <b>{first_name}</b>{premium_badge}, {age}\n"
+            f"👤 <b>{first_name}</b>{premium_badge}{superlike_badge}, {age}\n"
             f"📍 {city or '—'}\n"
             f"📝 {bio or t['bio_empty']}"
         )
@@ -5452,21 +5665,26 @@ async def handle_message(update, context):
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Premium statusini tekshirish
+        # =====================================================
+        # PREMIUM
+        # =====================================================
         cur.execute(
             """
             SELECT EXISTS(
-                SELECT 1 FROM users
+                SELECT 1
+                FROM users
                 WHERE user_id = %s
-                AND premium_until IS NOT NULL
-                AND premium_until > NOW()
+                  AND premium_until IS NOT NULL
+                  AND premium_until > NOW()
             )
             """,
             (sender.id,)
         )
         is_premium = bool(cur.fetchone()[0])
 
-        # Match statusini tekshirish
+        # =====================================================
+        # MATCH
+        # =====================================================
         cur.execute(
             """
             SELECT EXISTS(
@@ -5482,7 +5700,6 @@ async def handle_message(update, context):
         )
         is_match = bool(cur.fetchone()[0])
 
-        # Faqat Match yoki Premium yozishi mumkin
         if not is_match and not is_premium:
             context.user_data.pop("writing_to", None)
             cur.close()
@@ -5493,7 +5710,156 @@ async def handle_message(update, context):
             )
             return
 
-        # Xabarni saqlash
+        # =====================================================
+        # CHAT SESSION
+        # =====================================================
+        a, b = sorted([sender.id, target_id])
+
+        cur.execute(
+            """
+            SELECT is_active
+            FROM chat_sessions
+            WHERE user1 = %s AND user2 = %s
+            """,
+            (a, b)
+        )
+
+        session = cur.fetchone()
+
+        # Yopilgan suhbatga oddiy user qayta yozolmaydi
+        if session and not session[0] and not is_premium:
+            context.user_data.pop("writing_to", None)
+
+            cur.close()
+            conn.close()
+
+            language = get_user_language(sender.id)
+
+            if language == "ru":
+                msg = (
+                    "❌ <b>Разговор завершён</b>\n\n"
+                    "Собеседник завершил разговор.\n\n"
+                    "💬 Через бот писать больше нельзя.\n"
+                    "👑 Оформите Premium, чтобы продолжить общение "
+                    "через личный Telegram."
+                )
+            elif language == "uz_cyr":
+                msg = (
+                    "❌ <b>Суҳбат тугатилган</b>\n\n"
+                    "Суҳбатдош суҳбатни тугатган.\n\n"
+                    "💬 Энди бот орқали ёзиб бўлмайди.\n"
+                    "👑 Premium олиб, Telegram шахсий чати орқали "
+                    "мулоқотни давом эттиринг."
+                )
+            else:
+                msg = (
+                    "❌ <b>Suhbat tugatilgan</b>\n\n"
+                    "Suhbatdosh suhbatni tugatgan.\n\n"
+                    "💬 Endi bot orqali yozib bo'lmaydi.\n"
+                    "👑 Premium olib, Telegram shaxsiy chati orqali "
+                    "muloqotni davom ettiring."
+                )
+
+            keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(
+                        "👑 Premium olish",
+                        callback_data="premium"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "📨 Telegram shaxsiy chatiga yozish",
+                        callback_data=f"telegram_chat_{target_id}"
+                    )
+                ]
+            ])
+
+            await update.message.reply_text(
+                msg,
+                parse_mode="HTML",
+                reply_markup=keyboard
+            )
+            return
+
+        # =====================================================
+        # YANGI MATCH SESSION
+        # =====================================================
+        if is_match and not session:
+            cur.execute(
+                """
+                INSERT INTO chat_sessions
+                    (user1, user2, is_active)
+                VALUES (%s, %s, TRUE)
+                ON CONFLICT (user1, user2) DO NOTHING
+                """,
+                (a, b)
+            )
+            conn.commit()
+
+        # =====================================================
+        # 3 TA BEPUL XABAR
+        # FAQAT ODDIY USER
+        # =====================================================
+        if is_match and not is_premium:
+            cur.execute(
+                """
+                SELECT COUNT(*)
+                FROM messages
+                WHERE from_user = %s
+                  AND to_user = %s
+            """,
+                (sender.id, target_id)
+            )
+
+            sent_count = cur.fetchone()[0]
+
+            if sent_count >= 3:
+                context.user_data.pop("writing_to", None)
+
+                cur.close()
+                conn.close()
+
+                language = get_user_language(sender.id)
+
+                if language == "ru":
+                    msg = (
+                        "🚫 <b>Лимит бесплатных сообщений исчерпан</b>\n\n"
+                        "Для этого Match вы отправили 3 бесплатных сообщения.\n\n"
+                        "👑 Оформите Premium и продолжайте общение без ограничений."
+                    )
+                elif language == "uz_cyr":
+                    msg = (
+                        "🚫 <b>Бепул хабарлар лимити тугади</b>\n\n"
+                        "Бу Match учун 3 та бепул хабар юбордингиз.\n\n"
+                        "👑 Premium олинг ва суҳбатни чекловсиз давом эттиринг."
+                    )
+                else:
+                    msg = (
+                        "🚫 <b>Bepul xabarlar limiti tugadi</b>\n\n"
+                        "Bu Match uchun 3 ta bepul xabar yubordingiz.\n\n"
+                        "👑 Premium oling va suhbatni cheklovsiz davom ettiring."
+                    )
+
+                keyboard = InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            "👑 Premium olish",
+                            callback_data="premium"
+                        )
+                    ]
+                ])
+
+                await update.message.reply_text(
+                    msg,
+                    parse_mode="HTML",
+                    reply_markup=keyboard
+                )
+                return
+
+        # =====================================================
+        # XABARNI SAQLASH
+        # =====================================================
         cur.execute(
             """
             INSERT INTO messages (from_user, to_user, text)
@@ -5502,11 +5868,11 @@ async def handle_message(update, context):
             (sender.id, target_id, text)
         )
 
-        # Qabul qiluvchi nomi
         cur.execute(
             "SELECT first_name FROM users WHERE user_id = %s",
             (target_id,)
         )
+
         target = cur.fetchone()
 
         conn.commit()
@@ -5515,12 +5881,12 @@ async def handle_message(update, context):
 
         if not target:
             context.user_data.pop("writing_to", None)
+
             await update.message.reply_text(
                 "❌ Foydalanuvchi topilmadi."
             )
             return
 
-        # Javob berish / suhbatni tugatish tugmalari
         reply_keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
@@ -5531,7 +5897,7 @@ async def handle_message(update, context):
             [
                 InlineKeyboardButton(
                     "❌ Suhbatni tugatish",
-                    callback_data="end_chat"
+                    callback_data=f"end_chat_{sender.id}"
                 )
             ]
         ])
@@ -5554,12 +5920,10 @@ async def handle_message(update, context):
 
         except Exception:
             await update.message.reply_text(
-                "⚠️ Xabarni yetkazib bo‘lmadi. "
-                "Foydalanuvchi botni bloklagan bo‘lishi mumkin."
+                "⚠️ Xabarni yetkazib bo'lmadi. "
+                "Foydalanuvchi botni bloklagan bo'lishi mumkin."
             )
 
-        # writing_to saqlanadi:
-        # foydalanuvchi ketma-ket xabar yuborishi mumkin
         return
 
 
