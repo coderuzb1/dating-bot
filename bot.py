@@ -5123,7 +5123,7 @@ async def open_match_chat(update, context):
 
     # Qarshi tomon ma'lumotlari
     cur.execute("""
-        SELECT first_name, age
+        SELECT first_name, age, username
         FROM users
         WHERE user_id = %s
     """, (target_id,))
@@ -5139,7 +5139,9 @@ async def open_match_chat(update, context):
         )
         return
 
-    target_name, target_age = target
+    target_name, target_age, target_username = target
+    if target_username:
+        target_username = str(target_username).strip().lstrip("@")
 
     # Oxirgi 20 ta xabar
     cur.execute("""
@@ -5184,16 +5186,19 @@ async def open_match_chat(update, context):
         empty = "Пока сообщений нет."
         reply_text = "↩️ Ответить"
         end_text = "❌ Завершить разговор"
+        telegram_text = "📨 Открыть Telegram"
     elif language == "uz_cyr":
         title = f"💬 <b>{target_name}, {target_age} билан суҳбат</b>"
         empty = "Ҳозирча хабарлар йўқ."
         reply_text = "↩️ Жавоб бериш"
         end_text = "❌ Суҳбатни тугатиш"
+        telegram_text = "📨 Telegram'ни очиш"
     else:
         title = f"💬 <b>{target_name}, {target_age} bilan suhbat</b>"
         empty = "Hozircha xabarlar yo'q."
         reply_text = "↩️ Javob berish"
         end_text = "❌ Suhbatni tugatish"
+        telegram_text = "📨 Telegram shaxsiy chatiga yozish"
 
     chat_text = title + "\n\n"
 
@@ -5210,20 +5215,34 @@ async def open_match_chat(update, context):
     else:
         chat_text += empty
 
-    keyboard = InlineKeyboardMarkup([
+    keyboard_buttons = [
         [
             InlineKeyboardButton(
                 reply_text,
                 callback_data=f"reply_{target_id}"
             )
-        ],
-        [
-            InlineKeyboardButton(
-                end_text,
-                callback_data="end_chat"
-            )
         ]
+    ]
+
+    # Faqat Premium foydalanuvchiga Telegram tugmasi
+    # Username bo'lmasa ham tugma chiqadi.
+    if is_premium:
+        keyboard_buttons.append([
+            InlineKeyboardButton(
+                telegram_text,
+                callback_data=f"telegram_chat_{target_id}"
+            )
+        ])
+
+    # Suhbatni aynan shu odam bilan yopish
+    keyboard_buttons.append([
+        InlineKeyboardButton(
+            end_text,
+            callback_data=f"end_chat_{target_id}"
+        )
     ])
+
+    keyboard = InlineKeyboardMarkup(keyboard_buttons)
 
     await query.message.reply_text(
         chat_text,
