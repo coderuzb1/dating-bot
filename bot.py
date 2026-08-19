@@ -1322,6 +1322,61 @@ async def handle_callback(update, context):
             conn.close()
 
     
+    if data.startswith("skip_liker_"):
+        try:
+            target_id = int(data.split("_", 2)[2])
+        except (ValueError, IndexError):
+            await query.answer("❌ Xato.", show_alert=True)
+            return
+
+        if target_id == user.id:
+            await query.answer(
+                "❌ O'zingizni o'tkazib yubora olmaysiz.",
+                show_alert=True
+            )
+            return
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        try:
+            # Sizni Like qilgan foydalanuvchining Like'ini olib tashlaymiz.
+            # Shuning uchun u yana "Meni yoqtirganlar"da chiqmaydi.
+            cur.execute(
+                """
+                DELETE FROM likes
+                WHERE from_user = %s
+                  AND to_user = %s
+                """,
+                (target_id, user.id)
+            )
+
+            conn.commit()
+
+        except Exception:
+            conn.rollback()
+            await query.answer(
+                "❌ Amal bajarilmadi.",
+                show_alert=True
+            )
+            return
+
+        finally:
+            cur.close()
+            conn.close()
+
+        await query.answer("👎 O'tkazib yuborildi.")
+
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
+
+        # Qolgan Like qilganlarni ko'rsatish
+        await likes(update, context)
+        return
+
+
     if data.startswith("like_back_"):
         try:
             target_id = int(data.split("_", 2)[2])
