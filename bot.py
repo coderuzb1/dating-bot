@@ -743,6 +743,7 @@ async def get_photo(update, context):
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (user_id) DO UPDATE SET
+                    username = EXCLUDED.username,
                     first_name = EXCLUDED.first_name,
                     age = EXCLUDED.age,
                     gender = EXCLUDED.gender,
@@ -1226,9 +1227,7 @@ async def handle_callback(update, context):
             # Faqat Premium foydalanuvchi foydalanishi mumkin
             cur.execute(
                 """
-                SELECT
-                    premium_until,
-                    username
+                SELECT premium_until
                 FROM users
                 WHERE user_id = %s
                 """,
@@ -1243,7 +1242,7 @@ async def handle_callback(update, context):
                 )
                 return
 
-            premium_until, _ = sender_row
+            premium_until = sender_row[0]
 
             is_premium = bool(
                 premium_until is not None
@@ -1257,7 +1256,7 @@ async def handle_callback(update, context):
                 )
                 return
 
-            # Qarshi tomon username'ini tekshiramiz
+            # Qarshi tomon mavjudligini tekshiramiz
             cur.execute(
                 """
                 SELECT username
@@ -1277,6 +1276,27 @@ async def handle_callback(update, context):
 
             username = target_row[0]
 
+            # Bazada username bo'lmasa, Telegram'dan olishga urinib ko'ramiz
+            if not username:
+                try:
+                    target_chat = await context.bot.get_chat(target_id)
+                    username = getattr(target_chat, "username", None)
+
+                    if username:
+                        cur.execute(
+                            """
+                            UPDATE users
+                            SET username = %s
+                            WHERE user_id = %s
+                            """,
+                            (username, target_id)
+                        )
+                        conn.commit()
+
+                except Exception:
+                    username = None
+
+            # Username hali ham topilmasa
             if not username:
                 if language == "ru":
                     message = "📱 У пользователя не установлен Telegram username."
@@ -1293,16 +1313,18 @@ async def handle_callback(update, context):
 
             username = str(username).strip().lstrip("@")
 
-            # Username bor bo'lsa URL tugmasini shu xabarning o'zida chiqaramiz
+            # Username mavjud — Telegram profiliga o'tish
             if language == "ru":
-                text = "📨 Telegram личный чат готов."
+                text = "📨 Личный Telegram пользователя готов."
                 button_text = "📨 Открыть Telegram"
             elif language == "uz_cyr":
-                text = "📨 Telegram шахсий чати тайёр."
+                text = "📨 Фойдаланувчининг шахсий Telegram чати тайёр."
                 button_text = "📨 Telegram'ни очиш"
             else:
-                text = "📨 Telegram shaxsiy chati tayyor."
+                text = "📨 Foydalanuvchining shaxsiy Telegram chati tayyor."
                 button_text = "📨 Telegram'ni ochish"
+
+            await query.answer()
 
             await query.message.reply_text(
                 text,
@@ -1316,13 +1338,12 @@ async def handle_callback(update, context):
                 ])
             )
 
-            return
-
         finally:
             cur.close()
             conn.close()
 
-    
+        return
+
     if data.startswith("skip_liker_"):
         try:
             target_id = int(data.split("_", 2)[2])
