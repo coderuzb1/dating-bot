@@ -1431,6 +1431,9 @@ async def handle_callback(update, context):
 
                     match_created = True
 
+            # Like qaytarilganda Like yozuvlari saqlanadi.
+            # Match mavjud bo'lgani uchun likes() ularni ko'rsatmaydi.
+
             conn.commit()
 
         except Exception:
@@ -4669,9 +4672,20 @@ async def likes(update, context):
         JOIN users u ON u.user_id = l.from_user
         WHERE l.to_user = %s
           AND u.is_active = TRUE
+
+          -- Match bo'lganlar "Meni yoqtirganlar"da qayta chiqmaydi
+          AND NOT EXISTS (
+              SELECT 1
+              FROM matches m
+              WHERE
+                  (m.user1 = %s AND m.user2 = l.from_user)
+                  OR
+                  (m.user1 = l.from_user AND m.user2 = %s)
+          )
+
         ORDER BY l.created_at DESC
         """,
-        (user.id,)
+        (user.id, user.id, user.id)
     )
 
     likes_list = cur.fetchall()
