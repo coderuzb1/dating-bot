@@ -3213,7 +3213,7 @@ async def handle_callback(update, context):
         # Bot ichida qayta ochilmaydi.
         # Premium bo'lsa Telegram shaxsiy chatiga o'tadi.
         # =====================================================
-        if session and not session[0]:
+        if session and not session[0] and not is_premium:
             cur.execute(
                 """
                 SELECT username
