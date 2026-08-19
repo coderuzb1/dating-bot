@@ -4911,15 +4911,11 @@ async def likes(update, context):
     cur.close()
     conn.close()
 
-    # Oddiy xabardan chaqirilsa update.message,
-    # callback orqali chaqirilsa callback_query.message ishlatiladi.
-    message = update.message or update.callback_query.message
-
     if not likes_list:
-        await message.reply_text(t["empty"])
+        await update.message.reply_text(t["empty"])
         return
 
-    await message.reply_text(
+    await update.message.reply_text(
         t["title"] + f"\n\n👥 {len(likes_list)} ta odam sizga qiziqmoqda."
     )
 
@@ -4967,14 +4963,14 @@ async def likes(update, context):
 
         try:
             if photo:
-                await message.reply_photo(
+                await update.message.reply_photo(
                     photo=photo,
                     caption=caption,
                     reply_markup=keyboard,
                     parse_mode="HTML"
                 )
             else:
-                await message.reply_text(
+                await update.message.reply_text(
                     caption,
                     reply_markup=keyboard,
                     parse_mode="HTML"
@@ -5042,7 +5038,7 @@ async def matches(update, context):
     conn.close()
 
     if not matches_list:
-        await message.reply_text(t["empty"])
+        await update.message.reply_text(t["empty"])
         return
 
     keyboard = []
@@ -5057,7 +5053,7 @@ async def matches(update, context):
             )
         ])
 
-    await message.reply_text(
+    await update.message.reply_text(
         t["title"],
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -5296,7 +5292,7 @@ async def settings(update, context):
         )],
     ])
 
-    await message.reply_text(
+    await update.message.reply_text(
         t["title"],
         reply_markup=keyboard
     )
@@ -5485,7 +5481,7 @@ async def referral_panel(update, context):
         + t["finish"]
     )
 
-    await message.reply_text(text)
+    await update.message.reply_text(text)
 
 
 async def update_last_active(user_id):
@@ -5631,7 +5627,7 @@ async def handle_message(update, context):
             [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")]
         ])
 
-        await message.reply_text(
+        await update.message.reply_text(
             f'{t["title"]}\n\n'
             f'{t["intro"]}\n\n'
             f'{t["features"]}\n\n'
@@ -5667,7 +5663,7 @@ async def handle_message(update, context):
 
         if text == "/cancel":
             context.user_data.pop("writing_to", None)
-            await message.reply_text(
+            await update.message.reply_text(
                 "❌ Suhbat tugatildi."
             )
             return
@@ -5715,7 +5711,7 @@ async def handle_message(update, context):
             cur.close()
             conn.close()
 
-            await message.reply_text(
+            await update.message.reply_text(
                 "❌ Bu foydalanuvchiga yozish uchun Match yoki Premium kerak."
             )
             return
@@ -5785,7 +5781,7 @@ async def handle_message(update, context):
                 ]
             ])
 
-            await message.reply_text(
+            await update.message.reply_text(
                 msg,
                 parse_mode="HTML",
                 reply_markup=keyboard
@@ -5860,7 +5856,7 @@ async def handle_message(update, context):
                     ]
                 ])
 
-                await message.reply_text(
+                await update.message.reply_text(
                     msg,
                     parse_mode="HTML",
                     reply_markup=keyboard
@@ -5892,7 +5888,7 @@ async def handle_message(update, context):
         if not target:
             context.user_data.pop("writing_to", None)
 
-            await message.reply_text(
+            await update.message.reply_text(
                 "❌ Foydalanuvchi topilmadi."
             )
             return
@@ -5924,12 +5920,12 @@ async def handle_message(update, context):
                 reply_markup=reply_keyboard
             )
 
-            await message.reply_text(
+            await update.message.reply_text(
                 "✅ Xabaringiz yuborildi!"
             )
 
         except Exception:
-            await message.reply_text(
+            await update.message.reply_text(
                 "⚠️ Xabarni yetkazib bo'lmadi. "
                 "Foydalanuvchi botni bloklagan bo'lishi mumkin."
             )
@@ -6046,7 +6042,7 @@ async def handle_message(update, context):
             [InlineKeyboardButton(t["p10"], callback_data="sl_10")],
         ])
 
-        await message.reply_text(
+        await update.message.reply_text(
             f'{t["title"]}\n\n'
             f'{t["balance"].format(balance=balance)}\n\n'
             f'{t["priority"]}\n'
@@ -6143,7 +6139,7 @@ async def handle_message(update, context):
             f'{t["duration"]}'
         )
 
-        await message.reply_text(
+        await update.message.reply_text(
             message,
             reply_markup=keyboard,
             parse_mode="HTML"
@@ -6154,11 +6150,11 @@ async def givepremium(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     if len(context.args) != 2:
-        await message.reply_text(
+        await update.message.reply_text(
             "❌ Format:\n"
             "/givepremium USER_ID KUN\n\n"
             "Masalan:\n"
@@ -6171,7 +6167,7 @@ async def givepremium(update, context):
         days = int(context.args[1])
 
         if days <= 0:
-            await message.reply_text(
+            await update.message.reply_text(
                 "❌ Kun soni 0 dan katta bo'lishi kerak."
             )
             return
@@ -6192,7 +6188,7 @@ async def givepremium(update, context):
         if not target:
             cur.close()
             conn.close()
-            await message.reply_text(
+            await update.message.reply_text(
                 f"❌ Foydalanuvchi topilmadi.\nID: {target_id}"
             )
             return
@@ -6236,7 +6232,7 @@ async def givepremium(update, context):
         cur.close()
         conn.close()
 
-        await message.reply_text(
+        await update.message.reply_text(
             "✅ PREMIUM BERILDI\n\n"
             f"👤 Foydalanuvchi: {target[0]}\n"
             f"🆔 ID: {target_id}\n"
@@ -6258,14 +6254,14 @@ async def givepremium(update, context):
             print(f"Premium notification error: {e}")
 
     except ValueError:
-        await message.reply_text(
+        await update.message.reply_text(
             "❌ USER_ID va KUN son bo'lishi kerak.\n\n"
             "Masalan:\n"
             "/givepremium 5634936318 30"
         )
     except Exception as e:
         print(f"Give premium error: {e}")
-        await message.reply_text(
+        await update.message.reply_text(
             "❌ Premium berishda xatolik yuz berdi."
         )
 
@@ -6275,11 +6271,11 @@ async def removepremium(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     if len(context.args) != 1:
-        await message.reply_text(
+        await update.message.reply_text(
             "❌ Format:\n"
             "/removepremium USER_ID\n\n"
             "Masalan:\n"
@@ -6306,7 +6302,7 @@ async def removepremium(update, context):
         if not target:
             cur.close()
             conn.close()
-            await message.reply_text(
+            await update.message.reply_text(
                 f"❌ Foydalanuvchi topilmadi.\nID: {target_id}"
             )
             return
@@ -6338,7 +6334,7 @@ async def removepremium(update, context):
         cur.close()
         conn.close()
 
-        await message.reply_text(
+        await update.message.reply_text(
             "✅ PREMIUM BEKOR QILINDI\n\n"
             f"👤 Foydalanuvchi: {target[0]}\n"
             f"🆔 ID: {target_id}\n"
@@ -6356,14 +6352,14 @@ async def removepremium(update, context):
             print(f"Premium revoke notification error: {e}")
 
     except ValueError:
-        await message.reply_text(
+        await update.message.reply_text(
             "❌ USER_ID son bo'lishi kerak.\n\n"
             "Masalan:\n"
             "/removepremium 5634936318"
         )
     except Exception as e:
         print(f"Remove premium error: {e}")
-        await message.reply_text(
+        await update.message.reply_text(
             "❌ Premiumni bekor qilishda xatolik yuz berdi."
         )
 
@@ -6371,7 +6367,7 @@ async def admin(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     conn = get_db_connection()
@@ -6514,7 +6510,7 @@ async def admin(update, context):
         f"└ Referral orqali kelganlar: {referral_users}"
     )
 
-    await message.reply_text(text)
+    await update.message.reply_text(text)
 
 
 async def premiumlist(update, context):
@@ -6522,7 +6518,7 @@ async def premiumlist(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     conn = get_db_connection()
@@ -6551,7 +6547,7 @@ async def premiumlist(update, context):
         conn.close()
 
     if not rows:
-        await message.reply_text(
+        await update.message.reply_text(
             "👑 Hozirda aktiv Premium foydalanuvchilar yo'q."
         )
         return
@@ -6571,17 +6567,17 @@ async def premiumlist(update, context):
             f"{premium_until.strftime('%d.%m.%Y %H:%M')}\n\n"
         )
 
-    await message.reply_text(text)
+    await update.message.reply_text(text)
 
 async def checkpremium(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     if not context.args:
-        await message.reply_text(
+        await update.message.reply_text(
             "❗ Foydalanish:\n"
             "/checkpremium TELEGRAM_ID\n\n"
             "Masalan:\n"
@@ -6592,7 +6588,7 @@ async def checkpremium(update, context):
     try:
         target_id = int(context.args[0])
     except ValueError:
-        await message.reply_text("❌ Telegram ID noto‘g‘ri.")
+        await update.message.reply_text("❌ Telegram ID noto‘g‘ri.")
         return
 
     conn = get_db_connection()
@@ -6612,7 +6608,7 @@ async def checkpremium(update, context):
     conn.close()
 
     if not data:
-        await message.reply_text(
+        await update.message.reply_text(
             f"❌ {target_id} ID bilan foydalanuvchi topilmadi."
         )
         return
@@ -6646,7 +6642,7 @@ async def checkpremium(update, context):
         if premium_until else "Yo‘q"
     )
 
-    await message.reply_text(
+    await update.message.reply_text(
         f"🔎 PREMIUM TEKSHIRUVI\n\n"
         f"👤 Ism: {first_name}\n"
         f"🆔 ID: {user_id}\n"
@@ -6661,11 +6657,11 @@ async def premiumhistory(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     if len(context.args) != 1:
-        await message.reply_text(
+        await update.message.reply_text(
             "❗ Foydalanish:\n"
             "/premiumhistory USER_ID\n\n"
             "Masalan:\n"
@@ -6676,7 +6672,7 @@ async def premiumhistory(update, context):
     try:
         target_id = int(context.args[0])
     except ValueError:
-        await message.reply_text("❌ USER_ID noto'g'ri.")
+        await update.message.reply_text("❌ USER_ID noto'g'ri.")
         return
 
     conn = get_db_connection()
@@ -6694,7 +6690,7 @@ async def premiumhistory(update, context):
         target = cur.fetchone()
 
         if not target:
-            await message.reply_text(
+            await update.message.reply_text(
                 f"❌ Foydalanuvchi topilmadi.\n🆔 ID: {target_id}"
             )
             return
@@ -6724,7 +6720,7 @@ async def premiumhistory(update, context):
         conn.close()
 
     if not rows:
-        await message.reply_text(
+        await update.message.reply_text(
             "👑 PREMIUM TARIXI\n\n"
             f"👤 {target[0]}\n"
             f"🆔 ID: {target_id}\n\n"
@@ -6784,7 +6780,7 @@ async def premiumhistory(update, context):
 
         text += "\n"
 
-    await message.reply_text(text)
+    await update.message.reply_text(text)
 
 
 
@@ -6793,7 +6789,7 @@ async def premiumstats(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     conn = get_db_connection()
@@ -6859,13 +6855,13 @@ async def premiumstats(update, context):
         f"📚 Jami tarix yozuvlari: {total_history} ta"
     )
 
-    await message.reply_text(text)
+    await update.message.reply_text(text)
 
 
 async def approve(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
     try:
         parts = update.message.text.split()
@@ -6883,7 +6879,7 @@ async def approve(update, context):
         if not row:
             cur.close()
             conn.close()
-            await message.reply_text("❌ Foydalanuvchi topilmadi.")
+            await update.message.reply_text("❌ Foydalanuvchi topilmadi.")
             return
 
         old_until = row[0]
@@ -6912,15 +6908,15 @@ async def approve(update, context):
         conn.commit()
         cur.close()
         conn.close()
-        await message.reply_text(f"✅ Premium tasdiqlandi! {days} kun")
+        await update.message.reply_text(f"✅ Premium tasdiqlandi! {days} kun")
     except:
-        await message.reply_text("❌ Format: /approve USER_ID KUNLAR")
+        await update.message.reply_text("❌ Format: /approve USER_ID KUNLAR")
 
 async def block_user(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     try:
@@ -6939,12 +6935,12 @@ async def block_user(update, context):
         cur.close()
         conn.close()
 
-        await message.reply_text(
+        await update.message.reply_text(
             f"🚫 Foydalanuvchi bloklandi: {user_id}"
         )
 
     except:
-        await message.reply_text(
+        await update.message.reply_text(
             "❌ Format: /block USER_ID"
         )
 
@@ -6953,7 +6949,7 @@ async def unblock_user(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     try:
@@ -6972,12 +6968,12 @@ async def unblock_user(update, context):
         cur.close()
         conn.close()
 
-        await message.reply_text(
+        await update.message.reply_text(
             f"✅ Foydalanuvchi blokdan chiqarildi: {user_id}"
         )
 
     except:
-        await message.reply_text(
+        await update.message.reply_text(
             "❌ Format: /unblock USER_ID"
         )
 
@@ -6986,7 +6982,7 @@ async def delete_user(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     try:
@@ -7013,12 +7009,12 @@ async def delete_user(update, context):
         cur.close()
         conn.close()
 
-        await message.reply_text(
+        await update.message.reply_text(
             f"✅ Foydalanuvchi o'chirildi: {user_id}"
         )
 
     except:
-        await message.reply_text(
+        await update.message.reply_text(
             "❌ Format: /delete USER_ID"
         )
 
@@ -7027,7 +7023,7 @@ async def blocked_users(update, context):
     user = update.effective_user
 
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
 
     conn = get_db_connection()
@@ -7050,7 +7046,7 @@ async def blocked_users(update, context):
         conn.close()
 
     if not rows:
-        await message.reply_text(
+        await update.message.reply_text(
             "🚫 Bloklangan foydalanuvchilar yo'q."
         )
         return
@@ -7073,7 +7069,7 @@ async def blocked_users(update, context):
 
     lines.append(f"\n📊 Jami: {len(rows)} ta")
 
-    await message.reply_text(
+    await update.message.reply_text(
         "\n".join(lines)
     )
 
@@ -7081,7 +7077,7 @@ async def blocked_users(update, context):
 async def remove_premium(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
     try:
         parts = update.message.text.split()
@@ -7092,14 +7088,14 @@ async def remove_premium(update, context):
         conn.commit()
         cur.close()
         conn.close()
-        await message.reply_text(f"✅ Premium olib tashlandi: {user_id}")
+        await update.message.reply_text(f"✅ Premium olib tashlandi: {user_id}")
     except:
-        await message.reply_text("❌ Format: /unpremium USER_ID")
+        await update.message.reply_text("❌ Format: /unpremium USER_ID")
 
 async def find_user(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
     try:
         parts = update.message.text.split()
@@ -7111,19 +7107,19 @@ async def find_user(update, context):
         cur.close()
         conn.close()
         if not results:
-            await message.reply_text("❌ Foydalanuvchi topilmadi.")
+            await update.message.reply_text("❌ Foydalanuvchi topilmadi.")
             return
         text = "🔍 QIDIRUV NATIJASI:\n\n"
         for r in results:
             text += f"• {r[1]} (@{r[2] or 'yoq'}) - {r[4]}\nID: {r[0]}\n\n"
-        await message.reply_text(text)
+        await update.message.reply_text(text)
     except:
-        await message.reply_text("❌ Format: /finduser ISM")
+        await update.message.reply_text("❌ Format: /finduser ISM")
 
 async def approve_sl(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
     try:
         parts = update.message.text.split()
@@ -7135,22 +7131,22 @@ async def approve_sl(update, context):
         conn.commit()
         cur.close()
         conn.close()
-        await message.reply_text(f"✅ Superlike tasdiqlandi! {amount} ta")
+        await update.message.reply_text(f"✅ Superlike tasdiqlandi! {amount} ta")
         try:
             await context.bot.send_message(chat_id=user_id, text=f"🎉 {amount} ta Superlike hisobingizga qo'shildi!")
         except:
             pass
     except:
-        await message.reply_text("❌ Format: /approvesl USER_ID MIQDOR")
+        await update.message.reply_text("❌ Format: /approvesl USER_ID MIQDOR")
 
 async def broadcast(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
-        await message.reply_text("⛔ Siz admin emassiz!")
+        await update.message.reply_text("⛔ Siz admin emassiz!")
         return
     text = update.message.text.replace("/broadcast ", "")
     await notify_news(context.bot, text)
-    await message.reply_text("✅ Yuborildi!")
+    await update.message.reply_text("✅ Yuborildi!")
 
 def main():
     from flask import Flask
