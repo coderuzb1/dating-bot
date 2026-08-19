@@ -5920,8 +5920,19 @@ async def handle_message(update, context):
                 reply_markup=reply_keyboard
             )
 
+            # Xabar yuborilgandan keyin ham suhbatni istalgan payt yopish mumkin
+            close_keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(
+                        "❌ Suhbatni tugatish",
+                        callback_data=f"end_chat_{target_id}"
+                    )
+                ]
+            ])
+
             await update.message.reply_text(
-                "✅ Xabaringiz yuborildi!"
+                "✅ Xabaringiz yuborildi!",
+                reply_markup=close_keyboard
             )
 
         except Exception:
