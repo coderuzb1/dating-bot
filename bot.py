@@ -7646,7 +7646,8 @@ def main():
         CallbackQueryHandler(
             broadcast_confirm_callback,
             pattern=r"^(confirm_broadcast|cancel_broadcast)$"
-        )
+        ),
+        group=-2
     )
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("find", find))
