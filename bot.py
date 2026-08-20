@@ -6060,7 +6060,7 @@ async def handle_message(update, context):
                 else:
                     msg = (
                         "🚫 <b>Bepul xabarlar limiti tugadi</b>\n\n"
-                        "Bu Match uchun 3 ta bepul xabar yubordingiz.\n\n"
+                        "Bu Match uchun 1 ta bepul xabar yubordingiz.\n\n"
                         "👑 Premium oling va suhbatni cheklovsiz davom ettiring."
                     )
 
