@@ -1205,6 +1205,16 @@ async def handle_callback(update, context):
     data = query.data
 
     # =========================================================
+    # SHAHARDAGI YANGI PROFILLAR NOTIFICATION → QIDIRISH
+    # Avval o‘z shahri, keyin boshqa shaharlar.
+    # Mavjud find() funksiyasidan foydalanadi.
+    # =========================================================
+    if data == "find_profiles":
+        await query.answer()
+        await find(update, context)
+        return
+
+    # =========================================================
     # LIKE NOTIFICATION: "Profilini ko‘rish"
     # Mavjud "Meni yoqtirganlar" bo‘limiga olib boradi.
     # =========================================================
