@@ -1208,6 +1208,15 @@ async def handle_callback(update, context):
     data = query.data
 
     # =========================================================
+    # LIKE NOTIFICATION: "Profilini ko‘rish"
+    # Mavjud "Meni yoqtirganlar" bo‘limiga olib boradi.
+    # =========================================================
+    if data.startswith("view_profile_"):
+        await query.answer()
+        await who_liked_me(update, context)
+        return
+
+    # =========================================================
     # PREMIUM: TELEGRAM SHAXSIY CHATIGA YOZISH
     # Username bo'lmasa ham tugma chiqadi va shu yerda xabar beradi.
     # =========================================================
