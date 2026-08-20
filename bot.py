@@ -137,10 +137,9 @@ TRANSLATIONS = {
         "premium_choose": "✨ O'zingizga mos Premium tarifini tanlang:",
         "choose_duration": "📅 <b>Muddatni tanlang:</b>",
 
-        "plan_1w": "📅 1 hafta - 25 000 so'm • QULAY",
-        "plan_2w": "🔥 14 kun - 39 000 so'm • ENG QULAY",
-        "plan_1m": "⭐️ 1 oy - 59 000 so'm • OMMABOP",
-        "plan_3m": "👑 3 oy - 129 000 so'm • TEJAMKOR",
+        "plan_1w": "📅 1 hafta - 29 000 so'm • QULAY",
+        "plan_2w": "🔥 15 kun - 49 000 so'm • ENG QULAY",
+        "plan_1m": "⭐️ 1 oy - 79 000 so'm • OMMABOP",
         "cancel": "❌ Bekor qilish",
 
         "payment_method": "💳 TO'LOV USULINI TANLANG",
@@ -210,10 +209,9 @@ TRANSLATIONS = {
         "premium_choose": "✨ Выберите подходящий тариф Премиум:",
         "choose_duration": "📅 <b>Выберите срок:</b>",
 
-        "plan_1w": "📅 1 неделя - 25 000 сум • ВЫГОДНО",
-        "plan_2w": "🔥 14 дней - 39 000 сум • ЛУЧШИЙ ВЫБОР",
-        "plan_1m": "⭐️ 1 месяц - 59 000 сум • ПОПУЛЯРНЫЙ",
-        "plan_3m": "👑 3 месяца - 129 000 сум • ЭКОНОМНЫЙ",
+        "plan_1w": "📅 1 неделя - 29 000 сум • ВЫГОДНО",
+        "plan_2w": "🔥 15 дней - 49 000 сум • ЛУЧШИЙ ВЫБОР",
+        "plan_1m": "⭐️ 1 месяц - 79 000 сум • ПОПУЛЯРНЫЙ",
         "cancel": "❌ Отмена",
 
         "payment_method": "💳 ВЫБЕРИТЕ СПОСОБ ОПЛАТЫ",
@@ -283,10 +281,9 @@ TRANSLATIONS = {
         "premium_choose": "✨ Ўзингизга мос Премиум тарифини танланг:",
         "choose_duration": "📅 <b>Муддатни танланг:</b>",
 
-        "plan_1w": "📅 1 ҳафта - 25 000 сўм • ҚУЛАЙ",
-        "plan_2w": "🔥 14 кун - 39 000 сўм • ЭНГ ҚУЛАЙ",
-        "plan_1m": "⭐️ 1 ой - 59 000 сўм • ОММАБОП",
-        "plan_3m": "👑 3 ой - 129 000 сўм • ТЕЖАМКОР",
+        "plan_1w": "📅 1 ҳафта - 29 000 сўм • ҚУЛАЙ",
+        "plan_2w": "🔥 15 кун - 49 000 сўм • ЭНГ ҚУЛАЙ",
+        "plan_1m": "⭐️ 1 ой - 79 000 сўм • ОММАБОП",
         "cancel": "❌ Бекор қилиш",
 
         "payment_method": "💳 ТЎЛОВ УСУЛИНИ ТАНЛАНГ",
@@ -1729,10 +1726,9 @@ async def handle_callback(update, context):
                 "reason": "🔥 <b>Ko‘proq ko‘rinish → ko‘proq Like → ko‘proq Match!</b>",
                 "choose": "✨ O‘zingizga mos Premium tarifini tanlang:",
                 "duration": "📅 <b>Muddatni tanlang:</b>",
-                "week": "1 hafta - 25 000 so‘m",
-                "two_weeks": "14 kun - 39 000 so‘m",
-                "month": "1 oy - 59 000 so‘m",
-                "three_months": "3 oy - 129 000 so‘m",
+                "week": "1 hafta - 29 000 so‘m",
+                "two_weeks": "15 kun - 49 000 so‘m",
+                "month": "1 oy - 79 000 so‘m",
                 "cancel": "❌ Bekor qilish",
             },
             "ru": {
@@ -1751,10 +1747,9 @@ async def handle_callback(update, context):
                 "reason": "🔥 <b>Больше просмотров → больше Like → больше Match!</b>",
                 "choose": "✨ Выберите подходящий тариф Premium:",
                 "duration": "📅 <b>Выберите срок:</b>",
-                "week": "1 неделя - 25 000 сум",
-                "two_weeks": "14 дней - 39 000 сум",
-                "month": "1 месяц - 59 000 сум",
-                "three_months": "3 месяца - 129 000 сум",
+                "week": "1 неделя - 29 000 сум",
+                "two_weeks": "15 дней - 49 000 сум",
+                "month": "1 месяц - 79 000 сум",
                 "cancel": "❌ Отмена",
             },
             "uz_cyr": {
@@ -1773,10 +1768,9 @@ async def handle_callback(update, context):
                 "reason": "🔥 <b>Кўпроқ кўриниш → кўпроқ Like → кўпроқ Match!</b>",
                 "choose": "✨ Ўзингизга мос Premium тарифини танланг:",
                 "duration": "📅 <b>Муддатни танланг:</b>",
-                "week": "1 ҳафта - 25 000 сўм",
-                "two_weeks": "14 кун - 39 000 сўм",
-                "month": "1 ой - 59 000 сўм",
-                "three_months": "3 ой - 129 000 сўм",
+                "week": "1 ҳафта - 29 000 сўм",
+                "two_weeks": "15 кун - 49 000 сўм",
+                "month": "1 ой - 79 000 сўм",
                 "cancel": "❌ Бекор қилиш",
             },
         }
@@ -1787,7 +1781,6 @@ async def handle_callback(update, context):
             [InlineKeyboardButton(t["week"], callback_data="premium_1w")],
             [InlineKeyboardButton(t["two_weeks"], callback_data="premium_2w")],
             [InlineKeyboardButton(t["month"], callback_data="premium_1m")],
-            [InlineKeyboardButton(t["three_months"], callback_data="premium_3m")],
             [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")]
         ])
 
@@ -1842,10 +1835,9 @@ async def handle_callback(update, context):
                 "📅 Выберите срок:"
             )
             buttons = [
-                ["1 неделя - 20 000 сум 🔥", "discount_premium_1w"],
-                ["14 дней - 31 200 сум 🔥", "discount_premium_2w"],
-                ["1 месяц - 47 200 сум 🔥", "discount_premium_1m"],
-                ["3 месяца - 103 200 сум 🔥", "discount_premium_3m"],
+                ["1 неделя - 23 200 сум 🔥", "discount_premium_1w"],
+                ["15 дней - 39 200 сум 🔥", "discount_premium_2w"],
+                ["1 месяц - 63 200 сум 🔥", "discount_premium_1m"],
             ]
             cancel = "❌ Отмена"
 
@@ -1857,10 +1849,9 @@ async def handle_callback(update, context):
                 "📅 Муддатни танланг:"
             )
             buttons = [
-                ["1 ҳафта - 20 000 сўм 🔥", "discount_premium_1w"],
-                ["14 кун - 31 200 сўм 🔥", "discount_premium_2w"],
-                ["1 ой - 47 200 сўм 🔥", "discount_premium_1m"],
-                ["3 ой - 103 200 сўм 🔥", "discount_premium_3m"],
+                ["1 ҳафта - 23 200 сўм 🔥", "discount_premium_1w"],
+                ["15 кун - 39 200 сўм 🔥", "discount_premium_2w"],
+                ["1 ой - 63 200 сўм 🔥", "discount_premium_1m"],
             ]
             cancel = "❌ Бекор қилиш"
 
@@ -1872,10 +1863,9 @@ async def handle_callback(update, context):
                 "📅 Muddatni tanlang:"
             )
             buttons = [
-                ["1 hafta - 20 000 so'm 🔥", "discount_premium_1w"],
-                ["14 kun - 31 200 so'm 🔥", "discount_premium_2w"],
-                ["1 oy - 47 200 so'm 🔥", "discount_premium_1m"],
-                ["3 oy - 103 200 so'm 🔥", "discount_premium_3m"],
+                ["1 hafta - 23 200 so'm 🔥", "discount_premium_1w"],
+                ["15 kun - 39 200 so'm 🔥", "discount_premium_2w"],
+                ["1 oy - 63 200 so'm 🔥", "discount_premium_1m"],
             ]
             cancel = "❌ Bekor qilish"
 
@@ -1895,16 +1885,14 @@ async def handle_callback(update, context):
 
         durations = {
             "premium_1w": 7,
-            "premium_2w": 14,
+            "premium_2w": 15,
             "premium_1m": 30,
-            "premium_3m": 90
         }
 
         prices = {
-            "premium_1w": "20 000",
-            "premium_2w": "31 200",
-            "premium_1m": "47 200",
-            "premium_3m": "103 200"
+            "premium_1w": "23 200",
+            "premium_2w": "39 200",
+            "premium_1m": "63 200",
         }
 
         if plan not in durations:
@@ -1985,16 +1973,14 @@ async def handle_callback(update, context):
     if data.startswith("premium_"):
         durations = {
             "premium_1w": 7,
-            "premium_2w": 14,
+            "premium_2w": 15,
             "premium_1m": 30,
-            "premium_3m": 90
         }
 
         prices = {
-            "premium_1w": "25 000",
-            "premium_2w": "39 000",
-            "premium_1m": "59 000",
-            "premium_3m": "129 000"
+            "premium_1w": "29 000",
+            "premium_2w": "49 000",
+            "premium_1m": "79 000",
         }
 
         if data not in durations:
@@ -2069,16 +2055,14 @@ async def handle_callback(update, context):
 
         durations = {
             "premium_1w": 7,
-            "premium_2w": 14,
+            "premium_2w": 15,
             "premium_1m": 30,
-            "premium_3m": 90
         }
 
         prices = {
-            "premium_1w": "20 000",
-            "premium_2w": "31 200",
-            "premium_1m": "47 200",
-            "premium_3m": "103 200"
+            "premium_1w": "23 200",
+            "premium_2w": "39 200",
+            "premium_1m": "63 200",
         }
 
         if plan not in durations:
@@ -2191,16 +2175,14 @@ async def handle_callback(update, context):
 
         durations = {
             "premium_1w": 7,
-            "premium_2w": 14,
+            "premium_2w": 15,
             "premium_1m": 30,
-            "premium_3m": 90
         }
 
         prices = {
-            "premium_1w": "25 000",
-            "premium_2w": "39 000",
-            "premium_1m": "59 000",
-            "premium_3m": "129 000"
+            "premium_1w": "29 000",
+            "premium_2w": "49 000",
+            "premium_1m": "79 000",
         }
 
         if plan not in durations:
@@ -2296,16 +2278,14 @@ async def handle_callback(update, context):
 
         durations = {
             "premium_1w": 7,
-            "premium_2w": 14,
+            "premium_2w": 15,
             "premium_1m": 30,
-            "premium_3m": 90,
         }
 
         prices = {
-            "premium_1w": "25 000",
-            "premium_2w": "39 000",
-            "premium_1m": "59 000",
-            "premium_3m": "129 000",
+            "premium_1w": "29 000",
+            "premium_2w": "49 000",
+            "premium_1m": "79 000",
         }
 
         if plan not in durations:
@@ -4673,10 +4653,9 @@ async def handle_payment_check(update, context):
         plan = pending.get("plan")
 
         prices = {
-            "premium_1w": "25 000",
-            "premium_2w": "39 000",
-            "premium_1m": "59 000",
-            "premium_3m": "129 000",
+            "premium_1w": "29 000",
+            "premium_2w": "49 000",
+            "premium_1m": "79 000",
         }
 
         # Chegirmali Premium bo‘lsa, pending_payment ichidagi
@@ -5797,10 +5776,9 @@ async def handle_message(update, context):
                 "reason": "🔥 <b>Ko‘proq ko‘rinish → ko‘proq Like → ko‘proq Match!</b>",
                 "choose": "✨ O‘zingizga mos Premium tarifini tanlang:",
                 "duration": "📅 <b>Muddatni tanlang:</b>",
-                "week": "1 hafta - 25 000 so‘m",
-                "two_weeks": "14 kun - 39 000 so‘m",
-                "month": "1 oy - 59 000 so‘m",
-                "three_months": "3 oy - 129 000 so‘m",
+                "week": "1 hafta - 29 000 so‘m",
+                "two_weeks": "15 kun - 49 000 so‘m",
+                "month": "1 oy - 79 000 so‘m",
                 "cancel": "❌ Bekor qilish",
             },
             "ru": {
@@ -5819,10 +5797,9 @@ async def handle_message(update, context):
                 "reason": "🔥 <b>Больше просмотров → больше Like → больше Match!</b>",
                 "choose": "✨ Выберите подходящий тариф Premium:",
                 "duration": "📅 <b>Выберите срок:</b>",
-                "week": "1 неделя - 25 000 сум",
-                "two_weeks": "14 дней - 39 000 сум",
-                "month": "1 месяц - 59 000 сум",
-                "three_months": "3 месяца - 129 000 сум",
+                "week": "1 неделя - 29 000 сум",
+                "two_weeks": "15 дней - 49 000 сум",
+                "month": "1 месяц - 79 000 сум",
                 "cancel": "❌ Отмена",
             },
             "uz_cyr": {
@@ -5841,10 +5818,9 @@ async def handle_message(update, context):
                 "reason": "🔥 <b>Кўпроқ кўриниш → кўпроқ Like → кўпроқ Match!</b>",
                 "choose": "✨ Ўзингизга мос Premium тарифини танланг:",
                 "duration": "📅 <b>Муддатни танланг:</b>",
-                "week": "1 ҳафта - 25 000 сўм",
-                "two_weeks": "14 кун - 39 000 сўм",
-                "month": "1 ой - 59 000 сўм",
-                "three_months": "3 ой - 129 000 сўм",
+                "week": "1 ҳафта - 29 000 сўм",
+                "two_weeks": "15 кун - 49 000 сўм",
+                "month": "1 ой - 79 000 сўм",
                 "cancel": "❌ Бекор қилиш",
             },
         }
@@ -5855,7 +5831,6 @@ async def handle_message(update, context):
             [InlineKeyboardButton(t["week"], callback_data="premium_1w")],
             [InlineKeyboardButton(t["two_weeks"], callback_data="premium_2w")],
             [InlineKeyboardButton(t["month"], callback_data="premium_1m")],
-            [InlineKeyboardButton(t["three_months"], callback_data="premium_3m")],
             [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")]
         ])
 
@@ -6314,10 +6289,9 @@ async def handle_message(update, context):
                 "more": "🔥 <b>Ko'proq ko'rinish → ko'proq Like → ko'proq Match!</b>",
                 "choose": "✨ O'zingizga mos Premium tarifini tanlang:",
                 "duration": "📅 <b>Muddatni tanlang:</b>",
-                "p1": "📅 1 hafta - 25 000 so'm • QULAY",
-                "p2": "🔥 14 kun - 39 000 so'm • ENG QULAY",
-                "p3": "⭐️ 1 oy - 59 000 so'm • OMMABOP",
-                "p4": "👑 3 oy - 129 000 so'm • TEJAMKOR",
+                "p1": "📅 1 hafta - 29 000 so'm • QULAY",
+                "p2": "🔥 15 kun - 49 000 so'm • ENG QULAY",
+                "p3": "⭐️ 1 oy - 79 000 so'm • OMMABOP",
                 "cancel": "❌ Bekor qilish",
             },
             "ru": {
@@ -6332,10 +6306,9 @@ async def handle_message(update, context):
                 "more": "🔥 <b>Больше просмотров → больше Like → больше Match!</b>",
                 "choose": "✨ Выберите подходящий тариф Premium:",
                 "duration": "📅 <b>Выберите срок:</b>",
-                "p1": "📅 1 неделя - 25 000 сум • ВЫГОДНО",
-                "p2": "🔥 14 дней - 39 000 сум • ЛУЧШИЙ ВЫБОР",
-                "p3": "⭐️ 1 месяц - 59 000 сум • ПОПУЛЯРНЫЙ",
-                "p4": "👑 3 месяца - 129 000 сум • ЭКОНОМНО",
+                "p1": "📅 1 неделя - 29 000 сум • ВЫГОДНО",
+                "p2": "🔥 15 дней - 49 000 сум • ЛУЧШИЙ ВЫБОР",
+                "p3": "⭐️ 1 месяц - 79 000 сум • ПОПУЛЯРНЫЙ",
                 "cancel": "❌ Отмена",
             },
             "uz_cyr": {
@@ -6350,10 +6323,9 @@ async def handle_message(update, context):
                 "more": "🔥 <b>Кўпроқ кўриниш → кўпроқ Like → кўпроқ Match!</b>",
                 "choose": "✨ Ўзингизга мос Premium тарифини танланг:",
                 "duration": "📅 <b>Муддатни танланг:</b>",
-                "p1": "📅 1 ҳафта - 25 000 сўм • ҚУЛАЙ",
-                "p2": "🔥 14 кун - 39 000 сўм • ЭНГ ҚУЛАЙ",
-                "p3": "⭐️ 1 ой - 59 000 сўм • ОММАБОП",
-                "p4": "👑 3 ой - 129 000 сўм • ТЕЖАМКОР",
+                "p1": "📅 1 ҳафта - 29 000 сўм • ҚУЛАЙ",
+                "p2": "🔥 15 кун - 49 000 сўм • ЭНГ ҚУЛАЙ",
+                "p3": "⭐️ 1 ой - 79 000 сўм • ОММАБОП",
                 "cancel": "❌ Бекор қилиш",
             },
         }
@@ -6364,7 +6336,6 @@ async def handle_message(update, context):
             [InlineKeyboardButton(t["p1"], callback_data="premium_1w")],
             [InlineKeyboardButton(t["p2"], callback_data="premium_2w")],
             [InlineKeyboardButton(t["p3"], callback_data="premium_1m")],
-            [InlineKeyboardButton(t["p4"], callback_data="premium_3m")],
             [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")],
         ])
 
