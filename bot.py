@@ -6700,6 +6700,99 @@ async def admin(update, context):
         """)
         today_matches = cur.fetchone()[0]
 
+        # To‘lovlar statistikasi — faqat admin panel uchun
+        cur.execute("SELECT COUNT(*) FROM payments")
+        total_payments = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM payments
+            WHERE status = 'approved'
+        """)
+        approved_payments = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM payments
+            WHERE status = 'pending'
+        """)
+        pending_payments = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM payments
+            WHERE status = 'rejected'
+        """)
+        rejected_payments = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COALESCE(SUM(
+                NULLIF(
+                    REGEXP_REPLACE(amount, '[^0-9]', '', 'g'),
+                    ''
+                )::NUMERIC
+            ), 0)
+            FROM payments
+            WHERE status = 'approved'
+        """)
+        total_payment_amount = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COALESCE(SUM(
+                NULLIF(
+                    REGEXP_REPLACE(amount, '[^0-9]', '', 'g'),
+                    ''
+                )::NUMERIC
+            ), 0)
+            FROM payments
+            WHERE status = 'approved'
+              AND created_at >= CURRENT_DATE
+        """)
+        today_payment_amount = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COALESCE(SUM(
+                NULLIF(
+                    REGEXP_REPLACE(amount, '[^0-9]', '', 'g'),
+                    ''
+                )::NUMERIC
+            ), 0)
+            FROM payments
+            WHERE status = 'approved'
+              AND created_at >= CURRENT_DATE - INTERVAL '6 days'
+        """)
+        week_payment_amount = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COALESCE(SUM(
+                NULLIF(
+                    REGEXP_REPLACE(amount, '[^0-9]', '', 'g'),
+                    ''
+                )::NUMERIC
+            ), 0)
+            FROM payments
+            WHERE status = 'approved'
+              AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
+        """)
+        month_payment_amount = cur.fetchone()[0]
+
+        # Premium paketlar bo‘yicha tasdiqlangan sotuvlar
+        cur.execute("""
+            SELECT
+                COUNT(*) FILTER (WHERE days = 7),
+                COUNT(*) FILTER (WHERE days = 30),
+                COUNT(*) FILTER (WHERE days = 90),
+                COUNT(*) FILTER (WHERE days = 365)
+            FROM payments
+            WHERE status = 'approved'
+        """)
+        (
+            premium_7d_sales,
+            premium_30d_sales,
+            premium_90d_sales,
+            premium_365d_sales
+        ) = cur.fetchone()
+
         # Referral
         cur.execute("""
             SELECT COUNT(*)
@@ -6733,6 +6826,22 @@ async def admin(update, context):
         f"├ ❤️ Bugungi Like: {today_likes}\n"
         f"├ 💞 Jami Match: {total_matches}\n"
         f"└ 💞 Bugungi Match: {today_matches}\n\n"
+
+        "💳 TO‘LOVLAR\n"
+        f"├ 🧾 Jami to‘lovlar: {total_payments}\n"
+        f"├ ✅ Tasdiqlangan: {approved_payments}\n"
+        f"├ ⏳ Kutilmoqda: {pending_payments}\n"
+        f"├ ❌ Rad etilgan: {rejected_payments}\n"
+        f"├ 💰 Jami tushum: {total_payment_amount:,.0f} so‘m\n"
+        f"├ 📅 Bugungi tushum: {today_payment_amount:,.0f} so‘m\n"
+        f"├ 📆 Oxirgi 7 kun: {week_payment_amount:,.0f} so‘m\n"
+        f"└ 📆 Shu oy: {month_payment_amount:,.0f} so‘m\n\n"
+
+        "👑 PREMIUM SOTUVLAR\n"
+        f"├ 1 hafta: {premium_7d_sales} ta\n"
+        f"├ 1 oy: {premium_30d_sales} ta\n"
+        f"├ 3 oy: {premium_90d_sales} ta\n"
+        f"└ 1 yil: {premium_365d_sales} ta\n\n"
 
         "🎁 REFERRAL\n"
         f"└ Referral orqali kelganlar: {referral_users}"
