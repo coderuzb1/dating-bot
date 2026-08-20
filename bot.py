@@ -7467,9 +7467,88 @@ async def broadcast(update, context):
     if user.id != ADMIN_ID:
         await update.message.reply_text("⛔ Siz admin emassiz!")
         return
-    text = update.message.text.replace("/broadcast ", "")
-    await notify_news(context.bot, text)
-    await update.message.reply_text("✅ Yuborildi!")
+
+    context.user_data["broadcast_waiting"] = True
+
+    await update.message.reply_text(
+        "📢 <b>Broadcast rejimi</b>\\n\\n"
+        "Yuboriladigan xabar matnini yuboring.\\n"
+        "❌ Bekor qilish uchun /cancel yuboring.",
+        parse_mode="HTML"
+    )
+
+
+async def broadcast_text(update, context):
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        return
+
+    if not context.user_data.get("broadcast_waiting"):
+        return
+
+    text = update.message.text
+    context.user_data["broadcast_waiting"] = False
+    context.user_data["broadcast_text"] = text
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Yuborish", callback_data="confirm_broadcast"),
+            InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_broadcast")
+        ]
+    ])
+
+    await update.message.reply_text(
+        f"📢 <b>Broadcast preview:</b>\\n\\n"
+        f"{text}\\n\\n"
+        "⚠️ Ushbu xabar barcha aktiv foydalanuvchilarga yuboriladi.",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+async def broadcast_confirm_callback(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    if query.from_user.id != ADMIN_ID:
+        return
+
+    data = query.data
+
+    if data == "cancel_broadcast":
+        context.user_data.pop("broadcast_text", None)
+        context.user_data["broadcast_waiting"] = False
+
+        await query.edit_message_text(
+            "❌ Broadcast bekor qilindi."
+        )
+        return
+
+    if data == "confirm_broadcast":
+        text = context.user_data.get("broadcast_text")
+
+        if not text:
+            await query.edit_message_text(
+                "❌ Yuboriladigan xabar topilmadi."
+            )
+            return
+
+        context.user_data.pop("broadcast_text", None)
+        context.user_data["broadcast_waiting"] = False
+
+        await query.edit_message_text(
+            "⏳ Broadcast yuborilmoqda..."
+        )
+
+        await notify_news(context.bot, text)
+
+        try:
+            await query.message.reply_text(
+                "✅ Broadcast barcha aktiv foydalanuvchilarga yuborildi."
+            )
+        except Exception:
+            pass
+
 
 def main():
     from flask import Flask
@@ -7562,6 +7641,13 @@ def main():
     app.add_handler(CommandHandler("premiumhistory", premiumhistory))
     app.add_handler(CommandHandler("premiumstats", premiumstats))
     app.add_handler(CommandHandler("approve", approve))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, broadcast_text))
+    app.add_handler(
+        CallbackQueryHandler(
+            broadcast_confirm_callback,
+            pattern=r"^(confirm_broadcast|cancel_broadcast)$"
+        )
+    )
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("find", find))
     app.add_handler(CommandHandler("profile", profile))
