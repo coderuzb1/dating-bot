@@ -6052,7 +6052,7 @@ async def handle_message(update, context):
 
             sent_count = cur.fetchone()[0]
 
-            if sent_count >= 3:
+            if sent_count >= 1:
                 context.user_data.pop("writing_to", None)
 
                 cur.close()
