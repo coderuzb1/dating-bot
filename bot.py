@@ -2264,7 +2264,7 @@ async def handle_callback(update, context):
         )
         return
 
-    if data.startswith("confirm_"):
+    if data.startswith("confirm_") and data != "confirm_broadcast":
         parts = data.split("_", 2)
 
         if len(parts) != 3:
