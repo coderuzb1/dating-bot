@@ -7597,20 +7597,8 @@ def main():
     # -1 guruhda ishlaydi, shuning uchun boshqa handlerlardan
     # oldin bajariladi.
     # =========================================================
-    app.add_handler(
-        MessageHandler(
-            filters.ALL,
-            activity_message_handler
-        ),
-        group=-1
-    )
-
-    app.add_handler(
-        CallbackQueryHandler(
-            activity_callback_handler
-        ),
-        group=-1
-    )
+    # Activity tracking asosiy handlerlarni bloklamasligi uchun
+    # vaqtincha asosiy oqimdan chiqarildi.
 
     # =========================================================
     # MUHIM: PREMIUM VA TELEGRAM CALLBACKLARI CONVERSATION'DAN OLDIN
@@ -7643,7 +7631,10 @@ def main():
     app.add_handler(CommandHandler("premiumhistory", premiumhistory))
     app.add_handler(CommandHandler("premiumstats", premiumstats))
     app.add_handler(CommandHandler("approve", approve))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, broadcast_text))
+    app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, broadcast_text),
+        group=-2
+    )
     app.add_handler(
         CallbackQueryHandler(
             broadcast_confirm_callback,
