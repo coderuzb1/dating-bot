@@ -1534,6 +1534,12 @@ async def handle_callback(update, context):
                 show_alert=False
             )
 
+        # "Meni yoqtirganlar"dagi eski profil kartasini olib tashlash
+        try:
+            await query.message.delete()
+        except Exception as e:
+            print(f"Like-back message delete error: {e}")
+
         return
 
     if data.startswith("who_like:"):
