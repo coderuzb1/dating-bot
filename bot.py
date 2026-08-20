@@ -7669,7 +7669,7 @@ def main():
             pattern=r"^telegram_chat_\d+$"
         )
     )
-    app.add_handler(CallbackQueryHandler(handle_callback))
+    app.add_handler(CallbackQueryHandler(handle_callback), group=1)
     
     # =========================================================
     # RETENTION NOTIFICATION JOB
