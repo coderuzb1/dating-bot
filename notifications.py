@@ -280,22 +280,22 @@ async def notify_new_match(
 
         if lang == "ru":
             text = (
-                "🎉 <b>MATCH! ❤️</b>\n\n"
+                "🎉 MATCH! ❤️\n\n"
                 "Вы понравились друг другу!\n\n"
-                f"👤 <b>{target['name']}</b>"
+                f"👤 {target['name']}"
             )
 
             if target["age"]:
                 text += f", {target['age']}"
 
             if target["city"]:
-                text += f"\n📍 <b>{target['city']}</b>"
+                text += f"\n📍 {target['city']}"
 
             text += "\n\n💬 Начните общение прямо сейчас."
 
             if recipient["premium"]:
                 text += (
-                    "\n\n👑 <b>Вы Premium!</b>\n"
+                    "\n\n👑 Вы Premium!\n"
                     "📨 Вы также можете написать этому человеку "
                     "в личный Telegram.\n"
                     "💡 Такой способ связи может привлечь больше внимания "
@@ -303,7 +303,7 @@ async def notify_new_match(
                 )
             else:
                 text += (
-                    "\n\n👑 <b>Хотите больше шансов на общение?</b>\n"
+                    "\n\n👑 Хотите больше шансов на общение?\n"
                     "📨 С Premium вы сможете писать прямо в личный "
                     "Telegram собеседника.\n"
                     "🔥 Это поможет привлечь больше внимания и увеличить "
@@ -314,22 +314,22 @@ async def notify_new_match(
 
         if lang == "uz_cyr":
             text = (
-                "🎉 <b>МАТЧ! ❤️</b>\n\n"
+                "🎉 МАТЧ! ❤️\n\n"
                 "Сизлар бир-бирингизга ёқдингиз!\n\n"
-                f"👤 <b>{target['name']}</b>"
+                f"👤 {target['name']}"
             )
 
             if target["age"]:
                 text += f", {target['age']} ёш"
 
             if target["city"]:
-                text += f"\n📍 <b>{target['city']}</b>"
+                text += f"\n📍 {target['city']}"
 
             text += "\n\n💬 Ҳозироқ суҳбатни бошланг."
 
             if recipient["premium"]:
                 text += (
-                    "\n\n👑 <b>Сиз Premiumсиз!</b>\n"
+                    "\n\n👑 Сиз Premiumсиз!\n"
                     "📨 Суҳбатдошингизга Telegram шахсий чати орқали "
                     "ҳам ёзишингиз мумкин.\n"
                     "💡 Бу хабарингизга кўпроқ эътибор қаратилиши ва "
@@ -337,7 +337,7 @@ async def notify_new_match(
                 )
             else:
                 text += (
-                    "\n\n👑 <b>Кўпроқ имконият хоҳлайсизми?</b>\n"
+                    "\n\n👑 Кўпроқ имконият хоҳлайсизми?\n"
                     "📨 Premium билан Telegram шахсий чатига тўғридан-тўғри "
                     "ёзишингиз мумкин.\n"
                     "🔥 Бу кўпроқ эътибор ва жавоб олиш эҳтимолини ошириши мумкин."
@@ -346,22 +346,22 @@ async def notify_new_match(
             return text
 
         text = (
-            "🎉 <b>MATCH! ❤️</b>\n\n"
+            "🎉 MATCH! ❤️\n\n"
             "Sizlar bir-biringizga yoqdingiz!\n\n"
-            f"👤 <b>{target['name']}</b>"
+            f"👤 {target['name']}"
         )
 
         if target["age"]:
             text += f", {target['age']} yosh"
 
         if target["city"]:
-            text += f"\n📍 <b>{target['city']}</b>"
+            text += f"\n📍 {target['city']}"
 
         text += "\n\n💬 Hozir suhbatni boshlang."
 
         if recipient["premium"]:
             text += (
-                "\n\n👑 <b>Siz Premiumsiz!</b>\n"
+                "\n\n👑 Siz Premiumsiz!\n"
                 "📨 Bu odamga Telegram shaxsiy chatiga to‘g‘ridan-to‘g‘ri "
                 "yozishingiz mumkin.\n"
                 "💡 Bu xabaringizga ko‘proq e’tibor berilishiga va "
@@ -369,7 +369,7 @@ async def notify_new_match(
             )
         else:
             text += (
-                "\n\n👑 <b>Ko‘proq e’tibor va javob olishni xohlaysizmi?</b>\n"
+                "\n\n👑 Ko‘proq e’tibor va javob olishni xohlaysizmi?\n"
                 "📨 Premium bilan Telegram shaxsiy chatiga to‘g‘ridan-to‘g‘ri "
                 "yozishingiz mumkin.\n"
                 "🔥 Bu xabaringizni ko‘rish va javob olish ehtimolini oshirishi mumkin."
@@ -570,7 +570,7 @@ async def notify_new_user_in_city(
         [
             InlineKeyboardButton(
                 "🔍 Ko‘rish",
-                callback_data="find_profiles"
+                callback_data="new_city_profiles"
             )
         ]
     ])
@@ -578,17 +578,17 @@ async def notify_new_user_in_city(
     # Foydalanuvchi tiliga qarab notification
     texts = {
         "uz": (
-            "🔥 <b>Shaharingizda yangi profillar paydo bo‘ldi!</b>\n\n"
+            "🔥 Shaharingizda yangi profillar paydo bo‘ldi!\n\n"
             f"💕 {city} shahrida yangi tanishuv sizni kutmoqda.\n\n"
             "🔍 Yangi profillarni ko‘rish"
         ),
         "ru": (
-            "🔥 <b>В вашем городе появились новые профили!</b>\n\n"
+            "🔥 В вашем городе появились новые профили!\n\n"
             f"💕 В городе {city} вас ждёт новое знакомство.\n\n"
             "🔍 Посмотреть новые профили"
         ),
         "uz_cyr": (
-            "🔥 <b>Шаҳрингизда янги профиллар пайдо бўлди!</b>\n\n"
+            "🔥 Шаҳрингизда янги профиллар пайдо бўлди!\n\n"
             f"💕 {city} шаҳрида янги танишув сизни кутмоқда.\n\n"
             "🔍 Янги профилларни кўриш"
         ),
@@ -678,7 +678,7 @@ async def notify_inactive_users_3_days(bot):
         [
             InlineKeyboardButton(
                 "🔍 Ko‘rib chiqish",
-                callback_data="find_profiles"
+                callback_data="new_city_profiles"
             )
         ]
     ])
@@ -741,7 +741,7 @@ async def notify_inactive_users_7_days(bot):
         [
             InlineKeyboardButton(
                 "🔥 Profillarni ko‘rish",
-                callback_data="find_profiles"
+                callback_data="new_city_profiles"
             )
         ]
     ])
@@ -1076,7 +1076,7 @@ async def notify_retention_user(bot, user_id, first_name, last_active):
         [
             InlineKeyboardButton(
                 t["button"],
-                callback_data="find_profiles"
+                callback_data="new_city_profiles"
             )
         ]
     ])
@@ -1218,9 +1218,9 @@ async def notify_premium_expiring_1_day(bot):
 
     texts = {
         "uz": (
-            "🚨 <b>Premiumingiz ertaga tugaydi!</b>\n\n"
+            "🚨 Premiumingiz ertaga tugaydi!\n\n"
             "👑 Premium imkoniyatlaringizni yo‘qotib qo‘ymang.\n\n"
-            "🔥 <b>Faqat BUGUN — 20% CHEGIRMA!</b>\n\n"
+            "🔥 Faqat BUGUN — 20% CHEGIRMA!\n\n"
             "♾️ Cheksiz profil ko‘rish\n"
             "❤️ Cheksiz like\n"
             "⭐ Bepul Superlike\n"
@@ -1228,12 +1228,12 @@ async def notify_premium_expiring_1_day(bot):
             "📨 Telegram shaxsiy chatiga yozish\n"
             "💬 Match bo‘lmasdan xabar yozish\n"
             "🚀 Qidiruvda ustuvor ko‘rinish\n\n"
-            "⏰ <b>Chegirma faqat bugun amal qiladi!</b>"
+            "⏰ Chegirma faqat bugun amal qiladi!"
         ),
         "ru": (
-            "🚨 <b>Ваш Premium заканчивается завтра!</b>\n\n"
+            "🚨 Ваш Premium заканчивается завтра!\n\n"
             "👑 Не теряйте возможности Premium.\n\n"
-            "🔥 <b>ТОЛЬКО СЕГОДНЯ — СКИДКА 20%!</b>\n\n"
+            "🔥 ТОЛЬКО СЕГОДНЯ — СКИДКА 20%!\n\n"
             "♾️ Безлимитный просмотр профилей\n"
             "❤️ Безлимитные лайки\n"
             "⭐ Бесплатный Superlike\n"
@@ -1241,12 +1241,12 @@ async def notify_premium_expiring_1_day(bot):
             "📨 Писать в личный Telegram\n"
             "💬 Писать без взаимного матча\n"
             "🚀 Приоритет в поиске\n\n"
-            "⏰ <b>Скидка действует только сегодня!</b>"
+            "⏰ Скидка действует только сегодня!"
         ),
         "uz_cyr": (
-            "🚨 <b>Premium’ингиз эртага тугайди!</b>\n\n"
+            "🚨 Premium’ингиз эртага тугайди!\n\n"
             "👑 Premium имкониятларингизни йўқотиб қўйманг.\n\n"
-            "🔥 <b>ФАҚАТ БУГУН — 20% ЧЕГИРМА!</b>\n\n"
+            "🔥 ФАҚАТ БУГУН — 20% ЧЕГИРМА!\n\n"
             "♾️ Чексиз профил кўриш\n"
             "❤️ Чексиз лайк\n"
             "⭐ Бепул Superlike\n"
@@ -1254,7 +1254,7 @@ async def notify_premium_expiring_1_day(bot):
             "📨 Telegram шахсий чатига ёзиш\n"
             "💬 Match бўлмасдан хабар ёзиш\n"
             "🚀 Қидирувда устувор кўриниш\n\n"
-            "⏰ <b>Чегирма фақат бугун амал қилади!</b>"
+            "⏰ Чегирма фақат бугун амал қилади!"
         ),
     }
 
