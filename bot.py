@@ -7449,6 +7449,51 @@ async def find_user(update, context):
     except:
         await update.message.reply_text("❌ Format: /finduser ISM")
 
+async def buy_superlikes(update, context):
+    query = update.callback_query
+    user = query.from_user
+    language = get_user_language(user.id)
+
+    texts = {
+        "uz": {
+            "title": "⭐ <b>SUPERLIKE SOTIB OLISH</b>",
+            "choose": "Kerakli miqdorni tanlang:",
+            "one": "⭐ 1 ta — 1 000 so'm",
+            "five": "⭐ 5 ta — 4 000 so'm",
+            "ten": "⭐ 10 ta — 7 000 so'm",
+        },
+        "ru": {
+            "title": "⭐ <b>КУПИТЬ SUPERLIKE</b>",
+            "choose": "Выберите количество:",
+            "one": "⭐ 1 шт. — 1 000 сум",
+            "five": "⭐ 5 шт. — 4 000 сум",
+            "ten": "⭐ 10 шт. — 7 000 сум",
+        },
+        "uz_cyr": {
+            "title": "⭐ <b>SUPERLIKE СОТИБ ОЛИШ</b>",
+            "choose": "Керакли миқдорни танланг:",
+            "one": "⭐ 1 та — 1 000 сўм",
+            "five": "⭐ 5 та — 4 000 сўм",
+            "ten": "⭐ 10 та — 7 000 сўм",
+        }
+    }
+
+    t = texts.get(language, texts["uz"])
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(t["one"], callback_data="sl_1")],
+        [InlineKeyboardButton(t["five"], callback_data="sl_5")],
+        [InlineKeyboardButton(t["ten"], callback_data="sl_10")]
+    ])
+
+    await query.answer()
+    await query.message.reply_text(
+        f'{t["title"]}\n\n{t["choose"]}',
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+
 async def approve_sl(update, context):
     user = update.effective_user
     if user.id != ADMIN_ID:
