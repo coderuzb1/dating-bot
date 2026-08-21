@@ -3190,10 +3190,25 @@ async def handle_callback(update, context):
             # Oddiy foydalanuvchi uchun Premium olish
             if language == "ru":
                 premium_text = "👑 Купить Premium"
+                msg = (
+                    "❌ <b>Бесплатный лимит сообщений исчерпан</b>\n\n"
+                    "Вы уже использовали бесплатное сообщение в этом чате.\n"
+                    "💎 Получите Premium, чтобы продолжить общение."
+                )
             elif language == "uz_cyr":
                 premium_text = "👑 Premium олиш"
+                msg = (
+                    "❌ <b>Бепул хабарлар лимити тугади</b>\n\n"
+                    "Ушбу чатда бепул хабар юбориш лимитингиз тугади.\n"
+                    "💎 Мулоқотни давом эттириш учун Premium олинг."
+                )
             else:
                 premium_text = "👑 Premium olish"
+                msg = (
+                    "❌ <b>Bepul xabar limiti tugadi</b>\n\n"
+                    "Siz ushbu chatda 1 ta bepul xabar yubordingiz.\n"
+                    "💎 Suhbatni davom ettirish uchun Premium oling."
+                )
 
             keyboard = InlineKeyboardMarkup([
                 [
