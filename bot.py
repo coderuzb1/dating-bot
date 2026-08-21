@@ -2647,7 +2647,7 @@ async def handle_callback(update, context):
                 "title": "💳 TO'LOV",
                 "amount": f"⭐ {amount} ta Superlike",
                 "price": f"💰 Summa: {price} so'm",
-                "card": "💳 Karta: 9860 0866 0148 0972",
+                "card": "💳 Karta: <code>9860 0866 0148 0972</code>",
                 "hint": "To'lovni amalga oshiring va «✅ To'lov qildim» tugmasini bosing."
             },
             "ru": {
@@ -2656,7 +2656,7 @@ async def handle_callback(update, context):
                 "title": "💳 ОПЛАТА",
                 "amount": f"⭐ {amount} шт. Superlike",
                 "price": f"💰 Сумма: {price} сум",
-                "card": "💳 Карта: 9860 0866 0148 0972",
+                "card": "💳 Карта: <code>9860 0866 0148 0972</code>",
                 "hint": "Оплатите и нажмите «✅ Я оплатил»."
             },
             "uz_cyr": {
@@ -2665,7 +2665,7 @@ async def handle_callback(update, context):
                 "title": "💳 ТЎЛОВ",
                 "amount": f"⭐ {amount} та Superlike",
                 "price": f"💰 Сумма: {price} сўм",
-                "card": "💳 Карта: 9860 0866 0148 0972",
+                "card": "💳 Карта: <code>9860 0866 0148 0972</code>",
                 "hint": "Тўловни амалга оширинг ва «✅ Тўлов қилдим» тугмасини босинг."
             }
         }
@@ -2692,7 +2692,8 @@ async def handle_callback(update, context):
             f"{t['price']}\n\n"
             f"{t['card']}\n\n"
             f"{t['hint']}",
-            reply_markup=keyboard
+            reply_markup=keyboard,
+            parse_mode="HTML"
         )
         return
 
