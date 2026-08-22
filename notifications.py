@@ -153,6 +153,17 @@ async def weekend_premium_campaign(context):
             "❤️ Cheksiz Like "
             "🔥 Premiumga hozir -30% chegirma bilan ega bo‘ling!"
         ),
+        "2026-08-22_22": (
+            "🔥 PREMIUM -30% — BUGUN FAQAT 22:00! "
+            "💎 O‘zingizga mos insonni tez va oson toping. "
+            "💬 Match kutmang! Yoqqan profilingizga "
+            "to‘g‘ridan-to‘g‘ri Telegram chat orqali yozing. "
+            "🎁 Super Like — BEPUL! "
+            "♾️ Cheksiz profil ko‘rish "
+            "❤️ Cheksiz Like "
+            "⏰ Chegirma faqat hafta oxirida! "
+            "👉 Premiumni hoziroq oling!"
+        ),
         "2026-08-23_22": (
             "🚨 OXIRGI 2 SOAT! "
             "🔥 Premium -30% chegirma bilan — faqat bugun! "
