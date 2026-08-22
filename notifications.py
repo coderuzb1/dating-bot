@@ -316,8 +316,8 @@ async def notify_like(
     ])
 
     text = (
-        "💕 Sizni kimdir yoqtirdi!\\n\\n"
-        f"👤 {from_user_name}\\n\\n"
+        "💕 Sizni kimdir yoqtirdi!\n\n"
+        f"👤 {from_user_name}\n\n"
         "👀 Kim ekanini ko‘rish"
     )
 
