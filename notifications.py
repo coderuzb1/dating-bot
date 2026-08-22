@@ -1140,15 +1140,14 @@ def get_last_retention_notification(user_id):
 
 async def notify_retention_user(bot, user_id, first_name, last_active):
     """
-    Bitta faol bo'lmagan foydalanuvchini qayta jalb qilish.
+    Faol bo'lmagan foydalanuvchini har 2 kunda qayta jalb qilish.
+    6 ta marketing xabari navbat bilan yuboriladi.
     """
 
-    # Oxirgi retention xabarini tekshiramiz
     last_notification = get_last_retention_notification(user_id)
-
     now = datetime.now()
 
-    # Birinchi xabar: 2 kundan keyin
+    # Birinchi xabar — 2 kundan keyin
     if last_notification is None:
         if last_active > now:
             return False
@@ -1158,79 +1157,177 @@ async def notify_retention_user(bot, user_id, first_name, last_active):
         if inactive_days < RETENTION_FIRST_DAYS:
             return False
 
-    # Keyingi xabarlar: har 2 kunda
+        message_index = 0
+
+    # Keyingi xabarlar — har 2 kunda
     else:
         days_since_notification = (now - last_notification).days
 
         if days_since_notification < RETENTION_REPEAT_DAYS:
             return False
 
-    # Yangi profillar soni
-    new_profiles_count = get_new_profiles_count(
-        user_id,
-        last_active
-    )
+        # Oxirgi retention xabarining tartib raqamini olish
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM notification_logs
+            WHERE user_id = %s
+              AND notification_type = 'retention'
+            """,
+            (user_id,)
+        )
+
+        sent_count = cur.fetchone()[0] or 0
+
+        cur.close()
+        conn.close()
+
+        message_index = sent_count % 6
 
     # Foydalanuvchi nomi
     display_name = first_name or "do'stim"
 
-    # Foydalanuvchi tilini aniqlash
+    # Tilni aniqlash
     conn = get_db_connection()
     cur = conn.cursor()
+
     cur.execute(
         "SELECT language FROM users WHERE user_id = %s",
         (user_id,)
     )
+
     language_row = cur.fetchone()
+
     cur.close()
     conn.close()
 
     language = language_row[0] if language_row and language_row[0] else "uz"
 
-    texts = {
-        "uz": {
-            "text": (
-                f"👋 Salom, {display_name}!\n\n"
-                "❤️ Sizni SaraMatch'da sog'indik!\n\n"
-                "✨ Yangi tanishuvlar sizni kutmoqda.\n"
-                f"🔥 Siz yo'q paytingizda {new_profiles_count} ta "
-                "yangi profil qo'shilgan.\n\n"
-                "💕 Botga qayting va tanishuvni davom ettiring!"
+    messages = {
+        "uz": [
+            (
+                f"💌 {display_name}, ehtimol kimdir sizni yoqtirgandir!\n\n"
+                "Kirib ko'ring — yangi tanishuvlar va matchlar sizni kutmoqda. ❤️"
             ),
-            "button": "🔥 Profillarni ko'rish"
-        },
-        "ru": {
-            "text": (
-                f"👋 Привет, {display_name}!\n\n"
-                "❤️ Мы скучаем по вам в SaraMatch!\n\n"
-                "✨ Новые знакомства уже ждут вас.\n"
-                f"🔥 Пока вас не было, появилось новых профилей: "
-                f"{new_profiles_count}.\n\n"
-                "💕 Возвращайтесь и продолжайте знакомиться!"
+            (
+                "❤️ Chin sevgi — bu faqat “sevaman” deyish emas.\n\n"
+                "Chin sevgi — insonning qalbini asrash, uning ko'zidagi "
+                "quvonchni o'z baxtingdek ko'rishdir.\n\n"
+                "Sevgan insoning yoningda bo'lmaganda ham uning ko'nglini "
+                "o'ylash, qiyin kunlarida qo'lini qo'yib yubormaslikdir.\n\n"
+                "Chunki haqiqiy muhabbat chiroyli so'zlarda emas, "
+                "sadoqatda, sabrda va har kuni bir-birini qayta tanlashda "
+                "namoyon bo'ladi. 🤍\n\n"
+                "Haqiqiy sevgi — “men seni sevaman” emas, "
+                "“men seni asrayman” degan tuyg'udir."
             ),
-            "button": "🔥 Смотреть профили"
-        },
-        "uz_cyr": {
-            "text": (
-                f"👋 Салом, {display_name}!\n\n"
-                "❤️ Сизни SaraMatch'да соғиндик!\n\n"
-                "✨ Янги танишувлар сизни кутмоқда.\n"
-                f"🔥 Сиз йўқ пайтингизда {new_profiles_count} та "
-                "янги профиль қўшилди.\n\n"
-                "💕 Ботга қайтинг ва танишувни давом эттиринг!"
+            (
+                "5 ta harf: S-A-L-O-M. 😊\n\n"
+                "Ba'zan shu harflar butun bir hikoyani boshlab beradi.\n\n"
+                "Balki bugun sizning yangi tanishuvingiz ham oddiy "
+                "bir “Salom”dan boshlanar?"
             ),
-            "button": "🔥 Профилларни кўриш"
-        }
+            (
+                "Ilovani ochish — bor-yo'g'i 1 bosish. ❤️\n\n"
+                "Lekin o'sha 1 bosish yangi tanishuvni boshlab berishi mumkin.\n\n"
+                "Balki siz izlayotgan inson aynan hozir SaraMatch'da kutayotgandir. 😊"
+            ),
+            (
+                "Instagram'da soatlab reels ko'rish o'rniga... 📱\n\n"
+                "Bugun o'zingizga biroz vaqt ajrating — balki baxtingiz "
+                "ilovada kutayotgandir. ❤️\n\n"
+                "Sizga mos nomzodlarni ko'rib chiqing.\n"
+                "Ko'nglingizga yoqqan biriga birinchi bo'lib salom bering!\n\n"
+                "Ekranni behuda varaqlashdan ko'ra, real tanishuvga "
+                "bir qadam qo'ying. 👇"
+            ),
+            (
+                "Bo'sh vaqtingizdan unumli foydalaning. ❤️\n\n"
+                "Sizga tavsiya qilingan nomzodlarni ko'rib chiqing.\n"
+                "Anketalarini ko'rib, eng mosini toping.\n"
+                "Profilni oching va suhbatni boshlang!\n\n"
+                "Sizdan yaxshi xabarlarni kutib qolamiz 👇"
+            ),
+        ],
+        "ru": [
+            (
+                f"💌 {display_name}, возможно, вы кому-то понравились!\n\n"
+                "Загляните — новые знакомства и матчи уже ждут вас. ❤️"
+            ),
+            (
+                "❤️ Настоящая любовь — это не только слова «я люблю тебя».\n\n"
+                "Это забота, верность, терпение и желание каждый день "
+                "снова выбирать друг друга. 🤍"
+            ),
+            (
+                "5 букв: П-Р-И-В-Е-Т. 😊\n\n"
+                "Иногда эти несколько букв становятся началом целой истории."
+            ),
+            (
+                "Открыть приложение — всего одно нажатие. ❤️\n\n"
+                "Но это одно нажатие может стать началом нового знакомства."
+            ),
+            (
+                "Вместо того чтобы часами смотреть reels в Instagram... 📱\n\n"
+                "Подарите немного времени себе — возможно, ваша любовь "
+                "уже ждёт вас в приложении. ❤️"
+            ),
+            (
+                "Проведите свободное время с пользой. ❤️\n\n"
+                "Посмотрите рекомендованные анкеты, найдите подходящего "
+                "человека и начните разговор!\n\n"
+                "Ждём от вас хороших новостей 👇"
+            ),
+        ],
+        "uz_cyr": [
+            (
+                f"💌 {display_name}, эҳтимол кимдир сизни ёқтиргандир!\n\n"
+                "Кириб кўринг — янги танишувлар ва matchлар сизни кутмоқда. ❤️"
+            ),
+            (
+                "❤️ Чин севги — бу фақат “севаман” дейиш эмас.\n\n"
+                "Ҳақиқий муҳаббат — садоқат, сабр ва бир-бирини ҳар куни "
+                "қайта танлашдир. 🤍"
+            ),
+            (
+                "5 та ҳарф: С-А-Л-О-М. 😊\n\n"
+                "Баъзан шу ҳарфлар бутун бир ҳикояни бошлаб беради."
+            ),
+            (
+                "Иловани очиш — бор-йўғи 1 босиш. ❤️\n\n"
+                "Лекин шу 1 босиш янги танишувни бошлаб бериши мумкин."
+            ),
+            (
+                "Instagram'да соатлаб reels кўриш ўрнига... 📱\n\n"
+                "Бугун ўзингизга бироз вақт ажратинг — балки бахтингиз "
+                "иловада кутгандир. ❤️"
+            ),
+            (
+                "Бўш вақтингиздан унумли фойдаланинг. ❤️\n\n"
+                "Сизга тавсия қилинган номзодларни кўриб чиқинг, "
+                "энг мосини топинг ва суҳбатни бошланг!\n\n"
+                "Сиздан яхши хабарларни кутиб қоламиз 👇"
+            ),
+        ],
     }
 
-    t = texts.get(language, texts["uz"])
+    buttons = {
+        "uz": "🔥 Profillarni ko'rish",
+        "ru": "🔥 Смотреть профили",
+        "uz_cyr": "🔥 Профилларни кўриш",
+    }
 
-    text = t["text"]
+    language = language if language in messages else "uz"
+
+    text = messages[language][message_index]
 
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                t["button"],
+                buttons[language],
                 callback_data="retention_profiles"
             )
         ]
@@ -1251,7 +1348,7 @@ async def notify_retention_user(bot, user_id, first_name, last_active):
         print(
             f"✅ Retention yuborildi: "
             f"user={user_id}, "
-            f"new_profiles={new_profiles_count}"
+            f"message={message_index + 1}/6"
         )
 
         return True
