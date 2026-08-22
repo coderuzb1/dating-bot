@@ -6960,7 +6960,6 @@ async def admin(update, context):
         f"├ 📅 Oxirgi 7 kun: {week_users}\n"
         f"├ 📅 Oxirgi 15 kun: {fifteen_days_users}\n"
         f"├ 📅 Oxirgi 1 oy: {month_users}\n"
-        f"└ 📅 Oxirgi 1 oy: {month_users}\n\n"
 
         "📈 FAOLLIK\n"
         f"├ ❤️ Jami Like: {total_likes}\n"
@@ -7873,16 +7872,8 @@ def main():
 
         weekend_campaigns = [
             (
-                datetime(2026, 8, 22, 14, 15, tzinfo=tashkent_tz),
-                "2026-08-22_14"
-            ),
-            (
-                datetime(2026, 8, 23, 14, 0, tzinfo=tashkent_tz),
-                "2026-08-23_14"
-            ),
-            (
-                datetime(2026, 8, 23, 20, 0, tzinfo=tashkent_tz),
-                "2026-08-23_20"
+                datetime(2026, 8, 22, 22, 0, tzinfo=tashkent_tz),
+                "2026-08-22_22"
             ),
             (
                 datetime(2026, 8, 23, 22, 0, tzinfo=tashkent_tz),
@@ -7900,18 +7891,6 @@ def main():
                     data=campaign_id,
                     name=f"weekend_premium_{campaign_id}"
                 )
-
-        # BUGUNGI KAMPANIYANI BOT ISHGA TUSHGANDAN 10 SONIYA KEYIN YUBORISH
-        # Faqat 2026-08-22 uchun.
-        if now_tashkent.date().isoformat() == "2026-08-22":
-            app.job_queue.run_once(
-                weekend_premium_campaign,
-                when=10,
-                data="2026-08-22_14",
-                name="weekend_premium_2026-08-22_now"
-            )
-            print("🚀 Bugungi Weekend Premium kampaniyasi 10 soniyadan keyin yuboriladi!")
-
 
         print("🔥 Weekend Premium kampaniya scheduleri yoqildi!")
 
