@@ -1487,6 +1487,12 @@ async def handle_callback(update, context):
             cur.close()
             conn.close()
 
+        # Like qaytarilganda "Meni yoqtirganlar"dagi profilni olib tashlash
+        try:
+            await query.message.delete()
+        except Exception as e:
+            print(f"Like-back message delete error: {e}")
+
         if match_created:
             # Ikkala tomon uchun ism
             conn = get_db_connection()
@@ -5289,21 +5295,21 @@ async def likes(update, context):
             "empty": "❤️ Hozircha sizga hech kim Like bosmagan.",
             "title": "❤️ SIZNI YOQTIRGANLAR",
             "like_back": "❤️ Like qaytarish",
-            "skip": "👎 O'tkazib yuborish",
+            "skip": "👎 Dislike",
             "bio_empty": "Bio yozilmagan",
         },
         "ru": {
             "empty": "❤️ Пока вас никто не лайкнул.",
             "title": "❤️ ВАС ЛАЙКНУЛИ",
             "like_back": "❤️ Ответить лайком",
-            "skip": "👎 Пропустить",
+            "skip": "👎 Дизлайк",
             "bio_empty": "Биография не указана",
         },
         "uz_cyr": {
             "empty": "❤️ Ҳозирча сизга ҳеч ким Like босмаган.",
             "title": "❤️ СИЗНИ ЁҚТИРГАНЛАР",
             "like_back": "❤️ Лайк қайтариш",
-            "skip": "👎 Ўтказиб юбориш",
+            "skip": "👎 Дизлайк",
             "bio_empty": "Био ёзилмаган",
         },
     }
