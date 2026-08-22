@@ -7622,7 +7622,7 @@ def main():
 
         weekend_campaigns = [
             (
-                datetime(2026, 8, 22, 14, 0, tzinfo=tashkent_tz),
+                datetime(2026, 8, 22, 14, 15, tzinfo=tashkent_tz),
                 "2026-08-22_14"
             ),
             (
