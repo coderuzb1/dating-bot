@@ -1843,12 +1843,93 @@ async def handle_callback(update, context):
 
         t = premium_texts.get(language, premium_texts["uz"])
 
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton(t["week"], callback_data="premium_1w")],
-            [InlineKeyboardButton(t["two_weeks"], callback_data="premium_2w")],
-            [InlineKeyboardButton(t["month"], callback_data="premium_1m")],
-            [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")]
-        ])
+        # =========================================================
+        # WEEKEND PREMIUM — 30% CHEGIRMA
+        # 22-avgust 22:00 dan 23-avgust 23:59 gacha
+        # =========================================================
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        tashkent_tz = ZoneInfo("Asia/Tashkent")
+        now_tashkent = datetime.now(tashkent_tz)
+
+        discount_start = datetime(
+            2026, 8, 22, 20, 0,
+            tzinfo=tashkent_tz
+        )
+
+        discount_end = datetime(
+            2026, 8, 23, 23, 59, 59,
+            tzinfo=tashkent_tz
+        )
+
+        weekend_discount_active = (
+            discount_start <= now_tashkent <= discount_end
+        )
+
+        if weekend_discount_active:
+            if language == "ru":
+                week_text = "1 неделя — 2̶9̶ 0̶0̶0̶ → 20 300 сум 🔥"
+                two_weeks_text = "15 дней — 4̶9̶ 0̶0̶0̶ → 34 300 сум 🔥"
+                month_text = "1 месяц — 7̶9̶ 0̶0̶0̶ → 55 300 сум 🔥"
+            elif language == "uz_cyr":
+                week_text = "1 ҳафта — 2̶9̶ 0̶0̶0̶ → 20 300 сўм 🔥"
+                two_weeks_text = "15 кун — 4̶9̶ 0̶0̶0̶ → 34 300 сўм 🔥"
+                month_text = "1 ой — 7̶9̶ 0̶0̶0̶ → 55 300 сўм 🔥"
+            else:
+                week_text = "1 hafta — 2̶9̶ 0̶0̶0̶ → 20 300 so'm 🔥"
+                two_weeks_text = "15 kun — 4̶9̶ 0̶0̶0̶ → 34 300 so'm 🔥"
+                month_text = "1 oy — 7̶9̶ 0̶0̶0̶ → 55 300 so'm 🔥"
+
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton(
+                    week_text,
+                    callback_data="weekend_premium_1w"
+                )],
+                [InlineKeyboardButton(
+                    two_weeks_text,
+                    callback_data="weekend_premium_2w"
+                )],
+                [InlineKeyboardButton(
+                    month_text,
+                    callback_data="weekend_premium_1m"
+                )],
+                [InlineKeyboardButton(
+                    t["cancel"],
+                    callback_data="cancel_premium"
+                )]
+            ])
+
+            choose_text = (
+                "🔥 <b>WEEKEND PREMIUM — 30% CHEGIRMA!</b>\n\n"
+                "⏰ <b>Chegirma 23-avgust 23:59 gacha amal qiladi.</b>\n\n"
+                f'{t["choose"]}\n\n'
+                f'{t["duration"]}'
+            )
+        else:
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton(
+                    t["week"],
+                    callback_data="premium_1w"
+                )],
+                [InlineKeyboardButton(
+                    t["two_weeks"],
+                    callback_data="premium_2w"
+                )],
+                [InlineKeyboardButton(
+                    t["month"],
+                    callback_data="premium_1m"
+                )],
+                [InlineKeyboardButton(
+                    t["cancel"],
+                    callback_data="cancel_premium"
+                )]
+            ])
+
+            choose_text = (
+                f'{t["choose"]}\n\n'
+                f'{t["duration"]}'
+            )
 
         await query.answer()
 
@@ -1857,8 +1938,7 @@ async def handle_callback(update, context):
             f'{t["intro"]}\n\n'
             f'{t["features"]}\n\n'
             f'{t["reason"]}\n\n'
-            f'{t["choose"]}\n\n'
-            f'{t["duration"]}',
+            f'{choose_text}',
             reply_markup=keyboard,
             parse_mode="HTML"
         )
