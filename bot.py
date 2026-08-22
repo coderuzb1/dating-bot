@@ -1474,8 +1474,13 @@ async def handle_callback(update, context):
 
                     match_created = True
 
-            # Like qaytarilganda Like yozuvlari saqlanadi.
-            # Match mavjud bo'lgani uchun likes() ularni ko'rsatmaydi.
+            # Like qaytarilgandan keyin "Meni yoqtirganlar"dan
+            # ushbu profilni butunlay olib tashlaymiz.
+            cur.execute("""
+                DELETE FROM likes
+                WHERE from_user = %s
+                  AND to_user = %s
+            """, (target_id, user.id))
 
             conn.commit()
 
