@@ -1231,7 +1231,7 @@ async def notify_retention_user(bot, user_id, first_name, last_active):
         [
             InlineKeyboardButton(
                 t["button"],
-                callback_data="new_city_profiles"
+                callback_data="retention_profiles"
             )
         ]
     ])

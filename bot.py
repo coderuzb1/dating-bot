@@ -1687,6 +1687,17 @@ async def handle_callback(update, context):
 
         return
 
+    if data == "retention_profiles":
+        await query.answer()
+
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
+
+        await find(update, context)
+        return
+
     if data == "who_liked_menu":
         await who_liked_me(update, context)
         return
