@@ -2462,8 +2462,10 @@ async def handle_callback(update, context):
 
             first_name_display = first_name or "Noma'lum"
 
+            # Admin'ga yuborilgan chek rasm/document bo'lishi mumkin.
+            # Shuning uchun edit_text emas, captionni yangilaymiz.
             try:
-                await query.message.edit_text(
+                admin_result_text = (
                     "✅ PREMIUM TO'LOVI TASDIQLANDI\n\n"
                     f"🧾 To'lov ID: #{payment_id}\n"
                     f"👤 Foydalanuvchi: {first_name_display}\n"
@@ -2473,8 +2475,24 @@ async def handle_callback(update, context):
                     f"📅 Premiumgacha: "
                     f"{premium_until.strftime('%d.%m.%Y %H:%M')}"
                 )
+
+                await query.message.edit_caption(
+                    caption=admin_result_text,
+                    reply_markup=None
+                )
+
             except Exception as e:
-                print(f"Admin message update error: {e}")
+                print(f"Admin message caption update error: {e}")
+
+                # Agar captionni tahrirlash imkoni bo'lmasa,
+                # admin chatiga alohida tasdiq xabarini yuboramiz.
+                try:
+                    await context.bot.send_message(
+                        chat_id=ADMIN_ID,
+                        text=admin_result_text
+                    )
+                except Exception as e2:
+                    print(f"Admin approval fallback error: {e2}")
 
         except Exception as e:
             print(f"Premium approval error: {e}")
