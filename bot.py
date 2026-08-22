@@ -7889,6 +7889,13 @@ def main():
         )
     )
 
+    app.add_handler(
+        CallbackQueryHandler(
+            handle_callback,
+            pattern=r"^(admin_approve_\\d+|admin_reject_\\d+|fake_payment_\\d+)$"
+        )
+    )
+
     app.add_handler(conv_handler)
 
     # New user onboarding: Welcome -> Profil yaratish -> Til
