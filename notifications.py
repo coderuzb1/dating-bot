@@ -194,7 +194,7 @@ async def weekend_premium_campaign(context):
         [
             InlineKeyboardButton(
                 "👑 Premiumni olish — 30% chegirma",
-                callback_data="premium_buy"
+                callback_data="weekend_premium_buy"
             )
         ]
     ])

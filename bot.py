@@ -1713,6 +1713,65 @@ async def handle_callback(update, context):
         )
         return
 
+    if data == "weekend_premium_buy":
+        language = get_user_language(user.id)
+
+        texts = {
+            "uz": {
+                "title": "🔥 <b>WEEKEND PREMIUM — 30% CHEGIRMA!</b>",
+                "choose": "📅 <b>Premium muddatini tanlang:</b>",
+                "week": "1 hafta — 20 300 so'm 🔥",
+                "two_weeks": "15 kun — 34 300 so'm 🔥",
+                "month": "1 oy — 55 300 so'm 🔥",
+                "cancel": "❌ Bekor qilish",
+            },
+            "ru": {
+                "title": "🔥 <b>WEEKEND PREMIUM — СКИДКА 30%!</b>",
+                "choose": "📅 <b>Выберите срок Premium:</b>",
+                "week": "1 неделя — 20 300 сум 🔥",
+                "two_weeks": "15 дней — 34 300 сум 🔥",
+                "month": "1 месяц — 55 300 сум 🔥",
+                "cancel": "❌ Отмена",
+            },
+            "uz_cyr": {
+                "title": "🔥 <b>WEEKEND PREMIUM — 30% ЧЕГИРМА!</b>",
+                "choose": "📅 <b>Premium муддатини танланг:</b>",
+                "week": "1 ҳафта — 20 300 сўм 🔥",
+                "two_weeks": "15 кун — 34 300 сўм 🔥",
+                "month": "1 ой — 55 300 сўм 🔥",
+                "cancel": "❌ Бекор қилиш",
+            },
+        }
+
+        t = texts.get(language, texts["uz"])
+
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton(
+                "1 hafta — 2̶9̶ 0̶0̶0̶ → 20 300 so'm 🔥",
+                callback_data="weekend_premium_1w"
+            )],
+            [InlineKeyboardButton(
+                "15 kun — 4̶9̶ 0̶0̶0̶ → 34 300 so'm 🔥",
+                callback_data="weekend_premium_2w"
+            )],
+            [InlineKeyboardButton(
+                "1 oy — 7̶9̶ 0̶0̶0̶ → 55 300 so'm 🔥",
+                callback_data="weekend_premium_1m"
+            )],
+            [InlineKeyboardButton(
+                t["cancel"],
+                callback_data="cancel_premium"
+            )],
+        ])
+
+        await query.answer()
+        await query.message.reply_text(
+            f'{t["title"]}\n\n{t["choose"]}',
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        return
+
     if data == "premium_buy":
         language = get_user_language(user.id)
 
@@ -1974,6 +2033,198 @@ async def handle_callback(update, context):
             f"{price_text}: {price} so'm\n\n"
             f"{choose_text}",
             reply_markup=keyboard
+        )
+        return
+
+    # =========================================================
+    # WEEKEND PREMIUM — 30% CHEGIRMA
+    # =========================================================
+    if data.startswith("weekend_premium_"):
+        plan = data.replace("weekend_", "", 1)
+
+        durations = {
+            "premium_1w": 7,
+            "premium_2w": 15,
+            "premium_1m": 30,
+        }
+
+        prices = {
+            "premium_1w": "20 300",
+            "premium_2w": "34 300",
+            "premium_1m": "55 300",
+        }
+
+        if plan not in durations:
+            await query.answer("❌ Tarif topilmadi.", show_alert=True)
+            return
+
+        days = durations[plan]
+        price = prices[plan]
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "💳 HUMO",
+                    callback_data=f"weekend_pay_humo_{plan}"
+                ),
+                InlineKeyboardButton(
+                    "💳 VISA",
+                    callback_data=f"weekend_pay_visa_{plan}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "❌ Bekor qilish",
+                    callback_data="cancel_premium"
+                )
+            ]
+        ])
+
+        await query.answer()
+
+        await query.message.reply_text(
+            "🔥 WEEKEND PREMIUM — 30% CHEGIRMA!\n\n"
+            f"📅 Muddat: {days} kun\n"
+            f"💰 Chegirmali summa: {price} so'm\n\n"
+            "💳 To'lov usulini tanlang:",
+            reply_markup=keyboard
+        )
+        return
+
+    # =========================================================
+    # WEEKEND PREMIUM — HUMO / VISA TO'LOV
+    # =========================================================
+    if data.startswith("weekend_pay_humo_") or data.startswith("weekend_pay_visa_"):
+        parts = data.split("_", 3)
+
+        if len(parts) != 4:
+            await query.answer("❌ To'lov ma'lumotlari xato.", show_alert=True)
+            return
+
+        payment_method = parts[2].upper()
+        plan = parts[3]
+
+        durations = {
+            "premium_1w": 7,
+            "premium_2w": 15,
+            "premium_1m": 30,
+        }
+
+        prices = {
+            "premium_1w": "20 300",
+            "premium_2w": "34 300",
+            "premium_1m": "55 300",
+        }
+
+        if plan not in durations:
+            await query.answer("❌ Tarif topilmadi.", show_alert=True)
+            return
+
+        days = durations[plan]
+        price = prices[plan]
+
+        card = HUMO_CARD if payment_method == "HUMO" else VISA_CARD
+
+        if not card:
+            await query.answer(
+                "❌ Ushbu to'lov usuli hozircha sozlanmagan.",
+                show_alert=True
+            )
+            return
+
+        context.user_data["pending_payment"] = {
+            "type": "premium",
+            "days": days,
+            "plan": plan,
+            "price": price,
+            "payment_method": payment_method,
+            "user_id": user.id,
+            "discounted": True,
+            "campaign": "weekend_30",
+        }
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "✅ To'lov qildim",
+                    callback_data=f"weekend_confirm_{payment_method}_{plan}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "❌ Bekor qilish",
+                    callback_data="cancel_premium"
+                )
+            ]
+        ])
+
+        await query.answer()
+
+        await query.message.reply_text(
+            "🔥 WEEKEND PREMIUM — 30% CHEGIRMA!\n\n"
+            f"📅 Muddat: {days} kun\n"
+            f"💰 Chegirmali summa: {price} so'm\n"
+            f"💳 To'lov usuli: {payment_method}\n"
+            f"💳 Karta: {card}\n\n"
+            "To'lovni amalga oshirgach, "
+            "«✅ To'lov qildim» tugmasini bosing.",
+            reply_markup=keyboard
+        )
+        return
+
+    # =========================================================
+    # WEEKEND PREMIUM — TO'LOV QILDIM
+    # =========================================================
+    if data.startswith("weekend_confirm_"):
+        parts = data.split("_", 3)
+
+        if len(parts) != 4:
+            await query.answer("❌ To'lov ma'lumotlari xato.", show_alert=True)
+            return
+
+        payment_method = parts[2].upper()
+        plan = parts[3]
+
+        durations = {
+            "premium_1w": 7,
+            "premium_2w": 15,
+            "premium_1m": 30,
+        }
+
+        prices = {
+            "premium_1w": "20 300",
+            "premium_2w": "34 300",
+            "premium_1m": "55 300",
+        }
+
+        if plan not in durations:
+            await query.answer("❌ Tarif topilmadi.", show_alert=True)
+            return
+
+        days = durations[plan]
+        price = prices[plan]
+
+        context.user_data["pending_payment"] = {
+            "type": "premium",
+            "days": days,
+            "plan": plan,
+            "price": price,
+            "payment_method": payment_method,
+            "user_id": user.id,
+            "discounted": True,
+            "campaign": "weekend_30",
+        }
+
+        await query.answer()
+
+        await query.message.reply_text(
+            "📸📄 TO'LOV CHEKINI YUBORING\n\n"
+            f"👑 Premium: {days} kun\n"
+            f"💰 Summa: {price} so'm\n"
+            f"💳 To'lov usuli: {payment_method}\n\n"
+            "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
+            "⚠️ Faqat haqiqiy to'lov chekini yuboring!\n"
+            "⏳ Chek yuborilgach admin tekshiradi."
         )
         return
 
