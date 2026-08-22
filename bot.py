@@ -7650,6 +7650,17 @@ def main():
                     name=f"weekend_premium_{campaign_id}"
                 )
 
+        # BUGUNGI 22-AVGUST KAMPANIYASINI DARHOL YUBORISH
+        # Faqat shu deploy uchun; notification_logs takroriy yuborishni bloklaydi.
+        if now_tashkent.date().isoformat() == "2026-08-22":
+            app.job_queue.run_once(
+                weekend_premium_campaign,
+                when=5,
+                data="2026-08-22_14",
+                name="weekend_premium_2026-08-22_now"
+            )
+            print("🚀 Bugungi Weekend Premium kampaniyasi DARHOL yuborishga qo'yildi!")
+
         print("🔥 Weekend Premium kampaniya scheduleri yoqildi!")
 
     # =========================================================
