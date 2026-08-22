@@ -110,6 +110,12 @@ async def weekend_premium_campaign(context):
     bot = context.bot
     campaign_id = context.job.data
 
+    # notification_logs.reference_id BIGINT bo‘lgani uchun
+    # kampaniya ID'sini raqamli ko‘rinishga o'tkazamiz.
+    campaign_reference_id = int(
+        str(campaign_id).replace("-", "").replace("_", "")
+    )
+
     campaigns = {
         "2026-08-22_14": (
             "🔥 <b>DAM OLISH KUNLARI — PREMIUM -30%!</b>\n\n"
@@ -202,7 +208,7 @@ async def weekend_premium_campaign(context):
         if notification_already_sent(
             user_id,
             "weekend_premium_campaign",
-            reference_id=reference_id
+            reference_id=campaign_reference_id
         ):
             skipped_count += 1
             continue
@@ -218,7 +224,7 @@ async def weekend_premium_campaign(context):
             save_notification(
                 user_id,
                 "weekend_premium_campaign",
-                reference_id
+                campaign_reference_id
             )
             sent_count += 1
 
