@@ -725,7 +725,7 @@ async def notify_new_user_in_city(
         [
             InlineKeyboardButton(
                 "🔍 Ko‘rish",
-                callback_data="new_city_profiles"
+                callback_data="retention_profiles"
             )
         ]
     ])
@@ -833,7 +833,7 @@ async def notify_inactive_users_3_days(bot):
         [
             InlineKeyboardButton(
                 "🔍 Ko‘rib chiqish",
-                callback_data="new_city_profiles"
+                callback_data="retention_profiles"
             )
         ]
     ])
@@ -896,7 +896,7 @@ async def notify_inactive_users_7_days(bot):
         [
             InlineKeyboardButton(
                 "🔥 Profillarni ko‘rish",
-                callback_data="new_city_profiles"
+                callback_data="retention_profiles"
             )
         ]
     ])

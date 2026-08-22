@@ -1206,7 +1206,7 @@ async def handle_callback(update, context):
     # Avval o‘z shahri, keyin boshqa shaharlar.
     # Mavjud find() funksiyasidan foydalanadi.
     # =========================================================
-    if data == "new_city_profiles":
+    if data in ("new_city_profiles", "retention_profiles"):
         await query.answer()
         await find(update, context)
         return
