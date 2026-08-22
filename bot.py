@@ -5200,15 +5200,20 @@ async def who_liked_me(update, context):
         "uz": {
             "title": "👀 <b>SIZNI YOQTIRGANLAR</b>",
             "empty": "👀 Hozircha sizni hech kim yoqtirmagan.",
+            "like": "❤️ Like qaytarish",
+            "dislike": "👎 Dislike",
         },
         "ru": {
             "title": "👀 <b>КТО ВАС ЛАЙКНУЛ</b>",
             "empty": "👀 Пока никто вас не лайкнул.",
-
+            "like": "❤️ Ответить лайком",
+            "dislike": "👎 Дизлайк",
         },
         "uz_cyr": {
             "title": "👀 <b>СИЗНИ ЁҚТИРГАНЛАР</b>",
             "empty": "👀 Ҳозирча сизни ҳеч ким ёқтирмаган.",
+            "like": "❤️ Лайк қайтариш",
+            "dislike": "👎 Дизлайк",
         },
     }
 
@@ -5217,7 +5222,6 @@ async def who_liked_me(update, context):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Sizga like bosganlar
     cur.execute("""
         SELECT
             u.user_id,
@@ -5255,8 +5259,12 @@ async def who_liked_me(update, context):
         keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
-                    "❤️ Like",
-                    callback_data=f"who_like:{liker_id}"
+                    t["like"],
+                    callback_data=f"like_back_{liker_id}"
+                ),
+                InlineKeyboardButton(
+                    t["dislike"],
+                    callback_data=f"skip_liker_{liker_id}"
                 )
             ]
         ])
