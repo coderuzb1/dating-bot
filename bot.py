@@ -6677,19 +6677,6 @@ async def admin(update, context):
         """)
         month_users = cur.fetchone()[0]
 
-        cur.execute("""
-            SELECT COUNT(*)
-            FROM users
-            WHERE created_at >= CURRENT_DATE - INTERVAL '3 months'
-        """)
-        three_months_users = cur.fetchone()[0]
-
-        cur.execute("""
-            SELECT COUNT(*)
-            FROM users
-            WHERE created_at >= CURRENT_DATE - INTERVAL '6 months'
-        """)
-        six_months_users = cur.fetchone()[0]
 
         # Like va Match
         cur.execute("SELECT COUNT(*) FROM likes")
@@ -6830,8 +6817,7 @@ async def admin(update, context):
         f"├ 📅 Oxirgi 7 kun: {week_users}\n"
         f"├ 📅 Oxirgi 15 kun: {fifteen_days_users}\n"
         f"├ 📅 Oxirgi 1 oy: {month_users}\n"
-        f"├ 📅 Oxirgi 3 oy: {three_months_users}\n"
-        f"└ 📅 Oxirgi 6 oy: {six_months_users}\n\n"
+        f"└ 📅 Oxirgi 1 oy: {month_users}\n\n"
 
         "📈 FAOLLIK\n"
         f"├ ❤️ Jami Like: {total_likes}\n"
