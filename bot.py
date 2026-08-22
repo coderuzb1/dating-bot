@@ -1847,7 +1847,6 @@ async def handle_callback(update, context):
         # WEEKEND PREMIUM — 30% CHEGIRMA
         # 22-avgust 22:00 dan 23-avgust 23:59 gacha
         # =========================================================
-        from datetime import datetime
         from zoneinfo import ZoneInfo
 
         tashkent_tz = ZoneInfo("Asia/Tashkent")
