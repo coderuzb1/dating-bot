@@ -90,6 +90,144 @@ def save_notification(
     conn.close()
 
 
+
+
+# =========================================================
+# DAM OLISH KUNLARI PREMIUM KAMPANIYASI
+# FAQAT 2026-08-22 VA 2026-08-23
+# Toshkent vaqti bilan:
+# 22-avgust 14:00
+# 23-avgust 14:00, 20:00, 22:00
+# =========================================================
+
+async def weekend_premium_campaign(context):
+    """
+    Faqat shu hafta oxiri uchun bir martalik kampaniya.
+    Free + Premium barcha faol foydalanuvchilarga yuboriladi.
+    Har bir kampaniya vaqti uchun foydalanuvchiga faqat 1 marta.
+    """
+
+    bot = context.bot
+    campaign_id = context.job.data
+
+    campaigns = {
+        "2026-08-22_14": (
+            "🔥 <b>DAM OLISH KUNLARI — PREMIUM -30%!</b>\n\n"
+            "💎 <b>Premium bilan o‘zingizga mos insonni tez va oson toping!</b>\n\n"
+            "💬 <b>Match kutmang!</b> Vaqtingizni tejang — "
+            "yoqqan profilingizga to‘g‘ridan-to‘g‘ri Telegram chat orqali yozing.\n\n"
+            "♾️ Cheksiz profil ko‘rish\n"
+            "❤️ Cheksiz Like\n"
+            "👀 Sizni yoqtirganlarni ko‘rish\n"
+            "⭐ Premium belgisi\n"
+            "🚀 Profil ustuvorligi\n\n"
+            "🎁 <b>BONUS: Super Like — BEPUL!</b>\n\n"
+            "⏳ <b>Faqat shu hafta oxiri — 30% chegirma!</b>\n\n"
+            "👉 Premiumni hoziroq oling!"
+        ),
+        "2026-08-23_14": (
+            "🔥 <b>PREMIUM -30% — CHEGIRMA DAVOM ETMOQDA!</b>\n\n"
+            "💎 <b>Premium bilan o‘zingizga mos insonni tez va oson toping!</b>\n\n"
+            "💬 <b>Match kutmang!</b> Vaqtingizni tejang — "
+            "yoqqan profilingizga to‘g‘ridan-to‘g‘ri Telegram chat orqali yozing.\n\n"
+            "♾️ Cheksiz profil ko‘rish\n"
+            "❤️ Cheksiz Like\n"
+            "👀 Sizni yoqtirganlarni ko‘rish\n"
+            "🎁 <b>Super Like — BEPUL!</b>\n\n"
+            "⏳ <b>Chegirma faqat shu hafta oxirigacha!</b>\n\n"
+            "👉 Premiumni hoziroq oling!"
+        ),
+        "2026-08-23_20": (
+            "⏳ <b>PREMIUM -30% — YANA 4 SOAT!</b>\n\n"
+            "💎 O‘zingizga mos insonni tez va oson toping.\n\n"
+            "💬 <b>Match kutmang!</b> Vaqtingizni tejang — "
+            "yoqqan profilingizga to‘g‘ridan-to‘g‘ri Telegram chat orqali yozing.\n\n"
+            "🎁 <b>Super Like — BEPUL!</b>\n"
+            "♾️ Cheksiz profil ko‘rish\n"
+            "❤️ Cheksiz Like\n\n"
+            "🔥 <b>Premiumga hozir -30% chegirma bilan ega bo‘ling!</b>"
+        ),
+        "2026-08-23_22": (
+            "🚨 <b>OXIRGI 2 SOAT!</b>\n\n"
+            "🔥 <b>Premium -30% chegirma bilan — faqat bugun!</b>\n\n"
+            "💎 O‘zingizga mos insonni tez va oson toping.\n\n"
+            "💬 <b>Match kutmang!</b> Yoqqan profilingizga "
+            "to‘g‘ridan-to‘g‘ri Telegram chat orqali yozing.\n\n"
+            "🎁 <b>Super Like — BEPUL!</b>\n"
+            "♾️ Cheksiz profil ko‘rish\n"
+            "❤️ Cheksiz Like\n\n"
+            "⏰ <b>22:00 dan keyin chegirma tugaydi!</b>\n\n"
+            "👉 <b>Oxirgi imkoniyat — Premiumni hoziroq oling!</b>"
+        ),
+    }
+
+    text = campaigns.get(campaign_id)
+
+    if not text:
+        print(f"⚠️ Noma'lum weekend kampaniya: {campaign_id}")
+        return
+
+    reference_id = f"weekend_premium_{campaign_id}"
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT user_id
+        FROM users
+        WHERE is_active = TRUE
+        """
+    )
+
+    users = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "👑 Premiumni olish — 30% chegirma",
+                callback_data="premium_buy"
+            )
+        ]
+    ])
+
+    sent_count = 0
+    skipped_count = 0
+
+    for row in users:
+        user_id = row[0]
+
+        if notification_already_sent(
+            user_id,
+            "weekend_premium_campaign",
+            reference_id=reference_id
+        ):
+            skipped_count += 1
+            continue
+
+        sent = await safe_send_message(
+            bot,
+            user_id,
+            text,
+            keyboard
+        )
+
+        if sent:
+            save_notification(
+                user_id,
+                "weekend_premium_campaign",
+                reference_id
+            )
+            sent_count += 1
+
+    print(
+        f"🔥 Weekend Premium {campaign_id}: "
+        f"{sent_count} ta yuborildi, {skipped_count} ta o'tkazib yuborildi."
+    )
+
+
 async def safe_send_message(
     bot,
     user_id,

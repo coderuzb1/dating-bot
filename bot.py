@@ -13,8 +13,10 @@ from notifications import (
     notify_premium_expiring_1_day,
     notify_new_user_in_city,
     retention_job,
+    weekend_premium_campaign,
 )
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+from zoneinfo import ZoneInfo
 
 LANGUAGE, NAME, AGE, GENDER, CITY, BIO, PHOTO = range(7)
 ADMIN_ID = 6310532367
@@ -7609,6 +7611,47 @@ def main():
     )
     app.add_handler(CallbackQueryHandler(handle_callback), group=1)
     
+    # =========================================================
+    # BIR MARTALIK WEEKEND PREMIUM KAMPANIYASI
+    # Toshkent vaqti bilan
+    # 22-avgust: 14:00
+    # 23-avgust: 14:00, 20:00, 22:00
+    # =========================================================
+    if app.job_queue:
+        tashkent_tz = ZoneInfo("Asia/Tashkent")
+
+        weekend_campaigns = [
+            (
+                datetime(2026, 8, 22, 14, 0, tzinfo=tashkent_tz),
+                "2026-08-22_14"
+            ),
+            (
+                datetime(2026, 8, 23, 14, 0, tzinfo=tashkent_tz),
+                "2026-08-23_14"
+            ),
+            (
+                datetime(2026, 8, 23, 20, 0, tzinfo=tashkent_tz),
+                "2026-08-23_20"
+            ),
+            (
+                datetime(2026, 8, 23, 22, 0, tzinfo=tashkent_tz),
+                "2026-08-23_22"
+            ),
+        ]
+
+        now_tashkent = datetime.now(tashkent_tz)
+
+        for campaign_time, campaign_id in weekend_campaigns:
+            if campaign_time > now_tashkent:
+                app.job_queue.run_once(
+                    weekend_premium_campaign,
+                    when=campaign_time,
+                    data=campaign_id,
+                    name=f"weekend_premium_{campaign_id}"
+                )
+
+        print("🔥 Weekend Premium kampaniya scheduleri yoqildi!")
+
     # =========================================================
     # RETENTION NOTIFICATION JOB
     # =========================================================
