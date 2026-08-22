@@ -118,7 +118,7 @@ TRANSLATIONS = {
         "profile_created": "✅ Profil yaratildi!",
 
         "not_found_profile": "❌ Avval profil yarating. /start bosing.",
-        "limit_reached": "🚫 Bugungi 20 ta profil limitingiz tugadi.\n\n👑 Premiumga o'tib, profillarni cheksiz ko'rishingiz mumkin.",
+        "limit_reached": "👑 Premium imkoniyatlaridan foydalaning.",
         "no_profiles": "😔 Hozircha boshqa profillar qolmagan.",
         "dislike": "👎 Yoqmadi",
         "like": "❤️ Yoqdi",
@@ -190,7 +190,7 @@ TRANSLATIONS = {
         "profile_created": "✅ Профиль создан!",
 
         "not_found_profile": "❌ Сначала создайте профиль. Нажмите /start.",
-        "limit_reached": "🚫 Вы достигли дневного лимита в 20 профилей.\n\n👑 С Премиумом вы сможете просматривать профили без ограничений.",
+        "limit_reached": "👑 Используйте возможности Premium.",
         "no_profiles": "😔 Пока других профилей нет.",
         "dislike": "👎 Не нравится",
         "like": "❤️ Нравится",
@@ -262,7 +262,7 @@ TRANSLATIONS = {
         "profile_created": "✅ Профил яратилди!",
 
         "not_found_profile": "❌ Аввал профил яратинг. /start ни босинг.",
-        "limit_reached": "🚫 Бугунги 20 та профиль лимитингиз тугади.\n\n👑 Премиум орқали профилларни чекловсиз кўришингиз мумкин.",
+        "limit_reached": "👑 Premium имкониятларидан фойдаланинг.",
         "no_profiles": "😔 Ҳозирча бошқа профиллар қолмаган.",
         "dislike": "👎 Ёқмади",
         "like": "❤️ Ёқди",
@@ -1014,7 +1014,7 @@ async def find(update, context):
     texts = {
         "uz": {
             "no_profile": "❌ Avval profil yarating. /start bosing.",
-            "limit": "🚫 Bugungi 20 ta profil limitingiz tugadi.\n\n👑 Premiumga o'tib, profillarni cheksiz ko'rishingiz mumkin.",
+            "limit": "👑 Premium imkoniyatlaridan foydalaning.",
             "no_profiles": "😔 Hozircha yangi profillar qolmagan.",
             "dislike": "👎 Yoqmadi",
             "like": "❤️ Yoqdi",
@@ -1024,7 +1024,7 @@ async def find(update, context):
         },
         "ru": {
             "no_profile": "❌ Сначала создайте профиль. Нажмите /start.",
-            "limit": "🚫 Вы достигли дневного лимита в 20 профилей.\n\n👑 С Премиумом вы сможете просматривать профили без ограничений.",
+            "limit": "👑 Используйте возможности Premium.",
             "no_profiles": "😔 Новых профилей пока нет.",
             "dislike": "👎 Не нравится",
             "like": "❤️ Нравится",
@@ -1034,7 +1034,7 @@ async def find(update, context):
         },
         "uz_cyr": {
             "no_profile": "❌ Аввал профил яратинг. /start босинг.",
-            "limit": "🚫 Бугунги 20 та профиль лимитингиз тугади.\n\n👑 Premium билан профилларни чексиз кўришингиз мумкин.",
+            "limit": "👑 Premium имкониятларидан фойдаланинг.",
             "no_profiles": "😔 Ҳозирча янги профиллар қолмаган.",
             "dislike": "👎 Ёқмади",
             "like": "❤️ Ёқди",
@@ -1088,11 +1088,6 @@ async def find(update, context):
         )
         today_count = cur.fetchone()[0]
 
-        if today_count >= 20:
-            cur.close()
-            conn.close()
-            await message.reply_text(t["limit"])
-            return
 
     cur.execute(
         """
