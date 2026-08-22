@@ -1707,7 +1707,7 @@ async def handle_callback(update, context):
                 )],
                 [InlineKeyboardButton(
                     "👑 Premium",
-                    callback_data="premium_buy"
+                    callback_data="weekend_premium_buy"
                 )]
             ])
         )
@@ -3386,7 +3386,7 @@ async def handle_callback(update, context):
                 [
                     InlineKeyboardButton(
                         premium_text,
-                        callback_data="premium_buy"
+                        callback_data="weekend_premium_buy"
                     )
                 ]
             ])
@@ -5144,7 +5144,7 @@ async def profile(update, context):
         [
             InlineKeyboardButton(
                 t["premium"],
-                callback_data="premium_buy"
+                callback_data="weekend_premium_buy"
             )
         ]
     ])
@@ -6007,88 +6007,104 @@ async def handle_message(update, context):
     }
 
     if text == premium_buttons.get(language):
-        premium_texts = {
-            "uz": {
-                "title": "👑 <b>PREMIUM</b>",
-                "intro": "💎 Premium bilan tanishuv imkoniyatlaringizni kengaytiring!",
-                "features": (
-                    "♾️ <b>Cheksiz profil ko‘rish</b> — ko‘proq tanishuv\n"
-                    "❤️ <b>Cheksiz Like</b> — imkoniyatlarni qo‘ldan boy bermang\n"
-                    "⭐ <b>Superlike bepul</b> — ko‘proq e’tibor oling\n"
-                    "💬 <b>Matchsiz yozish</b> — suhbatni darhol boshlang\n"
-                    "📨 <b>Telegram shaxsiy chatiga yozish</b>\n"
-                    "👀 <b>Kim Like/Superlike bosganini ko‘ring</b>\n"
-                    "🚀 <b>Profil ustuvorligi</b> — ko‘proq ko‘rining\n"
-                    "⭐ <b>Premium belgisi</b>"
-                ),
-                "reason": "🔥 <b>Ko‘proq ko‘rinish → ko‘proq Like → ko‘proq Match!</b>",
-                "choose": "✨ O‘zingizga mos Premium tarifini tanlang:",
-                "duration": "📅 <b>Muddatni tanlang:</b>",
-                "week": "1 hafta - 29 000 so‘m",
-                "two_weeks": "15 kun - 49 000 so‘m",
-                "month": "1 oy - 79 000 so‘m",
-                "cancel": "❌ Bekor qilish",
-            },
-            "ru": {
-                "title": "👑 <b>ПРЕМИУМ</b>",
-                "intro": "💎 Расширьте возможности знакомств!",
-                "features": (
-                    "♾️ <b>Безлимитный просмотр профилей</b> — больше знакомств\n"
-                    "❤️ <b>Безлимитные Like</b> — не упускайте возможности\n"
-                    "⭐ <b>Superlike бесплатно</b> — больше внимания\n"
-                    "💬 <b>Сообщения без Match</b> — начинайте общение сразу\n"
-                    "📨 <b>Сообщения в личный Telegram</b>\n"
-                    "👀 <b>Видеть, кто поставил Like/Superlike</b>\n"
-                    "🚀 <b>Приоритет профиля</b> — больше просмотров\n"
-                    "⭐ <b>Значок Premium</b>"
-                ),
-                "reason": "🔥 <b>Больше просмотров → больше Like → больше Match!</b>",
-                "choose": "✨ Выберите подходящий тариф Premium:",
-                "duration": "📅 <b>Выберите срок:</b>",
-                "week": "1 неделя - 29 000 сум",
-                "two_weeks": "15 дней - 49 000 сум",
-                "month": "1 месяц - 79 000 сум",
-                "cancel": "❌ Отмена",
-            },
-            "uz_cyr": {
-                "title": "👑 <b>ПРЕМИУМ</b>",
-                "intro": "💎 Танишув имкониятларингизни кенгайтиринг!",
-                "features": (
-                    "♾️ <b>Чексиз профиль кўриш</b> — кўпроқ танишув\n"
-                    "❤️ <b>Чексиз Like</b> — имкониятларни қўлдан бой берманг\n"
-                    "⭐ <b>Superlike бепул</b> — кўпроқ эътибор олинг\n"
-                    "💬 <b>Matchсиз ёзиш</b> — дарҳол суҳбат бошланг\n"
-                    "📨 <b>Telegram шахсий чатига ёзиш</b>\n"
-                    "👀 <b>Ким Like/Superlike босганини кўриш</b>\n"
-                    "🚀 <b>Профил устуворлиги</b> — кўпроқ кўриниш\n"
-                    "⭐ <b>Premium белгиси</b>"
-                ),
-                "reason": "🔥 <b>Кўпроқ кўриниш → кўпроқ Like → кўпроқ Match!</b>",
-                "choose": "✨ Ўзингизга мос Premium тарифини танланг:",
-                "duration": "📅 <b>Муддатни танланг:</b>",
-                "week": "1 ҳафта - 29 000 сўм",
-                "two_weeks": "15 кун - 49 000 сўм",
-                "month": "1 ой - 79 000 сўм",
-                "cancel": "❌ Бекор қилиш",
-            },
+        from zoneinfo import ZoneInfo
+
+        tashkent_tz = ZoneInfo("Asia/Tashkent")
+        now_tashkent = datetime.now(tashkent_tz)
+
+        discount_start = datetime(
+            2026, 8, 22, 20, 0,
+            tzinfo=tashkent_tz
+        )
+        discount_end = datetime(
+            2026, 8, 23, 23, 59, 59,
+            tzinfo=tashkent_tz
+        )
+
+        weekend_discount_active = (
+            discount_start <= now_tashkent <= discount_end
+        )
+
+        if weekend_discount_active:
+            if language == "ru":
+                title = "🔥 <b>WEEKEND PREMIUM — СКИДКА 30%!</b>"
+                choose = "📅 <b>Выберите срок Premium:</b>"
+                week = "1 неделя — 2̶9̶ 0̶0̶0̶ → 20 300 сум 🔥"
+                two_weeks = "15 дней — 4̶9̶ 0̶0̶0̶ → 34 300 сум 🔥"
+                month = "1 месяц — 7̶9̶ 0̶0̶0̶ → 55 300 сум 🔥"
+                cancel = "❌ Отмена"
+            elif language == "uz_cyr":
+                title = "🔥 <b>WEEKEND PREMIUM — 30% ЧЕГИРМА!</b>"
+                choose = "📅 <b>Premium муддатини танланг:</b>"
+                week = "1 ҳафта — 2̶9̶ 0̶0̶0̶ → 20 300 сўм 🔥"
+                two_weeks = "15 кун — 4̶9̶ 0̶0̶0̶ → 34 300 сўм 🔥"
+                month = "1 ой — 7̶9̶ 0̶0̶0̶ → 55 300 сўм 🔥"
+                cancel = "❌ Бекор қилиш"
+            else:
+                title = "🔥 <b>WEEKEND PREMIUM — 30% CHEGIRMA!</b>"
+                choose = "📅 <b>Premium muddatini tanlang:</b>"
+                week = "1 hafta — 2̶9̶ 0̶0̶0̶ → 20 300 so'm 🔥"
+                two_weeks = "15 kun — 4̶9̶ 0̶0̶0̶ → 34 300 so'm 🔥"
+                month = "1 oy — 7̶9̶ 0̶0̶0̶ → 55 300 so'm 🔥"
+                cancel = "❌ Bekor qilish"
+
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton(
+                    week,
+                    callback_data="weekend_premium_1w"
+                )],
+                [InlineKeyboardButton(
+                    two_weeks,
+                    callback_data="weekend_premium_2w"
+                )],
+                [InlineKeyboardButton(
+                    month,
+                    callback_data="weekend_premium_1m"
+                )],
+                [InlineKeyboardButton(
+                    cancel,
+                    callback_data="cancel_premium"
+                )]
+            ])
+
+            await update.message.reply_text(
+                f"{title}\n\n"
+                f"⏰ <b>Chegirma 23-avgust 23:59 gacha amal qiladi.</b>\n\n"
+                f"{choose}",
+                reply_markup=keyboard,
+                parse_mode="HTML"
+            )
+            return
+
+        # Chegirma tugaganidan keyin oddiy Premium oynasi
+        premium_callback_text = {
+            "uz": ("👑 <b>PREMIUM</b>", "📅 <b>Muddatni tanlang:</b>",
+                   "1 hafta - 29 000 so'm",
+                   "15 kun - 49 000 so'm",
+                   "1 oy - 79 000 so'm", "❌ Bekor qilish"),
+            "ru": ("👑 <b>ПРЕМИУМ</b>", "📅 <b>Выберите срок:</b>",
+                   "1 неделя - 29 000 сум",
+                   "15 дней - 49 000 сум",
+                   "1 месяц - 79 000 сум", "❌ Отмена"),
+            "uz_cyr": ("👑 <b>ПРЕМИУМ</b>", "📅 <b>Муддатни танланг:</b>",
+                       "1 ҳафта - 29 000 сўм",
+                       "15 кун - 49 000 сўм",
+                       "1 ой - 79 000 сўм", "❌ Бекор қилиш"),
         }
 
-        t = premium_texts.get(language, premium_texts["uz"])
+        title, choose, week, two_weeks, month, cancel = premium_callback_text.get(
+            language, premium_callback_text["uz"]
+        )
 
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton(t["week"], callback_data="premium_1w")],
-            [InlineKeyboardButton(t["two_weeks"], callback_data="premium_2w")],
-            [InlineKeyboardButton(t["month"], callback_data="premium_1m")],
-            [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")]
+            [InlineKeyboardButton(week, callback_data="premium_1w")],
+            [InlineKeyboardButton(two_weeks, callback_data="premium_2w")],
+            [InlineKeyboardButton(month, callback_data="premium_1m")],
+            [InlineKeyboardButton(cancel, callback_data="cancel_premium")]
         ])
 
         await update.message.reply_text(
-            f'{t["title"]}\n\n'
-            f'{t["intro"]}\n\n'
-            f'{t["features"]}\n\n'
-            f'{t["reason"]}\n\n'
-            f'{t["choose"]}\n\n'
-            f'{t["duration"]}',
+            f"{title}\n\n{choose}",
             reply_markup=keyboard,
             parse_mode="HTML"
         )
