@@ -6456,11 +6456,19 @@ async def handle_message(update, context):
                 reply_markup=close_keyboard
             )
 
-        except Exception:
-            await update.message.reply_text(
-                "⚠️ Xabarni yetkazib bo'lmadi. "
-                "Foydalanuvchi botni bloklagan bo'lishi mumkin."
-            )
+        except Exception as e:
+            print(f"❌ Xabar yuborishda xatolik: {type(e).__name__}: {e}")
+
+            if "Forbidden" in type(e).__name__ or "bot was blocked" in str(e).lower():
+                await update.message.reply_text(
+                    "⚠️ Xabarni yetkazib bo'lmadi. "
+                    "Foydalanuvchi botni bloklagan bo'lishi mumkin."
+                )
+            else:
+                await update.message.reply_text(
+                    "⚠️ Xabarni yetkazib bo'lmadi. "
+                    "Texnik xatolik yuz berdi."
+                )
 
         return
 
