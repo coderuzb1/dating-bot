@@ -3242,10 +3242,28 @@ async def handle_callback(update, context):
 
         context.user_data["writing_to"] = target_id
 
+        cancel_keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "❌ Bekor qilish",
+                    callback_data="cancel_chat_write"
+                )
+            ]
+        ])
+
         await query.message.reply_text(
-            f"✉️ {target[0]} ga yubormoqchi bo'lgan xabaringizni yozing.\n\n"
-            "❌ Bekor qilish: /cancel"
+            f"✉️ {target[0]} ga yubormoqchi bo'lgan xabaringizni yozing.",
+            reply_markup=cancel_keyboard
         )
+        return
+
+    # =========================================================
+    # CHAT: XABAR YOZISHNI BEKOR QILISH
+    # =========================================================
+    if data == "cancel_chat_write":
+        context.user_data.pop("writing_to", None)
+        await query.answer("❌ Bekor qilindi.")
+        await query.message.reply_text("❌ Xabar yozish bekor qilindi.")
         return
 
     # =========================================================
@@ -6164,7 +6182,7 @@ async def handle_message(update, context):
         target_id = context.user_data["writing_to"]
         sender = update.effective_user
 
-        if text == "/cancel":
+        if text.split("@")[0].strip() == "/cancel":
             context.user_data.pop("writing_to", None)
             await update.message.reply_text(
                 "❌ Suhbat tugatildi."
