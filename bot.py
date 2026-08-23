@@ -6307,8 +6307,8 @@ async def handle_message(update, context):
             conn.commit()
 
         # =====================================================
-        # 3 TA BEPUL XABAR
-        # FAQAT ODDIY USER
+        # 1 TA BEPUL XABAR
+        # FAQAT ODDIY USER VA HAR BIR MATCH UCHUN
         # =====================================================
         if is_match and not is_premium:
             cur.execute(
@@ -6334,13 +6334,13 @@ async def handle_message(update, context):
                 if language == "ru":
                     msg = (
                         "🚫 <b>Лимит бесплатных сообщений исчерпан</b>\n\n"
-                        "Для этого Match вы отправили 3 бесплатных сообщения.\n\n"
+                        "Для этого Match вы уже отправили 1 бесплатное сообщение.\n\n"
                         "👑 Оформите Premium и продолжайте общение без ограничений."
                     )
                 elif language == "uz_cyr":
                     msg = (
                         "🚫 <b>Бепул хабарлар лимити тугади</b>\n\n"
-                        "Бу Match учун 3 та бепул хабар юбордингиз.\n\n"
+                        "Бу Match учун 1 та бепул хабар юбордингиз.\n\n"
                         "👑 Premium олинг ва суҳбатни чекловсиз давом эттиринг."
                     )
                 else:
