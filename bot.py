@@ -1099,6 +1099,7 @@ async def find(update, context):
         FROM users
         WHERE user_id != %s
           AND is_active = TRUE
+          AND gender != %s
           AND user_id NOT IN (
               SELECT to_user FROM likes WHERE from_user = %s
           )
@@ -1115,7 +1116,7 @@ async def find(update, context):
             created_at DESC
         LIMIT 1
         """,
-        (user.id, user.id, user.id, user.id, my_city),
+        (user.id, my_gender, user.id, user.id, user.id, my_city),
     )
 
     target = cur.fetchone()
