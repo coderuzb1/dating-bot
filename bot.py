@@ -5211,6 +5211,7 @@ async def profile(update, context):
 
 async def who_liked_me(update, context):
     user = update.effective_user
+    message = update.callback_query.message if update.callback_query else update.message
     language = get_user_language(user.id)
 
     texts = {
@@ -5261,10 +5262,10 @@ async def who_liked_me(update, context):
     conn.close()
 
     if not rows:
-        await update.message.reply_text(t["empty"], parse_mode="HTML")
+        await message.reply_text(t["empty"], parse_mode="HTML")
         return
 
-    await update.message.reply_text(t["title"], parse_mode="HTML")
+    await message.reply_text(t["title"], parse_mode="HTML")
 
     for liker_id, first_name, age, photo, city in rows:
         caption = (
@@ -5288,20 +5289,20 @@ async def who_liked_me(update, context):
 
         if photo:
             try:
-                await update.message.reply_photo(
+                await message.reply_photo(
                     photo=photo,
                     caption=caption,
                     reply_markup=keyboard,
                     parse_mode="HTML"
                 )
             except Exception:
-                await update.message.reply_text(
+                await message.reply_text(
                     caption,
                     reply_markup=keyboard,
                     parse_mode="HTML"
                 )
         else:
-            await update.message.reply_text(
+            await message.reply_text(
                 caption,
                 reply_markup=keyboard,
                 parse_mode="HTML"
