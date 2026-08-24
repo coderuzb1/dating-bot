@@ -5185,7 +5185,7 @@ async def profile(update, context):
         [
             InlineKeyboardButton(
                 t["premium"],
-                callback_data="weekend_premium_buy"
+                callback_data="premium"
             )
         ]
     ])
