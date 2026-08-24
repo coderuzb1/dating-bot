@@ -1703,6 +1703,95 @@ async def handle_callback(update, context):
         await who_liked_me(update, context)
         return
 
+    if data == "premium":
+        await query.answer()
+
+        language = get_user_language(user.id)
+
+        texts = {
+            "uz": {
+                "title": "👑 <b>PREMIUM</b>",
+                "intro": "💎 Premium bilan tanishuv imkoniyatlaringizni yanada kengaytiring!",
+                "unlimited_profiles": "♾️ <b>Cheksiz profil ko'rish</b> — ko'proq odamlarni kashf eting",
+                "unlimited_likes": "❤️ <b>Cheksiz Like</b> — imkoniyatlarni o'tkazib yubormang",
+                "direct": "✉️ <b>Matchni kutmasdan yozing</b> — yoqqan insoningiz bilan darhol suhbat boshlang",
+                "who": "👀 <b>Sizni kim yoqtirganini ko'ring</b> — kim sizga qiziqayotganini biling",
+                "badge": "⭐️ <b>Premium belgisi</b> — profilingizni ajratib turing",
+                "priority": "🚀 <b>Profil ustuvorligi</b> — ko'proq ko'rinishga ega bo'ling",
+                "more": "🔥 <b>Ko'proq ko'rinish → ko'proq Like → ko'proq Match!</b>",
+                "choose": "✨ O'zingizga mos Premium tarifini tanlang:",
+                "duration": "📅 <b>Muddatni tanlang:</b>",
+                "p1": "📅 1 hafta - 29 000 so'm • QULAY",
+                "p2": "🔥 15 kun - 49 000 so'm • ENG QULAY",
+                "p3": "⭐️ 1 oy - 79 000 so'm • OMMABOP",
+                "cancel": "❌ Bekor qilish",
+            },
+            "ru": {
+                "title": "👑 <b>ПРЕМИУМ</b>",
+                "intro": "💎 Расширьте свои возможности для знакомств с Premium!",
+                "unlimited_profiles": "♾️ <b>Безлимитный просмотр профилей</b> — открывайте больше людей",
+                "unlimited_likes": "❤️ <b>Безлимитные Like</b> — не упускайте возможности",
+                "direct": "✉️ <b>Пишите без ожидания Match</b> — начинайте общение сразу",
+                "who": "👀 <b>Узнайте, кто вас лайкнул</b> — знайте, кто заинтересован",
+                "badge": "⭐️ <b>Значок Premium</b> — выделите свой профиль",
+                "priority": "🚀 <b>Приоритет профиля</b> — получайте больше просмотров",
+                "more": "🔥 <b>Больше просмотров → больше Like → больше Match!</b>",
+                "choose": "✨ Выберите подходящий тариф Premium:",
+                "duration": "📅 <b>Выберите срок:</b>",
+                "p1": "📅 1 неделя - 29 000 сум • ВЫГОДНО",
+                "p2": "🔥 15 дней - 49 000 сум • ЛУЧШИЙ ВЫБОР",
+                "p3": "⭐️ 1 месяц - 79 000 сум • ПОПУЛЯРНЫЙ",
+                "cancel": "❌ Отмена",
+            },
+            "uz_cyr": {
+                "title": "👑 <b>PREMIUM</b>",
+                "intro": "💎 Premium билан танишув имкониятларингизни янада кенгайтиринг!",
+                "unlimited_profiles": "♾️ <b>Чексиз профиль кўриш</b> — кўпроқ одамларни кашф этинг",
+                "unlimited_likes": "❤️ <b>Чексиз Like</b> — имкониятларни ўтказиб юборманг",
+                "direct": "✉️ <b>Matchни кутмасдан ёзинг</b> — ёққан инсонгиз билан дарҳол суҳбат бошланг",
+                "who": "👀 <b>Сизни ким ёқтирганини кўринг</b> — ким сизга қизиқиш билдирганини билинг",
+                "badge": "⭐️ <b>Premium белгиси</b> — профилингизни ажратиб туринг",
+                "priority": "🚀 <b>Профиль устуворлиги</b> — кўпроқ кўринишга эга бўлинг",
+                "more": "🔥 <b>Кўпроқ кўриниш → кўпроқ Like → кўпроқ Match!</b>",
+                "choose": "✨ Ўзингизга мос Premium тарифини танланг:",
+                "duration": "📅 <b>Муддатни танланг:</b>",
+                "p1": "📅 1 ҳафта - 29 000 сўм • ҚУЛАЙ",
+                "p2": "🔥 15 кун - 49 000 сўм • ЭНГ ҚУЛАЙ",
+                "p3": "⭐️ 1 ой - 79 000 сўм • ОММАБОП",
+                "cancel": "❌ Бекор қилиш",
+            },
+        }
+
+        t = texts.get(language, texts["uz"])
+
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton(t["p1"], callback_data="premium_1w")],
+            [InlineKeyboardButton(t["p2"], callback_data="premium_2w")],
+            [InlineKeyboardButton(t["p3"], callback_data="premium_1m")],
+            [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")],
+        ])
+
+        message = (
+            f'{t["title"]}\n\n'
+            f'{t["intro"]}\n\n'
+            f'{t["unlimited_profiles"]}\n'
+            f'{t["unlimited_likes"]}\n'
+            f'{t["direct"]}\n'
+            f'{t["who"]}\n'
+            f'{t["badge"]}\n'
+            f'{t["priority"]}\n\n'
+            f'{t["more"]}\n\n'
+            f'{t["choose"]}\n\n'
+            f'{t["duration"]}'
+        )
+
+        await query.message.reply_text(
+            message,
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        return
+
     if data == "change_language":
         await change_language_menu(update, context)
         return
