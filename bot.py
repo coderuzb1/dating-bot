@@ -7375,6 +7375,14 @@ async def delete_user(update, context):
             "DELETE FROM matches WHERE user1 = %s OR user2 = %s",
             (user_id, user_id)
         )
+        cur.execute(
+            "DELETE FROM skips WHERE from_user = %s OR to_user = %s",
+            (user_id, user_id)
+        )
+        cur.execute(
+            "DELETE FROM profile_views WHERE user_id = %s OR viewed_user_id = %s",
+            (user_id, user_id)
+        )
 
         conn.commit()
         cur.close()
