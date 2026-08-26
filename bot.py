@@ -5029,10 +5029,29 @@ async def who_liked_me(update, context):
         JOIN users u ON u.user_id = l.from_user
         WHERE l.to_user = %s
           AND u.is_active = TRUE
+
+          -- Match bo'lganlar qayta chiqmaydi
+          AND NOT EXISTS (
+              SELECT 1
+              FROM matches m
+              WHERE
+                  (m.user1 = %s AND m.user2 = l.from_user)
+                  OR
+                  (m.user1 = l.from_user AND m.user2 = %s)
+          )
+
+          -- Dislike qilinganlar qayta chiqmaydi
+          AND NOT EXISTS (
+              SELECT 1
+              FROM skips s
+              WHERE s.from_user = %s
+                AND s.to_user = l.from_user
+          )
+
         ORDER BY
             COALESCE(l.is_superlike, FALSE) DESC,
             l.created_at DESC
-    """, (user.id,))
+    """, (user.id, user.id, user.id, user.id))
 
     rows = cur.fetchall()
 
