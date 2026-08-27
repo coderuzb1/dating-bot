@@ -1375,8 +1375,18 @@ async def handle_callback(update, context):
         cur = conn.cursor()
 
         try:
+            # Dislike tarixini saqlaymiz.
+            # Shu foydalanuvchi keyin qayta "Meni yoqtirganlar"da chiqmaydi.
+            cur.execute(
+                """
+                INSERT INTO skips (from_user, to_user)
+                VALUES (%s, %s)
+                ON CONFLICT DO NOTHING
+                """,
+                (user.id, target_id)
+            )
+
             # Sizni Like qilgan foydalanuvchining Like'ini olib tashlaymiz.
-            # Shuning uchun u yana "Meni yoqtirganlar"da chiqmaydi.
             cur.execute(
                 """
                 DELETE FROM likes
