@@ -1018,10 +1018,6 @@ async def notify_news(bot, text):
         SELECT user_id
         FROM users
         WHERE is_blocked = FALSE
-          AND (
-              premium_until IS NULL
-              OR premium_until <= NOW()
-          )
         """
     )
 
