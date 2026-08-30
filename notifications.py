@@ -1017,7 +1017,11 @@ async def notify_news(bot, text):
         """
         SELECT user_id
         FROM users
-        WHERE is_active = TRUE
+        WHERE is_blocked = FALSE
+          AND (
+              premium_until IS NULL
+              OR premium_until <= NOW()
+          )
         """
     )
 
@@ -1026,12 +1030,37 @@ async def notify_news(bot, text):
     cur.close()
     conn.close()
 
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "🎁 PREMIUM OLISH",
+                callback_data="premium"
+            )
+        ]
+    ])
+
+    sent_count = 0
+    failed_count = 0
+
     for row in users:
-        await safe_send_message(
+        sent = await safe_send_message(
             bot,
             row[0],
-            f"📢 Yangilik:\n\n{text}"
+            f"📢 Yangilik:\n\n{text}",
+            reply_markup=keyboard
         )
+
+        if sent:
+            sent_count += 1
+        else:
+            failed_count += 1
+
+    print(
+        f"📢 Premium broadcast: "
+        f"yuborildi={sent_count}, xato={failed_count}"
+    )
+
+
 
 # =========================================================
 
