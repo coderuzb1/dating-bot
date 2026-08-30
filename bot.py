@@ -7631,9 +7631,7 @@ async def broadcast_text(update, context):
     ])
 
     await update.message.reply_text(
-        f"📢 <b>Broadcast preview:</b>\\n\\n"
-        f"{text}\\n\\n"
-        "⚠️ Ushbu xabar barcha aktiv foydalanuvchilarga yuboriladi.",
+        text,
         reply_markup=keyboard,
         parse_mode="HTML"
     )
