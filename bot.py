@@ -6641,7 +6641,7 @@ async def minuspremium(update, context):
 
         await update.message.reply_text(
             "✅ Premium muddati kamaytirildi!\n\n"
-            f"👤 Ism: {first_name or "Noma'lum"}\n"
+            f"👤 Ism: {first_name or 'Noma' + chr(39) + 'lum'}\n"
             f"🆔 ID: {target_id}\n"
             f"📅 Eski muddat: {old_until.strftime('%d.%m.%Y %H:%M')}\n"
             f"📅 Yangi muddat: {new_until.strftime('%d.%m.%Y %H:%M')}\n"
