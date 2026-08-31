@@ -1042,8 +1042,9 @@ async def notify_news(bot, text):
         sent = await safe_send_message(
             bot,
             row[0],
-            f"📢 Yangilik:\n\n{text}",
-            reply_markup=keyboard
+            text,
+            reply_markup=keyboard,
+            parse_mode="HTML"
         )
 
         if sent:
