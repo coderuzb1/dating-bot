@@ -2112,9 +2112,9 @@ async def handle_callback(update, context):
         }
 
         prices = {
-            "premium_1w": "29 000",
-            "premium_2w": "49 000",
-            "premium_1m": "79 000",
+            "premium_1w": "20 000",
+            "premium_2w": "35 000",
+            "premium_1m": "55 000",
         }
 
         if data not in durations:
@@ -2314,9 +2314,9 @@ async def handle_callback(update, context):
         }
 
         prices = {
-            "premium_1w": "29 000",
-            "premium_2w": "49 000",
-            "premium_1m": "79 000",
+            "premium_1w": "20 000",
+            "premium_2w": "35 000",
+            "premium_1m": "55 000",
         }
 
         if plan not in durations:
@@ -5907,9 +5907,9 @@ async def handle_message(update, context):
         t = texts.get(language, texts["uz"])
 
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton(t["p1"], callback_data="premium_1w")],
-            [InlineKeyboardButton(t["p2"], callback_data="premium_2w")],
-            [InlineKeyboardButton(t["p3"], callback_data="premium_1m")],
+            [InlineKeyboardButton("📅 1 hafta — 20 000 so'm 🔥", callback_data="premium_1w")],
+            [InlineKeyboardButton("🔥 15 kun — 35 000 so'm 🔥", callback_data="premium_2w")],
+            [InlineKeyboardButton("⭐️ 1 oy — 55 000 so'm 🔥", callback_data="premium_1m")],
             [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")],
         ])
 
