@@ -249,13 +249,15 @@ async def safe_send_message(
     bot,
     user_id,
     text,
-    reply_markup=None
+    reply_markup=None,
+    parse_mode=None
 ):
     try:
         await bot.send_message(
             chat_id=user_id,
             text=text,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+            parse_mode=parse_mode
         )
         return True
 
