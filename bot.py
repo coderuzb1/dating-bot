@@ -2508,7 +2508,6 @@ async def handle_callback(update, context):
                 FROM payments p
                 LEFT JOIN users u ON u.user_id = p.user_id
                 WHERE p.id = %s
-                FOR UPDATE
                 """,
                 (payment_id,)
             )
