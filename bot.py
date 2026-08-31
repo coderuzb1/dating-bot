@@ -1774,9 +1774,9 @@ async def handle_callback(update, context):
         t = texts.get(language, texts["uz"])
 
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton(t["p1"], callback_data="premium_1w")],
-            [InlineKeyboardButton(t["p2"], callback_data="premium_2w")],
-            [InlineKeyboardButton(t["p3"], callback_data="premium_1m")],
+            [InlineKeyboardButton("📅 1 hafta — 20 000 so'm 🔥", callback_data="premium_1w")],
+            [InlineKeyboardButton("🔥 15 kun — 35 000 so'm 🔥", callback_data="premium_2w")],
+            [InlineKeyboardButton("⭐️ 1 oy — 55 000 so'm 🔥", callback_data="premium_1m")],
             [InlineKeyboardButton(t["cancel"], callback_data="cancel_premium")],
         ])
 
@@ -1790,6 +1790,10 @@ async def handle_callback(update, context):
             f'{t["badge"]}\n'
             f'{t["priority"]}\n\n'
             f'{t["more"]}\n\n'
+            '🎉 <b>BAYRAM AKSIYASI!</b>\n\n'
+            '📅 <s>29 000 soʻm</s> → <b>20 000 soʻm</b>\n'
+            '🔥 <s>49 000 soʻm</s> → <b>35 000 soʻm</b>\n'
+            '⭐️ <s>79 000 soʻm</s> → <b>55 000 soʻm</b>\n\n'
             f'{t["choose"]}\n\n'
             f'{t["duration"]}'
         )
