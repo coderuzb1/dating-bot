@@ -6577,6 +6577,88 @@ async def givepremium(update, context):
         )
 
 
+async def minuspremium(update, context):
+    """Admin Premium muddatidan kun ayiradi."""
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+
+    if len(context.args) != 2:
+        await update.message.reply_text(
+            "❌ Format:\n"
+            "/minuspremium USER_ID KUN\n\n"
+            "Masalan:\n"
+            "/minuspremium 8560665871 7"
+        )
+        return
+
+    try:
+        target_id = int(context.args[0])
+        days = int(context.args[1])
+
+        if days <= 0:
+            raise ValueError
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT first_name, premium_until FROM users WHERE user_id = %s",
+            (target_id,)
+        )
+        row = cur.fetchone()
+
+        if not row:
+            cur.close()
+            conn.close()
+            await update.message.reply_text("❌ Foydalanuvchi topilmadi.")
+            return
+
+        first_name, old_until = row
+
+        if old_until is None:
+            cur.close()
+            conn.close()
+            await update.message.reply_text("❌ Bu foydalanuvchida Premium mavjud emas.")
+            return
+
+        new_until = old_until - timedelta(days=days)
+
+        cur.execute(
+            """
+            UPDATE users
+            SET premium_until = %s
+            WHERE user_id = %s
+            """,
+            (new_until, target_id)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        await update.message.reply_text(
+            "✅ Premium muddati kamaytirildi!\n\n"
+            f"👤 Ism: {first_name or 'Noma\'lum'}\n"
+            f"🆔 ID: {target_id}\n"
+            f"📅 Eski muddat: {old_until.strftime('%d.%m.%Y %H:%M')}\n"
+            f"📅 Yangi muddat: {new_until.strftime('%d.%m.%Y %H:%M')}\n"
+            f"➖ Ayirildi: {days} kun"
+        )
+
+    except (ValueError, TypeError):
+        await update.message.reply_text(
+            "❌ Kun soni noto'g'ri."
+        )
+    except Exception as e:
+        print(f"minuspremium error: {e}")
+        await update.message.reply_text(
+            "❌ Premium muddatini o'zgartirishda xatolik yuz berdi."
+        )
+
+
 async def removepremium(update, context):
     """Admin foydalanuvchining Premiumini bekor qiladi."""
     user = update.effective_user
@@ -7763,6 +7845,7 @@ def main():
     app.add_handler(CommandHandler("admin", admin))
     app.add_handler(CommandHandler("givepremium", givepremium))
     app.add_handler(CommandHandler("removepremium", removepremium))
+    app.add_handler(CommandHandler("minuspremium", minuspremium))
     app.add_handler(CommandHandler("delete", delete_user))
     app.add_handler(CommandHandler("blocked", blocked_users))
 
