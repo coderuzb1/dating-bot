@@ -2785,6 +2785,8 @@ async def handle_callback(update, context):
                 return
 
             # To'lovni fake deb belgilash
+            # To'lovni fake deb belgilash va foydalanuvchini
+            # bitta transaction ichida bloklash.
             cur.execute(
                 """
                 UPDATE payments
@@ -2794,7 +2796,16 @@ async def handle_callback(update, context):
                 (payment_id,)
             )
 
-            # Foydalanuvchini bloklash
+            if cur.rowcount != 1:
+                conn.rollback()
+                cur.close()
+                conn.close()
+                await query.answer(
+                    "⚠️ Bu to'lov allaqachon qayta ishlangan.",
+                    show_alert=True
+                )
+                return
+
             cur.execute(
                 """
                 UPDATE users
@@ -2804,6 +2815,16 @@ async def handle_callback(update, context):
                 """,
                 (target_id,)
             )
+
+            if cur.rowcount != 1:
+                conn.rollback()
+                cur.close()
+                conn.close()
+                await query.answer(
+                    "❌ Foydalanuvchi bazadan topilmadi.",
+                    show_alert=True
+                )
+                return
 
             conn.commit()
 
