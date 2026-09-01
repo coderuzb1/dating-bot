@@ -368,11 +368,20 @@ async def start(update, context):
             pass
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT is_active FROM users WHERE user_id = %s", (user.id,))
+    cur.execute("SELECT is_active, COALESCE(is_blocked, FALSE) FROM users WHERE user_id = %s", (user.id,))
     user_status = cur.fetchone()
     cur.close()
     conn.close()
     
+    # 🚫 BLOKLANGAN FOYDALANUVCHI
+    if user_status and user_status[1]:
+        await update.message.reply_text(
+            "🚫 HISOBINGIZ BLOKLANGAN!\n\n"
+            "Soxta to'lov cheki yuborilgani sababli "
+            "botdan foydalanish imkoniyatingiz bloklangan."
+        )
+        return
+
     if user_status:
         # Foydalanuvchi botga kirgan vaqtni yangilash
         try:
@@ -395,10 +404,13 @@ async def start(update, context):
         except Exception as e:
             print(f"Last active update error: {e}")
 
-        if not user_status[0]:
+        if not user_status[0] and not user_status[1]:
             conn = get_db_connection()
             cur = conn.cursor()
-            cur.execute("UPDATE users SET is_active = TRUE WHERE user_id = %s", (user.id,))
+            cur.execute(
+                "UPDATE users SET is_active = TRUE WHERE user_id = %s AND COALESCE(is_blocked, FALSE) = FALSE",
+                (user.id,)
+            )
             conn.commit()
             cur.close()
             conn.close()
@@ -7844,7 +7856,7 @@ def main():
     app.add_handler(
         CallbackQueryHandler(
             handle_callback,
-            pattern=r"^(admin_approve_\\d+|admin_reject_\\d+|fake_payment_\\d+)$"
+            pattern=r"^(admin_approve_\d+|admin_reject_\d+|fake_payment_\d+)$"
         )
     )
 
