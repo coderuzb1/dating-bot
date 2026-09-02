@@ -6865,6 +6865,19 @@ async def admin(update, context):
         """)
         month_payment_amount = cur.fetchone()[0]
 
+        cur.execute("""
+            SELECT COALESCE(SUM(
+                NULLIF(
+                    REGEXP_REPLACE(amount, '[^0-9]', '', 'g'),
+                    ''
+                )::NUMERIC
+            ), 0)
+            FROM payments
+            WHERE status = 'approved'
+              AND created_at >= CURRENT_DATE - INTERVAL '29 days'
+        """)
+        last_month_payment_amount = cur.fetchone()[0]
+
         # Premium paketlar bo‘yicha tasdiqlangan sotuvlar
         cur.execute("""
             SELECT
@@ -6922,6 +6935,7 @@ async def admin(update, context):
         f"├ 💰 Jami tushum: {total_payment_amount:,.0f} so‘m\n"
         f"├ 📅 Bugungi tushum: {today_payment_amount:,.0f} so‘m\n"
         f"├ 📆 Oxirgi 7 kun: {week_payment_amount:,.0f} so‘m\n"
+        f"├ 📆 Oxirgi 1 oy: {last_month_payment_amount:,.0f} so‘m\n"
         f"└ 📆 Shu oy: {month_payment_amount:,.0f} so‘m\n\n"
 
         "👑 PREMIUM SOTUVLAR\n"
