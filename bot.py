@@ -4672,6 +4672,8 @@ async def handle_payment_check(update, context):
             "💳 PREMIUM TO'LOV CHEKI\n\n"
             f"👤 {user.first_name}\n"
             f"🆔 ID: {user.id}\n"
+            f"🔗 Username: @{user.username if user.username else '—'}\n"
+            f"🎂 Yosh: {user.age if user.age else '—'}\n"
             f"📅 Muddat: {days} kun\n"
             f"💰 Summa: {price} so'm\n\n"
             "📸/📄 Chek yuborildi.\n"
