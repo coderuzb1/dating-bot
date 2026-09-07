@@ -1101,6 +1101,15 @@ async def find(update, context):
         )
         today_count = cur.fetchone()[0]
 
+        if today_count >= 20:
+            cur.close()
+            conn.close()
+            await message.reply_text(
+                "🚫 Bugungi 20 ta profil limitingiz tugadi.\n\n"
+                "👑 Premiumga o'tib, profillarni cheksiz ko'rishingiz mumkin."
+            )
+            return
+
 
     cur.execute(
         """
