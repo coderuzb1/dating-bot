@@ -3769,31 +3769,6 @@ async def handle_callback(update, context):
             and premium_result[0] > datetime.now()
         )
 
-        if not is_premium:
-            cur.execute(
-                """
-                SELECT COUNT(*)
-                FROM likes
-                WHERE from_user = %s
-                  AND created_at >= CURRENT_DATE
-                  AND created_at < CURRENT_DATE + INTERVAL '1 day'
-                """,
-                (user.id,)
-            )
-
-            today_likes = cur.fetchone()[0]
-
-            if today_likes >= 3:
-                cur.close()
-                conn.close()
-
-                await query.answer(
-                    "❤️ Bugungi 3 ta Like limitingiz tugadi!\n\n"
-                    "👑 Premium bilan cheksiz Like bosing.",
-                    show_alert=True
-                )
-                return
-
         cur.execute(
             """
             INSERT INTO likes
@@ -6046,64 +6021,51 @@ async def handle_message(update, context):
             conn.commit()
 
         # =====================================================
-        # 1 TA BEPUL XABAR
-        # FAQAT ODDIY USER VA HAR BIR MATCH UCHUN
+        # MATCH CHAT — FAQAT PREMIUM
+        # FREE USER UCHUN BEPUL XABAR YO'Q
         # =====================================================
         if is_match and not is_premium:
-            cur.execute(
-                """
-                SELECT COUNT(*)
-                FROM messages
-                WHERE from_user = %s
-                  AND to_user = %s
-            """,
-                (sender.id, target_id)
-            )
+            context.user_data.pop("writing_to", None)
 
-            sent_count = cur.fetchone()[0]
+            cur.close()
+            conn.close()
 
-            if sent_count >= 1:
-                context.user_data.pop("writing_to", None)
+            language = get_user_language(sender.id)
 
-                cur.close()
-                conn.close()
-
-                language = get_user_language(sender.id)
-
-                if language == "ru":
-                    msg = (
-                        "🚫 <b>Лимит бесплатных сообщений исчерпан</b>\n\n"
-                        "Для этого Match вы уже отправили 1 бесплатное сообщение.\n\n"
-                        "👑 Оформите Premium и продолжайте общение без ограничений."
-                    )
-                elif language == "uz_cyr":
-                    msg = (
-                        "🚫 <b>Бепул хабарлар лимити тугади</b>\n\n"
-                        "Бу Match учун 1 та бепул хабар юбордингиз.\n\n"
-                        "👑 Premium олинг ва суҳбатни чекловсиз давом эттиринг."
-                    )
-                else:
-                    msg = (
-                        "🚫 <b>Bepul xabarlar limiti tugadi</b>\n\n"
-                        "Bu Match uchun 1 ta bepul xabar yubordingiz.\n\n"
-                        "👑 Premium oling va suhbatni cheklovsiz davom ettiring."
-                    )
-
-                keyboard = InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton(
-                            "👑 Premium olish",
-                            callback_data="premium"
-                        )
-                    ]
-                ])
-
-                await update.message.reply_text(
-                    msg,
-                    parse_mode="HTML",
-                    reply_markup=keyboard
+            if language == "ru":
+                msg = (
+                    "💎 <b>Для общения в Match нужен Premium</b>\n\n"
+                    "Бесплатные пользователи не могут отправлять сообщения в Match.\n\n"
+                    "👑 Оформите Premium и начните общение."
                 )
-                return
+            elif language == "uz_cyr":
+                msg = (
+                    "💎 <b>Matchда мулоқот қилиш учун Premium керак</b>\n\n"
+                    "Бепул фойдаланувчилар Matchда хабар юбора олмайди.\n\n"
+                    "👑 Мулоқотни бошлаш учун Premium олинг."
+                )
+            else:
+                msg = (
+                    "💎 <b>Matchda yozish uchun Premium kerak</b>\n\n"
+                    "Bepul foydalanuvchilar Matchda xabar yubora olmaydi.\n\n"
+                    "👑 Suhbatni boshlash uchun Premium oling."
+                )
+
+            keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(
+                        "👑 Premium olish",
+                        callback_data="premium"
+                    )
+                ]
+            ])
+
+            await update.message.reply_text(
+                msg,
+                parse_mode="HTML",
+                reply_markup=keyboard
+            )
+            return
 
         # =====================================================
         # XABARNI SAQLASH
