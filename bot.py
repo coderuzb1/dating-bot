@@ -2430,6 +2430,8 @@ async def handle_callback(update, context):
             )
             return
 
+        await query.answer("⏳ To'lov tasdiqlanmoqda...")
+
         try:
             payment_id = int(data.split("_")[2])
 
@@ -2457,10 +2459,6 @@ async def handle_callback(update, context):
             if not payment:
                 cur.close()
                 conn.close()
-                await query.answer(
-                    "❌ To'lov topilmadi!",
-                    show_alert=True
-                )
                 return
 
             target_id, amount, days, status, first_name, old_until = payment
@@ -2468,10 +2466,6 @@ async def handle_callback(update, context):
             if status != "pending":
                 cur.close()
                 conn.close()
-                await query.answer(
-                    f"⚠️ Bu to'lov allaqachon: {status}",
-                    show_alert=True
-                )
                 return
 
             # Mavjud Premium bo'lsa, ustiga qo'shamiz
@@ -2502,11 +2496,6 @@ async def handle_callback(update, context):
 
             cur.close()
             conn.close()
-
-            await query.answer(
-                "✅ To'lov tasdiqlandi!",
-                show_alert=True
-            )
 
             try:
                 await context.bot.send_message(
@@ -2579,6 +2568,8 @@ async def handle_callback(update, context):
             )
             return
 
+        await query.answer("⏳ To'lov rad etilmoqda...")
+
         try:
             payment_id = int(data.split("_")[2])
 
@@ -2605,10 +2596,6 @@ async def handle_callback(update, context):
             if not payment:
                 cur.close()
                 conn.close()
-                await query.answer(
-                    "❌ To'lov topilmadi!",
-                    show_alert=True
-                )
                 return
 
             target_id, amount, days, status, first_name = payment
@@ -2616,10 +2603,6 @@ async def handle_callback(update, context):
             if status != "pending":
                 cur.close()
                 conn.close()
-                await query.answer(
-                    f"⚠️ Bu to'lov allaqachon: {status}",
-                    show_alert=True
-                )
                 return
 
             cur.execute(
@@ -2635,11 +2618,6 @@ async def handle_callback(update, context):
 
             cur.close()
             conn.close()
-
-            await query.answer(
-                "❌ To'lov rad etildi!",
-                show_alert=True
-            )
 
             try:
                 await context.bot.send_message(
@@ -2687,6 +2665,8 @@ async def handle_callback(update, context):
             )
             return
 
+        await query.answer("⏳ Foydalanuvchi bloklanmoqda...")
+
         try:
             payment_id = int(data.split("_")[2])
 
@@ -2707,10 +2687,6 @@ async def handle_callback(update, context):
             if not payment:
                 cur.close()
                 conn.close()
-                await query.answer(
-                    "❌ To'lov topilmadi!",
-                    show_alert=True
-                )
                 return
 
             target_id, amount, days, status = payment
@@ -2718,10 +2694,6 @@ async def handle_callback(update, context):
             if status != "pending":
                 cur.close()
                 conn.close()
-                await query.answer(
-                    f"⚠️ Bu to'lov allaqachon: {status}",
-                    show_alert=True
-                )
                 return
 
             # To'lovni fake deb belgilash
@@ -2740,10 +2712,6 @@ async def handle_callback(update, context):
                 conn.rollback()
                 cur.close()
                 conn.close()
-                await query.answer(
-                    "⚠️ Bu to'lov allaqachon qayta ishlangan.",
-                    show_alert=True
-                )
                 return
 
             cur.execute(
@@ -2760,10 +2728,6 @@ async def handle_callback(update, context):
                 conn.rollback()
                 cur.close()
                 conn.close()
-                await query.answer(
-                    "❌ Foydalanuvchi bazadan topilmadi.",
-                    show_alert=True
-                )
                 return
 
             conn.commit()
@@ -2796,11 +2760,6 @@ async def handle_callback(update, context):
                 )
             except Exception as e:
                 print(f"Fake payment admin message error: {e}")
-
-            await query.answer(
-                "🚫 Foydalanuvchi bloklandi!",
-                show_alert=True
-            )
 
         except Exception as e:
             print(f"Fake payment error: {e}")
