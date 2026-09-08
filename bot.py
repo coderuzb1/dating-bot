@@ -4411,6 +4411,15 @@ async def save_edit(update, context):
     return ConversationHandler.END
 
 async def handle_payment_check(update, context):
+    print("🔥🔥🔥 HANDLE_PAYMENT_CHECK ISHLADI 🔥🔥🔥", flush=True)
+    print(
+        f"🔎 PAYMENT DEBUG | user={getattr(update.effective_user, "id", None)} "
+        f"| photo={bool(update.message and update.message.photo)} "
+        f"| document={bool(update.message and update.message.document)} "
+        f"| pending={bool(context.user_data.get("pending_payment"))}",
+        flush=True
+    )
+
     user = update.effective_user
 
     if not update.message:
