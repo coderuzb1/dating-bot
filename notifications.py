@@ -544,26 +544,18 @@ async def notify_new_match(
             ]
         ]
 
-        if recipient["premium"]:
-            if target["username"]:
-                buttons.append([
-                    InlineKeyboardButton(
-                        "📨 Telegram chatiga yozish",
-                        url=f"https://t.me/{target['username']}"
-                    )
-                ])
-            else:
-                buttons.append([
-                    InlineKeyboardButton(
-                        "📨 Telegram chatiga yozish",
-                        callback_data=f"telegram_chat_{target['id']}"
-                    )
-                ])
+        if recipient["premium"] and target["username"]:
+            buttons.append([
+                InlineKeyboardButton(
+                    "📨 Telegram shaxsiy chatiga yozish",
+                    url=f"https://t.me/{target['username']}"
+                )
+            ])
         else:
             buttons.append([
                 InlineKeyboardButton(
-                    "👑 Premium olish",
-                    callback_data="premium_buy"
+                    "📨 Telegram shaxsiy chatiga yozish",
+                    callback_data=f"telegram_chat_{target['id']}"
                 )
             ])
 

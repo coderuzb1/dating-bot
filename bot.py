@@ -1284,9 +1284,23 @@ async def handle_callback(update, context):
             )
 
             if not is_premium:
-                await query.answer(
-                    "👑 Bu imkoniyat faqat Premium uchun.",
-                    show_alert=True
+                cur.close()
+                conn.close()
+
+                keyboard = InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            "👑 Premium olish",
+                            callback_data="premium"
+                        )
+                    ]
+                ])
+
+                await query.message.reply_text(
+                    "💎 <b>Telegram shaxsiy chatiga yozish uchun Premium kerak</b>\n\n"
+                    "👑 Premium oling va Telegram shaxsiy chatiga yozing.",
+                    parse_mode="HTML",
+                    reply_markup=keyboard
                 )
                 return
 
@@ -2938,11 +2952,24 @@ async def handle_callback(update, context):
         )
         is_match = bool(cur.fetchone()[0])
 
-        if not is_premium and not is_match:
+        if not is_premium:
             cur.close()
             conn.close()
+
+            keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(
+                        "👑 Premium olish",
+                        callback_data="premium"
+                    )
+                ]
+            ])
+
             await query.message.reply_text(
-                "👑 Match bo'lmagan holda yozish faqat Premium uchun."
+                "💎 <b>Suhbatni boshlash uchun Premium kerak</b>\n\n"
+                "👑 Premium oling va suhbatni boshlang.",
+                parse_mode="HTML",
+                reply_markup=keyboard
             )
             return
 
