@@ -2635,14 +2635,14 @@ async def handle_callback(update, context):
 
             first_name_display = first_name or "Noma'lum"
 
-            await query.message.edit_text(
+            await query.message.edit_caption(caption=(
                 "❌ PREMIUM TO'LOVI RAD ETILDI\n\n"
                 f"🧾 To'lov ID: #{payment_id}\n"
                 f"👤 Foydalanuvchi: {first_name_display}\n"
                 f"🆔 ID: {target_id}\n"
                 f"📅 Tarif: {days} kun\n"
                 f"💰 Summa: {amount} so'm"
-            )
+            ), reply_markup=None)
 
         except Exception as e:
             print(f"Premium rejection error: {e}")
@@ -2749,7 +2749,7 @@ async def handle_callback(update, context):
                 print(f"Fake receipt notification error: {e}")
 
             try:
-                await query.message.edit_text(
+                await query.message.edit_caption(caption=(
                     "🚫 SOXTA CHEK — FOYDALANUVCHI BLOKLANDI\n\n"
                     f"🧾 To'lov ID: #{payment_id}\n"
                     f"🆔 User ID: {target_id}\n"
@@ -2757,7 +2757,7 @@ async def handle_callback(update, context):
                     f"💰 Summa: {amount} so'm\n"
                     "🔒 Status: BLOCKED\n"
                     "❌ Premium: berilmadi"
-                )
+                ), reply_markup=None)
             except Exception as e:
                 print(f"Fake payment admin message error: {e}")
 
