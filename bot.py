@@ -4704,12 +4704,30 @@ async def handle_payment_check(update, context):
             ]
         ])
 
+        # Foydalanuvchi yoshini Telegram User obyektidan emas,
+        # database'dan olamiz.
+        user_age = "—"
+        try:
+            conn_age = get_db_connection()
+            cur_age = conn_age.cursor()
+            cur_age.execute(
+                "SELECT age FROM users WHERE user_id = %s",
+                (user.id,)
+            )
+            age_result = cur_age.fetchone()
+            if age_result and age_result[0]:
+                user_age = age_result[0]
+            cur_age.close()
+            conn_age.close()
+        except Exception as age_error:
+            print(f"⚠️ Yoshni olishda xato: {age_error}")
+
         caption = (
             "💳 PREMIUM TO'LOV CHEKI\n\n"
             f"👤 {user.first_name}\n"
             f"🆔 ID: {user.id}\n"
             f"🔗 Username: @{user.username if user.username else '—'}\n"
-            f"🎂 Yosh: {user.age if user.age else '—'}\n"
+            f"🎂 Yosh: {user_age}\n"
             f"📅 Muddat: {days} kun\n"
             f"💰 Summa: {price} so'm\n\n"
             "📸/📄 Chek yuborildi.\n"
