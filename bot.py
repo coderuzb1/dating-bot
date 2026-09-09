@@ -3480,6 +3480,92 @@ async def handle_callback(update, context):
         await find(update, context)
         return
     
+    # =====================================================
+    # SUPERLIKE SOTIB OLISH
+    # Asosiy paneldagi Superlike oynasini callback orqali ochadi.
+    # =====================================================
+    if data == "buy_superlikes":
+        language = get_user_language(user.id)
+
+        conn_sl = get_db_connection()
+        cur_sl = conn_sl.cursor()
+
+        cur_sl.execute(
+            """
+            SELECT superlike_balance
+            FROM users
+            WHERE user_id = %s
+            """,
+            (user.id,)
+        )
+        result_sl = cur_sl.fetchone()
+        balance_sl = result_sl[0] if result_sl and result_sl[0] else 0
+
+        cur_sl.close()
+        conn_sl.close()
+
+        texts_sl = {
+            "uz": {
+                "title": "⭐ SUPERLIKE",
+                "balance": "📊 Mavjud: {balance} ta",
+                "priority": "🔥 Profilingiz birinchi chiqadi!",
+                "power": "💪 3x kuchliroq",
+                "choose": "Paketni tanlang:",
+                "p1": "1 ta - 1 000 so'm",
+                "p5": "5 ta - 4 000 so'm",
+                "p10": "10 ta - 7 000 so'm",
+            },
+            "ru": {
+                "title": "⭐ СУПЕРЛАЙК",
+                "balance": "📊 Доступно: {balance} шт.",
+                "priority": "🔥 Ваш профиль будет показан первым!",
+                "power": "💪 В 3 раза сильнее",
+                "choose": "Выберите пакет:",
+                "p1": "1 шт. - 1 000 сум",
+                "p5": "5 шт. - 4 000 сум",
+                "p10": "10 шт. - 7 000 сум",
+            },
+            "uz_cyr": {
+                "title": "⭐ СУПЕРЛАЙК",
+                "balance": "📊 Мавжуд: {balance} та",
+                "priority": "🔥 Профилингиз биринчи чиқади!",
+                "power": "💪 3 баравар кучлироқ",
+                "choose": "Пакетни танланг:",
+                "p1": "1 та - 1 000 сўм",
+                "p5": "5 та - 4 000 сўм",
+                "p10": "10 та - 7 000 сўм",
+            },
+        }
+
+        t_sl = texts_sl.get(language, texts_sl["uz"])
+
+        keyboard_sl = InlineKeyboardMarkup([
+            [InlineKeyboardButton(
+                t_sl["p1"],
+                callback_data="sl_1"
+            )],
+            [InlineKeyboardButton(
+                t_sl["p5"],
+                callback_data="sl_5"
+            )],
+            [InlineKeyboardButton(
+                t_sl["p10"],
+                callback_data="sl_10"
+            )],
+        ])
+
+        await query.answer()
+
+        await query.message.reply_text(
+            f'{t_sl["title"]}\n\n'
+            f'{t_sl["balance"].format(balance=balance_sl)}\n\n'
+            f'{t_sl["priority"]}\n'
+            f'{t_sl["power"]}\n\n'
+            f'{t_sl["choose"]}',
+            reply_markup=keyboard_sl
+        )
+        return
+
     if data.startswith("superlike_"):
         target_id = int(data.split("_")[1])
 
@@ -3493,18 +3579,31 @@ async def handle_callback(update, context):
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # =====================================================
+        # SUPERLIKE BALANCE
+        # PREMIUM = CHEKSIZ BEPUL SUPERLIKE
+        # FREE = BALANSDAN FOYDALANADI
+        # =====================================================
         cur.execute(
             """
-            SELECT superlike_balance
+            SELECT superlike_balance, premium_until
             FROM users
             WHERE user_id = %s
             """,
             (user.id,)
         )
         result = cur.fetchone()
-        balance = result[0] if result and result[0] else 0
 
-        if balance <= 0:
+        balance = result[0] if result and result[0] else 0
+        premium_until = result[1] if result and result[1] else None
+
+        is_premium = (
+            premium_until is not None
+            and premium_until > datetime.now()
+        )
+
+        # Faqat Free foydalanuvchi uchun balans tekshiriladi.
+        if not is_premium and balance <= 0:
             cur.close()
             conn.close()
 
@@ -3606,15 +3705,18 @@ async def handle_callback(update, context):
                 (user.id, target_id)
             )
 
-        cur.execute(
-            """
-            UPDATE users
-            SET superlike_balance = COALESCE(superlike_balance, 0) - 1
-            WHERE user_id = %s
-              AND COALESCE(superlike_balance, 0) > 0
-            """,
-            (user.id,)
-        )
+        # Premium foydalanuvchiga Superlike bepul.
+        # Free foydalanuvchidan esa 1 ta Superlike ayiriladi.
+        if not is_premium:
+            cur.execute(
+                """
+                UPDATE users
+                SET superlike_balance = COALESCE(superlike_balance, 0) - 1
+                WHERE user_id = %s
+                  AND COALESCE(superlike_balance, 0) > 0
+                """,
+                (user.id,)
+            )
 
         cur.execute(
             """
@@ -7766,13 +7868,6 @@ def main():
         CallbackQueryHandler(
             handle_callback,
             pattern=r"^(admin_approve_\d+|admin_reject_\d+|fake_payment_\d+)$"
-        )
-    )
-
-    app.add_handler(
-        CallbackQueryHandler(
-            buy_superlikes,
-            pattern=r"^buy_superlikes$"
         )
     )
 
