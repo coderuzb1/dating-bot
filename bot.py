@@ -7769,6 +7769,13 @@ def main():
         )
     )
 
+    app.add_handler(
+        CallbackQueryHandler(
+            buy_superlikes,
+            pattern=r"^buy_superlikes$"
+        )
+    )
+
     app.add_handler(conv_handler)
 
     # New user onboarding: Welcome -> Profil yaratish -> Til
