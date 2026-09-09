@@ -3566,6 +3566,261 @@ async def handle_callback(update, context):
         )
         return
 
+    # ========================================================
+    # SUPERLIKE SOTIB OLISH — FAQAT SUPERLIKE
+    # PREMIUM KODIGA TEGILMAYDI
+    # ========================================================
+
+    if data in {"sl_1", "sl_5", "sl_10"}:
+        amounts = {
+            "sl_1": 1,
+            "sl_5": 5,
+            "sl_10": 10,
+        }
+
+        prices = {
+            1: 1000,
+            5: 4000,
+            10: 7000,
+        }
+
+        amount = amounts[data]
+        price = prices[amount]
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "💳 HUMO",
+                    callback_data=f"sl_pay_humo_{amount}"
+                ),
+                InlineKeyboardButton(
+                    "💳 VISA",
+                    callback_data=f"sl_pay_visa_{amount}"
+                )
+            ]
+        ])
+
+        await query.answer()
+
+        await query.message.reply_text(
+            "⭐ <b>SUPERLIKE SOTIB OLISH</b>\n\n"
+            f"⭐ Miqdor: <b>{amount} ta</b>\n"
+            f"💰 Summa: <b>{price:,} so'm</b>\n\n"
+            "To'lov usulini tanlang:",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        return
+
+    if data.startswith("sl_pay_humo_") or data.startswith("sl_pay_visa_"):
+        parts = data.split("_")
+
+        payment_method = parts[2].upper()
+        amount = int(parts[3])
+
+        prices = {
+            1: 1000,
+            5: 4000,
+            10: 7000,
+        }
+
+        price = prices.get(amount)
+
+        if price is None:
+            await query.answer(
+                "❌ Paket topilmadi.",
+                show_alert=True
+            )
+            return
+
+        context.user_data["pending_payment"] = {
+            "type": "superlike",
+            "amount": amount,
+            "price": price,
+            "payment_method": payment_method,
+            "user_id": user.id,
+        }
+
+        card = HUMO_CARD if payment_method == "HUMO" else VISA_CARD
+
+        await query.answer()
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "✅ To'lov qildim — chek yuboraman",
+                    callback_data=f"sl_paid_{amount}"
+                )
+            ]
+        ])
+
+        await query.message.reply_text(
+            "⭐ <b>SUPERLIKE TO'LOVI</b>\n\n"
+            f"⭐ Paket: <b>{amount} ta</b>\n"
+            f"💰 Summa: <b>{price:,} so'm</b>\n"
+            f"💳 Usul: <b>{payment_method}</b>\n\n"
+            f"💳 Karta raqami:\n"
+            f"<code>{card}</code>\n\n"
+            "To'lovni amalga oshiring.\n"
+            "Keyin quyidagi tugmani bosing va to'lov chekini "
+            "rasm yoki fayl ko'rinishida yuboring.",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        return
+
+    if data.startswith("sl_paid_"):
+        amount = int(data.split("_")[2])
+
+        pending = context.user_data.get("pending_payment")
+
+        if not pending or pending.get("type") != "superlike":
+            await query.answer(
+                "❌ Faol Superlike to'lovi topilmadi.",
+                show_alert=True
+            )
+            return
+
+        await query.answer()
+
+        await query.message.reply_text(
+            "📸 <b>Endi to'lov chekini yuboring.</b>\n\n"
+            "Chekni rasm yoki fayl ko'rinishida shu yerga yuboring.\n\n"
+            "Admin tekshiradi va tasdiqlagandan so'ng "
+            "Superlike hisobingizga qo'shiladi.",
+            parse_mode="HTML"
+        )
+        return
+
+    # ========================================================
+    # SUPERLIKE ADMIN TASDIQLASH / RAD ETISH
+    # ========================================================
+
+    if data.startswith("ok_sl_"):
+        if user.id != ADMIN_ID:
+            await query.answer(
+                "⛔ Sizda bu amalni bajarish huquqi yo'q!",
+                show_alert=True
+            )
+            return
+
+        parts = data.split("_")
+
+        try:
+            target_id = int(parts[2])
+            amount = int(parts[3])
+        except (ValueError, IndexError):
+            await query.answer(
+                "❌ To'lov ma'lumotlari noto'g'ri.",
+                show_alert=True
+            )
+            return
+
+        await query.answer("⏳ Superlike qo'shilmoqda...")
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            UPDATE users
+            SET superlike_balance =
+                COALESCE(superlike_balance, 0) + %s
+            WHERE user_id = %s
+            """,
+            (amount, target_id)
+        )
+
+        updated = cur.rowcount
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        if updated != 1:
+            await query.message.edit_caption(
+                caption=(
+                    "❌ SUPERLIKE TASDIQLANMADI\n\n"
+                    f"🆔 User ID: {target_id}\n"
+                    "Foydalanuvchi topilmadi."
+                ),
+                reply_markup=None
+            )
+            return
+
+        try:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=(
+                    "🎉 <b>SUPERLIKE TASDIQLANDI!</b>\n\n"
+                    f"⭐ Hisobingizga <b>{amount} ta</b> Superlike qo'shildi."
+                ),
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            print(f"Superlike approval notification error: {e}")
+
+        try:
+            await query.message.edit_caption(
+                caption=(
+                    "✅ SUPERLIKE TO'LOVI TASDIQLANDI\n\n"
+                    f"🆔 User ID: {target_id}\n"
+                    f"⭐ Miqdor: {amount} ta\n"
+                    "💰 To'lov tasdiqlandi\n"
+                    "⭐ Superlike balansiga qo'shildi"
+                ),
+                reply_markup=None
+            )
+        except Exception as e:
+            print(f"Superlike admin caption edit error: {e}")
+
+        return
+
+    if data.startswith("no_sl_"):
+        if user.id != ADMIN_ID:
+            await query.answer(
+                "⛔ Sizda bu amalni bajarish huquqi yo'q!",
+                show_alert=True
+            )
+            return
+
+        try:
+            target_id = int(data.split("_")[2])
+        except (ValueError, IndexError):
+            await query.answer(
+                "❌ To'lov ma'lumotlari noto'g'ri.",
+                show_alert=True
+            )
+            return
+
+        await query.answer("⏳ To'lov rad etilmoqda...")
+
+        try:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=(
+                    "❌ <b>SUPERLIKE TO'LOVI RAD ETILDI</b>\n\n"
+                    "Admin yuborilgan to'lov chekini tasdiqlamadi."
+                ),
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            print(f"Superlike rejection notification error: {e}")
+
+        try:
+            await query.message.edit_caption(
+                caption=(
+                    "❌ SUPERLIKE TO'LOVI RAD ETILDI\n\n"
+                    f"🆔 User ID: {target_id}\n"
+                    "⭐ Superlike qo'shilmadi."
+                ),
+                reply_markup=None
+            )
+        except Exception as e:
+            print(f"Superlike reject caption edit error: {e}")
+
+        return
+
     if data.startswith("superlike_"):
         target_id = int(data.split("_")[1])
 
