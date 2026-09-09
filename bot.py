@@ -871,11 +871,9 @@ async def finish_registration(update, context):
                     referral_count = cur.fetchone()[0]
 
                     rewards = {
-                        5: 1,
-                        10: 7,
-                        25: 30,
-                        50: 90,
-                        100: 365
+                        10: 1,
+                        25: 7,
+                        50: 30
                     }
 
                     if referral_count in rewards:
@@ -6018,11 +6016,9 @@ async def referral_panel(update, context):
     conn.close()
 
     rewards = [
-        (5, 1),
-        (10, 7),
-        (25, 30),
-        (50, 90),
-        (100, 365),
+        (10, 1),
+        (25, 7),
+        (50, 30),
     ]
 
     lines = []
