@@ -5476,9 +5476,18 @@ async def likes(update, context):
                   (m.user1 = l.from_user AND m.user2 = %s)
           )
 
+          -- Dislike qilinganlar "Meni yoqtirganlar"da qayta chiqmaydi
+          AND NOT EXISTS (
+              SELECT 1
+              FROM skips s
+              WHERE
+                  s.from_user = %s
+                  AND s.to_user = l.from_user
+          )
+
         ORDER BY l.created_at DESC
         """,
-        (user.id, user.id, user.id)
+        (user.id, user.id, user.id, user.id)
     )
 
     likes_list = cur.fetchall()
