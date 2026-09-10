@@ -6164,6 +6164,7 @@ async def handle_message(update, context):
                 "who": "👀 <b>Sizni kim yoqtirganini ko'ring</b> — kim sizga qiziqayotganini biling",
                 "badge": "⭐️ <b>Premium belgisi</b> — profilingizni ajratib turing",
                 "priority": "🚀 <b>Profil ustuvorligi</b> — ko'proq ko'rinishga ega bo'ling",
+                "bonus": "🎁 <b>BONUS</b> — ⭐ Superlike bepul taqdim etiladi",
                 "more": "🔥 <b>Ko'proq ko'rinish → ko'proq Like → ko'proq Match!</b>",
                 "choose": "✨ O'zingizga mos Premium tarifini tanlang:",
                 "duration": "📅 <b>Muddatni tanlang:</b>",
@@ -6181,6 +6182,7 @@ async def handle_message(update, context):
                 "who": "👀 <b>Узнайте, кто вас лайкнул</b> — знайте, кто заинтересован",
                 "badge": "⭐️ <b>Значок Premium</b> — выделите свой профиль",
                 "priority": "🚀 <b>Приоритет профиля</b> — получайте больше просмотров",
+                "bonus": "🎁 <b>БОНУС</b> — ⭐ Superlike предоставляется бесплатно",
                 "more": "🔥 <b>Больше просмотров → больше Like → больше Match!</b>",
                 "choose": "✨ Выберите подходящий тариф Premium:",
                 "duration": "📅 <b>Выберите срок:</b>",
@@ -6198,6 +6200,7 @@ async def handle_message(update, context):
                 "who": "👀 <b>Сизни ким ёқтирганини кўринг</b> — ким сизга қизиқиш билдирганини билинг",
                 "badge": "⭐️ <b>Premium белгиси</b> — профилингизни ажратиб туринг",
                 "priority": "🚀 <b>Профиль устуворлиги</b> — кўпроқ кўринишга эга бўлинг",
+                "bonus": "🎁 <b>БОНУС</b> — ⭐ Суперлайк бепул тақдим этилади",
                 "more": "🔥 <b>Кўпроқ кўриниш → кўпроқ Like → кўпроқ Match!</b>",
                 "choose": "✨ Ўзингизга мос Premium тарифини танланг:",
                 "duration": "📅 <b>Муддатни танланг:</b>",
@@ -6225,7 +6228,8 @@ async def handle_message(update, context):
             f'{t["direct"]}\n'
             f'{t["who"]}\n'
             f'{t["badge"]}\n'
-            f'{t["priority"]}\n\n'
+            f'{t["priority"]}\n'
+            f'{t["bonus"]}\n\n'
             f'{t["more"]}\n\n'
             f'{t["choose"]}\n\n'
             f'{t["duration"]}'
