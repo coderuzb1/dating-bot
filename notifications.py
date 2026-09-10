@@ -47,9 +47,10 @@ def notification_already_sent(
                 WHERE user_id = %s
                   AND notification_type = %s
                   AND reference_id = %s
+                  AND created_at >= NOW() - (%s * INTERVAL '1 hour')
             )
             """,
-            (user_id, notification_type, reference_id)
+            (user_id, notification_type, reference_id, hours)
         )
 
     result = cur.fetchone()[0]
