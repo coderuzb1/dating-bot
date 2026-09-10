@@ -309,6 +309,25 @@ async def notify_like(
     ):
         return
 
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT COALESCE(is_superlike, FALSE)
+        FROM likes
+        WHERE from_user = %s
+          AND to_user = %s
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (from_user_id, to_user_id)
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    is_superlike = bool(row[0]) if row else False
+
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
@@ -318,11 +337,19 @@ async def notify_like(
         ]
     ])
 
-    text = (
-        "💕 Sizni kimdir yoqtirdi!\n\n"
-        f"👤 {from_user_name}\n\n"
-        "👀 Kim ekanini ko‘rish"
-    )
+    if is_superlike:
+        text = (
+            "⭐💎 Sizga SUPERLIKE yuborildi!\n\n"
+            f"👤 {from_user_name}\n\n"
+            "💖 Bu foydalanuvchi sizga alohida qiziqish bildirdi!\n\n"
+            "👀 Profilini ko‘ring!"
+        )
+    else:
+        text = (
+            "💕 Sizni kimdir yoqtirdi!\n\n"
+            f"👤 {from_user_name}\n\n"
+            "👀 Kim ekanini ko‘rish"
+        )
 
     try:
         if from_user_photo:

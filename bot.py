@@ -5485,7 +5485,9 @@ async def likes(update, context):
                   AND s.to_user = l.from_user
           )
 
-        ORDER BY l.created_at DESC
+        ORDER BY
+            COALESCE(l.is_superlike, FALSE) DESC,
+            l.created_at DESC
         """,
         (user.id, user.id, user.id, user.id)
     )
