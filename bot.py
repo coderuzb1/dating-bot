@@ -1193,13 +1193,12 @@ async def find(update, context):
         ),
     ]]
 
-    if is_premium:
-        buttons.append([
-            InlineKeyboardButton(
-                t["write"],
-                callback_data=f"write_{target_id}"
-            )
-        ])
+    buttons.append([
+        InlineKeyboardButton(
+            t["write"],
+            callback_data=f"write_{target_id}"
+        )
+    ])
 
     keyboard = InlineKeyboardMarkup(buttons)
 
