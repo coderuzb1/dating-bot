@@ -364,7 +364,7 @@ async def notify_like(
             )
 
     except Exception as e:
-        print(f"Like notification error: {e}")
+        print(f"Like notification error: {e!r}")
 
 
 # =========================================================
@@ -602,7 +602,7 @@ async def notify_new_match(
         print(f"🚫 Match user1 blocked bot: {user1_id}")
 
     except Exception as e:
-        print(f"Match user1 error: {e}")
+        print(f"Match user1 error: {e!r}")
 
     try:
         if not notification_already_sent(
@@ -630,7 +630,7 @@ async def notify_new_match(
         print(f"🚫 Match user2 blocked bot: {user2_id}")
 
     except Exception as e:
-        print(f"Match user2 error: {e}")
+        print(f"Match user2 error: {e!r}")
 
 
 # =========================================================
