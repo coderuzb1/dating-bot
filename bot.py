@@ -1757,6 +1757,7 @@ async def handle_callback(update, context):
                 "unlimited_likes": "❤️ <b>Cheksiz Like</b> — imkoniyatlarni o'tkazib yubormang",
                 "direct": "✉️ <b>Matchni kutmasdan yozing</b> — yoqqan insoningiz bilan darhol suhbat boshlang",
                 "who": "👀 <b>Sizni kim yoqtirganini ko'ring</b> — kim sizga qiziqayotganini biling",
+            "bonus": "🎁 <b>BONUS</b> — ⭐ Superlike bepul taqdim etiladi",
                 "badge": "⭐️ <b>Premium belgisi</b> — profilingizni ajratib turing",
                 "priority": "🚀 <b>Profil ustuvorligi</b> — ko'proq ko'rinishga ega bo'ling",
                 "more": "🔥 <b>Ko'proq ko'rinish → ko'proq Like → ko'proq Match!</b>",
@@ -1774,6 +1775,7 @@ async def handle_callback(update, context):
                 "unlimited_likes": "❤️ <b>Безлимитные Like</b> — не упускайте возможности",
                 "direct": "✉️ <b>Пишите без ожидания Match</b> — начинайте общение сразу",
                 "who": "👀 <b>Узнайте, кто вас лайкнул</b> — знайте, кто заинтересован",
+            "bonus": "🎁 <b>БОНУС</b> — ⭐ Superlike предоставляется бесплатно",
                 "badge": "⭐️ <b>Значок Premium</b> — выделите свой профиль",
                 "priority": "🚀 <b>Приоритет профиля</b> — получайте больше просмотров",
                 "more": "🔥 <b>Больше просмотров → больше Like → больше Match!</b>",
@@ -1791,6 +1793,7 @@ async def handle_callback(update, context):
                 "unlimited_likes": "❤️ <b>Чексиз Like</b> — имкониятларни ўтказиб юборманг",
                 "direct": "✉️ <b>Matchни кутмасдан ёзинг</b> — ёққан инсонгиз билан дарҳол суҳбат бошланг",
                 "who": "👀 <b>Сизни ким ёқтирганини кўринг</b> — ким сизга қизиқиш билдирганини билинг",
+            "bonus": "🎁 <b>БОНУС</b> — ⭐ Суперлайк бепул тақдим этилади",
                 "badge": "⭐️ <b>Premium белгиси</b> — профилингизни ажратиб туринг",
                 "priority": "🚀 <b>Профиль устуворлиги</b> — кўпроқ кўринишга эга бўлинг",
                 "more": "🔥 <b>Кўпроқ кўриниш → кўпроқ Like → кўпроқ Match!</b>",
@@ -1819,6 +1822,7 @@ async def handle_callback(update, context):
             f'{t["unlimited_likes"]}\n'
             f'{t["direct"]}\n'
             f'{t["who"]}\n'
+            f'{t["bonus"]}\n'
             f'{t["badge"]}\n'
             f'{t["priority"]}\n\n'
             f'{t["more"]}\n\n'
