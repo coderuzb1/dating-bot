@@ -605,9 +605,7 @@ async def notify_new_match(
     text2 = build_text(recipient2, target2)
 
     try:
-        if not notification_already_sent(
-            user1_id, "match", user2_id, hours=24 * 30
-        ):
+        if True:
             try:
                 if user2_photo:
                     await bot.send_photo(
@@ -642,9 +640,7 @@ async def notify_new_match(
         print(f"Match user1 error: {e!r}")
 
     try:
-        if not notification_already_sent(
-            user2_id, "match", user1_id, hours=24 * 30
-        ):
+        if True:
             try:
                 if user1_photo:
                     await bot.send_photo(
