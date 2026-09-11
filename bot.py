@@ -1450,14 +1450,6 @@ async def handle_callback(update, context):
         except Exception as e:
             print(f"Skip liker message delete error: {e}")
 
-        # Qolgan Like qilganlarni qayta ko'rsatish
-        try:
-            await who_liked_me(update, context)
-        except Exception as e:
-            print(f"Who liked me refresh error: {e}")
-            await query.message.reply_text(
-                "👎 O'tkazib yuborildi."
-            )
 
         return
 
