@@ -1516,13 +1516,21 @@ async def handle_callback(update, context):
 
                     match_created = True
 
-            # Like qaytarilgandan keyin "Meni yoqtirganlar"dan
-            # ushbu profilni butunlay olib tashlaymiz.
+            # Like qaytarilgandan keyin ikkala Like ham yakunlangan.
+            # Match keyinchalik o'chirilsa ham qayta chiqmasligi uchun
+            # ikkala tarafdagi Like'ni o'chiramiz.
             cur.execute("""
                 DELETE FROM likes
-                WHERE from_user = %s
-                  AND to_user = %s
-            """, (target_id, user.id))
+                WHERE
+                    (from_user = %s AND to_user = %s)
+                    OR
+                    (from_user = %s AND to_user = %s)
+            """, (
+                user.id,
+                target_id,
+                target_id,
+                user.id
+            ))
 
             conn.commit()
 
@@ -1667,6 +1675,22 @@ async def handle_callback(update, context):
                     """, (user.id, target_id))
 
                     match_created = True
+
+            # Match bo'lganda ikkala Like ham yakunlangan.
+            # Match oldindan mavjud bo'lsa ham Like'lar qayta chiqmasin.
+            if other_like:
+                cur.execute("""
+                    DELETE FROM likes
+                    WHERE
+                        (from_user = %s AND to_user = %s)
+                        OR
+                        (from_user = %s AND to_user = %s)
+                """, (
+                    user.id,
+                    target_id,
+                    target_id,
+                    user.id
+                ))
 
             conn.commit()
 
@@ -3990,6 +4014,23 @@ async def handle_callback(update, context):
         is_new_match = False
 
         if mutual_like:
+            # Mutual Like yakunlandi — ikkala Like ham darhol o'chiriladi.
+            # Match keyinchalik o'chirilsa ham Like qayta paydo bo'lmaydi.
+            cur.execute(
+                """
+                DELETE FROM likes
+                WHERE
+                    (from_user = %s AND to_user = %s)
+                    OR
+                    (from_user = %s AND to_user = %s)
+                """,
+                (
+                    user.id,
+                    target_id,
+                    target_id,
+                    user.id
+                )
+            )
             cur.execute(
                 """
                 SELECT EXISTS(
@@ -4040,6 +4081,22 @@ async def handle_callback(update, context):
                 )
 
                 is_new_match = True
+
+        # Mutual Like bo'lsa, Match yangi yoki eski bo'lishidan qat'i nazar,
+        # ikkala Like yozuvini yakuniy tozalaymiz.
+        if mutual_like:
+            cur.execute("""
+                DELETE FROM likes
+                WHERE
+                    (from_user = %s AND to_user = %s)
+                    OR
+                    (from_user = %s AND to_user = %s)
+            """, (
+                user.id,
+                target_id,
+                target_id,
+                user.id
+            ))
 
         conn.commit()
         cur.close()
@@ -4206,6 +4263,23 @@ async def handle_callback(update, context):
         is_new_match = False
 
         if mutual_like:
+            # Mutual Like yakunlandi — ikkala Like ham darhol o'chiriladi.
+            # Match keyinchalik o'chirilsa ham Like qayta paydo bo'lmaydi.
+            cur.execute(
+                """
+                DELETE FROM likes
+                WHERE
+                    (from_user = %s AND to_user = %s)
+                    OR
+                    (from_user = %s AND to_user = %s)
+                """,
+                (
+                    user.id,
+                    target_id,
+                    target_id,
+                    user.id
+                )
+            )
 
             cur.execute(
                 """
@@ -4265,6 +4339,22 @@ async def handle_callback(update, context):
                 )
 
                 is_new_match = True
+
+        # Mutual Like bo'lsa, Match yangi yoki eski bo'lishidan qat'i nazar,
+        # ikkala Like yozuvini yakuniy tozalaymiz.
+        if mutual_like:
+            cur.execute("""
+                DELETE FROM likes
+                WHERE
+                    (from_user = %s AND to_user = %s)
+                    OR
+                    (from_user = %s AND to_user = %s)
+            """, (
+                user.id,
+                target_id,
+                target_id,
+                user.id
+            ))
 
         conn.commit()
         cur.close()
