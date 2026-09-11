@@ -1525,43 +1525,6 @@ async def retention_job(context):
         context.bot
     )
 
-    # =========================================================
-    # 7 KUNLIK MATCH CLEANUP
-    # Faqat 7 kundan eski matchlarni o'chiradi.
-    # Boshqa funksiyalarga ta'sir qilmasligi uchun alohida try/except.
-    # =========================================================
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        cur.execute(
-            """
-            DELETE FROM matches
-            WHERE created_at < NOW() - INTERVAL '7 days'
-            """
-        )
-
-        deleted_count = cur.rowcount
-        conn.commit()
-
-        cur.close()
-        conn.close()
-
-        print(
-            f"🧹 7 kundan eski matchlar tozalandi: "
-            f"{deleted_count} ta"
-        )
-
-    except Exception as e:
-        print(f"⚠️ Match cleanup xatosi: {e}")
-        try:
-            conn.rollback()
-            cur.close()
-            conn.close()
-        except Exception:
-            pass
-
-
 # =========================================================
 # PREMIUM TUGASHIGA 1 KUN QOLGANDA
 # FAQAT OXIRGI KUN — 20% CHEGIRMA
