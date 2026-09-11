@@ -608,15 +608,24 @@ async def notify_new_match(
         if not notification_already_sent(
             user1_id, "match", user2_id, hours=24 * 30
         ):
-            if user2_photo:
-                await bot.send_photo(
-                    chat_id=user1_id,
-                    photo=user2_photo,
-                    caption=text1,
-                    parse_mode="HTML",
-                    reply_markup=keyboard1
-                )
-            else:
+            try:
+                if user2_photo:
+                    await bot.send_photo(
+                        chat_id=user1_id,
+                        photo=user2_photo,
+                        caption=text1,
+                        parse_mode="HTML",
+                        reply_markup=keyboard1
+                    )
+                else:
+                    await bot.send_message(
+                        chat_id=user1_id,
+                        text=text1,
+                        parse_mode="HTML",
+                        reply_markup=keyboard1
+                    )
+            except Exception as photo_error:
+                print(f"Match user1 photo send error, retrying without photo: {photo_error!r}")
                 await bot.send_message(
                     chat_id=user1_id,
                     text=text1,
@@ -636,15 +645,24 @@ async def notify_new_match(
         if not notification_already_sent(
             user2_id, "match", user1_id, hours=24 * 30
         ):
-            if user1_photo:
-                await bot.send_photo(
-                    chat_id=user2_id,
-                    photo=user1_photo,
-                    caption=text2,
-                    parse_mode="HTML",
-                    reply_markup=keyboard2
-                )
-            else:
+            try:
+                if user1_photo:
+                    await bot.send_photo(
+                        chat_id=user2_id,
+                        photo=user1_photo,
+                        caption=text2,
+                        parse_mode="HTML",
+                        reply_markup=keyboard2
+                    )
+                else:
+                    await bot.send_message(
+                        chat_id=user2_id,
+                        text=text2,
+                        parse_mode="HTML",
+                        reply_markup=keyboard2
+                    )
+            except Exception as photo_error:
+                print(f"Match user2 photo send error, retrying without photo: {photo_error!r}")
                 await bot.send_message(
                     chat_id=user2_id,
                     text=text2,
