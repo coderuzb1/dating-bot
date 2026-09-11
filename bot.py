@@ -4019,6 +4019,26 @@ async def handle_callback(update, context):
                     """,
                     (user.id, target_id)
                 )
+
+                # Match bo'lgach, ikkala Like/Superlike ham yakunlangan.
+                # Match keyinchalik o'chirilsa ham qayta ko'rinmasligi uchun
+                # ikkala Like yozuvini o'chiramiz.
+                cur.execute(
+                    """
+                    DELETE FROM likes
+                    WHERE
+                        (from_user = %s AND to_user = %s)
+                        OR
+                        (from_user = %s AND to_user = %s)
+                    """,
+                    (
+                        user.id,
+                        target_id,
+                        target_id,
+                        user.id
+                    )
+                )
+
                 is_new_match = True
 
         conn.commit()
@@ -4222,6 +4242,25 @@ async def handle_callback(update, context):
                     (
                         user.id,
                         target_id
+                    )
+                )
+
+                # Match bo'lgach, ikkala Like ham yakunlangan.
+                # Keyinchalik Match o'chirilsa ham qayta ko'rinmasligi uchun
+                # ikkala Like'ni likes jadvalidan o'chiramiz.
+                cur.execute(
+                    """
+                    DELETE FROM likes
+                    WHERE
+                        (from_user = %s AND to_user = %s)
+                        OR
+                        (from_user = %s AND to_user = %s)
+                    """,
+                    (
+                        user.id,
+                        target_id,
+                        target_id,
+                        user.id
                     )
                 )
 
