@@ -5454,7 +5454,8 @@ async def who_liked_me(update, context):
             u.first_name,
             u.age,
             u.photo,
-            u.city
+            u.city,
+            COALESCE(l.is_superlike, FALSE) AS is_superlike
         FROM likes l
         JOIN users u ON u.user_id = l.from_user
         WHERE l.to_user = %s
@@ -5470,12 +5471,14 @@ async def who_liked_me(update, context):
                   (m.user1 = l.from_user AND m.user2 = %s)
           )
 
-          -- Dislike qilinganlar qayta chiqmaydi
+          -- Oddiy Like uchun Dislike filtri ishlaydi.
+          -- Superlike esa eski Dislike bo'lsa ham ko'rinadi.
           AND NOT EXISTS (
               SELECT 1
               FROM skips s
               WHERE s.from_user = %s
                 AND s.to_user = l.from_user
+                AND COALESCE(l.is_superlike, FALSE) = FALSE
           )
 
         ORDER BY
@@ -5494,11 +5497,13 @@ async def who_liked_me(update, context):
 
     await message.reply_text(t["title"], parse_mode="HTML")
 
-    for liker_id, first_name, age, photo, city in rows:
+    for liker_id, first_name, age, photo, city, is_superlike in rows:
+        superlike_badge = " ⭐ SUPERLIKE" if is_superlike else ""
+
         caption = (
-            f"👤 <b>{first_name}</b>, {age}\n"
+            f"👤 <b>{first_name}</b>{superlike_badge}, {age}\n"
             f"📍 {city or '—'}\n\n"
-            "❤️ <b>Sizga Like bosgan</b>"
+            f"{'⭐ <b>Sizga SUPERLIKE yubordi</b>' if is_superlike else '❤️ <b>Sizga Like bosgan</b>'}"
         )
 
         keyboard = InlineKeyboardMarkup([
