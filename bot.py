@@ -5471,16 +5471,6 @@ async def who_liked_me(update, context):
                   (m.user1 = l.from_user AND m.user2 = %s)
           )
 
-          -- Oddiy Like uchun Dislike filtri ishlaydi.
-          -- Superlike esa eski Dislike bo'lsa ham ko'rinadi.
-          AND NOT EXISTS (
-              SELECT 1
-              FROM skips s
-              WHERE s.from_user = %s
-                AND s.to_user = l.from_user
-                AND COALESCE(l.is_superlike, FALSE) = FALSE
-          )
-
         ORDER BY
             COALESCE(l.is_superlike, FALSE) DESC,
             l.created_at DESC
