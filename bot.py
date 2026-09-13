@@ -5475,7 +5475,7 @@ async def who_liked_me(update, context):
         ORDER BY
             COALESCE(l.is_superlike, FALSE) DESC,
             l.created_at DESC
-    """, (user.id, user.id, user.id, user.id))
+    """, (user.id, user.id, user.id))
 
     rows = cur.fetchall()
 
