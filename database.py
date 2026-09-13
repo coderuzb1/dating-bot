@@ -84,6 +84,11 @@ def init_db():
         ADD COLUMN IF NOT EXISTS last_active TIMESTAMP DEFAULT NOW()
     """)
 
+    cur.execute("""
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS channel_promo_sent BOOLEAN DEFAULT FALSE
+    """)
+
     # Eski foydalanuvchilarda NULL bo'lsa
     cur.execute("""
         UPDATE users

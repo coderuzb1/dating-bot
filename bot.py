@@ -1,4 +1,5 @@
 import os
+import asyncio
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from database import init_db, get_db_connection
@@ -8191,6 +8192,119 @@ async def broadcast_confirm_callback(update, context):
             pass
 
 
+
+async def channel_promo(update, context):
+    """Sara Match Community reklamasini foydalanuvchilarga bir marta yuborish."""
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "📢 Sara Match Community",
+                url="https://t.me/saramatch_community"
+            )
+        ]
+    ])
+
+    promo_text = (
+        "📢 <b>Sara Match rasmiy kanaliga a’zo bo‘ling!</b>\n\n"
+        "❤️ Yangiliklar, aksiyalar, bonuslar va yangi imkoniyatlardan "
+        "birinchi bo‘lib xabardor bo‘ling!\n\n"
+        "👇 <b>Kanalimizni kuzatib boring!</b>"
+    )
+
+    conn = None
+    cur = None
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT user_id
+            FROM users
+            WHERE COALESCE(channel_promo_sent, FALSE) = FALSE
+            ORDER BY user_id
+        """)
+
+        users = cur.fetchall()
+
+        total = len(users)
+        sent = 0
+        failed = 0
+
+        await update.message.reply_text(
+            f"⏳ Kanal reklamasi yuborilmoqda...\n"
+            f"👥 Navbatdagi foydalanuvchilar: {total}"
+        )
+
+        for (user_id,) in users:
+            try:
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text=promo_text,
+                    parse_mode="HTML",
+                    reply_markup=keyboard
+                )
+
+                cur.execute("""
+                    UPDATE users
+                    SET channel_promo_sent = TRUE
+                    WHERE user_id = %s
+                """, (user_id,))
+                conn.commit()
+
+                sent += 1
+
+                # Telegram flood limitiga tushib qolmaslik uchun
+                await asyncio.sleep(0.08)
+
+            except Exception as e:
+                failed += 1
+                print(f"Channel promo yuborilmadi {user_id}: {e}")
+
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+
+        await update.message.reply_text(
+            "✅ <b>Sara Match Community reklamasi tugadi!</b>\n\n"
+            f"📨 Yuborildi: {sent}\n"
+            f"❌ Yuborilmadi: {failed}\n"
+            f"👥 Jami navbatda: {total}\n\n"
+            "ℹ️ Muvaffaqiyatli yuborilganlar qayta yuborilmaydi.",
+            parse_mode="HTML"
+        )
+
+    except Exception as e:
+        print(f"Channel promo umumiy xato: {e}")
+
+        try:
+            await update.message.reply_text(
+                f"❌ Xatolik yuz berdi:\n{e}"
+            )
+        except Exception:
+            pass
+
+    finally:
+        try:
+            if cur:
+                cur.close()
+        except Exception:
+            pass
+
+        try:
+            if conn:
+                conn.close()
+        except Exception:
+            pass
+
+
 def main():
     from flask import Flask
     flask_app = Flask(__name__)
@@ -8290,6 +8404,7 @@ def main():
         group=-2
     )
     app.add_handler(CommandHandler("broadcast", broadcast))
+    app.add_handler(CommandHandler("channelpromo", channel_promo))
     app.add_handler(CommandHandler("find", find))
     app.add_handler(CommandHandler("profile", profile))
     app.add_handler(CommandHandler("matches", matches))
