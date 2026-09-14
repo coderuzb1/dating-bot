@@ -8253,8 +8253,8 @@ async def channel_promo_text(update, context):
     ])
 
     await update.message.reply_text(
-        "👀 <b>PREVIEW:</b>\n\n" + text,
-        parse_mode=None,
+        text,
+        parse_mode="HTML",
         reply_markup=keyboard
     )
 
