@@ -8194,12 +8194,151 @@ async def broadcast_confirm_callback(update, context):
 
 
 async def channel_promo(update, context):
-    """Sara Match Community reklamasini foydalanuvchilarga bir marta yuborish."""
+    """Sara Match Community uchun yangi reklama kampaniyasini boshlash."""
     user = update.effective_user
 
     if user.id != ADMIN_ID:
         await update.message.reply_text("⛔ Siz admin emassiz!")
         return
+
+    context.user_data["channel_promo_waiting"] = True
+    context.user_data.pop("channel_promo_text", None)
+    context.user_data.pop("channel_promo_photo", None)
+
+    await update.message.reply_text(
+        "📢 <b>Channel Promo</b>\n\n"
+        "Yuboriladigan reklama xabarini yuboring.\n\n"
+        "📝 Faqat matn yuborishingiz mumkin.\n"
+        "🖼 Rasm + caption ham yuborishingiz mumkin.\n\n"
+        "Keyin sizga preview va tasdiqlash tugmalari chiqadi.",
+        parse_mode="HTML"
+    )
+
+
+async def channel_promo_text(update, context):
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        return
+
+    if not context.user_data.get("channel_promo_waiting"):
+        return
+
+    text = update.message.text
+
+    if not text:
+        return
+
+    context.user_data["channel_promo_waiting"] = False
+    context.user_data["channel_promo_text"] = text
+    context.user_data.pop("channel_promo_photo", None)
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "📢 Sara Match Community",
+                url="https://t.me/saramatch_community"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "✅ Yuborish",
+                callback_data="confirm_channel_promo"
+            ),
+            InlineKeyboardButton(
+                "❌ Bekor qilish",
+                callback_data="cancel_channel_promo"
+            )
+        ]
+    ])
+
+    await update.message.reply_text(
+        "👀 <b>PREVIEW:</b>\n\n" + text,
+        parse_mode=None,
+        reply_markup=keyboard
+    )
+
+
+async def channel_promo_photo(update, context):
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        return
+
+    if not context.user_data.get("channel_promo_waiting"):
+        return
+
+    photo = update.message.photo[-1]
+    caption = update.message.caption or ""
+
+    context.user_data["channel_promo_waiting"] = False
+    context.user_data["channel_promo_photo"] = photo.file_id
+    context.user_data["channel_promo_text"] = caption
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "📢 Sara Match Community",
+                url="https://t.me/saramatch_community"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "✅ Yuborish",
+                callback_data="confirm_channel_promo"
+            ),
+            InlineKeyboardButton(
+                "❌ Bekor qilish",
+                callback_data="cancel_channel_promo"
+            )
+        ]
+    ])
+
+    await update.message.reply_photo(
+        photo=photo.file_id,
+        caption=caption if caption else None,
+        reply_markup=keyboard
+    )
+
+
+async def channel_promo_confirm_callback(update, context):
+    query = update.callback_query
+
+    await query.answer()
+
+    if query.from_user.id != ADMIN_ID:
+        return
+
+    data = query.data
+
+    if data == "cancel_channel_promo":
+        context.user_data.pop("channel_promo_waiting", None)
+        context.user_data.pop("channel_promo_text", None)
+        context.user_data.pop("channel_promo_photo", None)
+
+        try:
+            await query.edit_message_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+
+        await query.message.reply_text("❌ Channel Promo bekor qilindi.")
+        return
+
+    if data != "confirm_channel_promo":
+        return
+
+    promo_text = context.user_data.get("channel_promo_text")
+    promo_photo = context.user_data.get("channel_promo_photo")
+
+    if not promo_text and not promo_photo:
+        await query.message.reply_text(
+            "❌ Reklama xabari topilmadi. /channelpromo orqali qaytadan boshlang."
+        )
+        return
+
+    context.user_data.pop("channel_promo_waiting", None)
+    context.user_data.pop("channel_promo_text", None)
+    context.user_data.pop("channel_promo_photo", None)
 
     keyboard = InlineKeyboardMarkup([
         [
@@ -8210,53 +8349,48 @@ async def channel_promo(update, context):
         ]
     ])
 
-    promo_text = (
-        "📢 <b>Sara Match rasmiy kanaliga a’zo bo‘ling!</b>\n\n"
-        "❤️ Yangiliklar, aksiyalar, bonuslar va yangi imkoniyatlardan "
-        "birinchi bo‘lib xabardor bo‘ling!\n\n"
-        "👇 <b>Kanalimizni kuzatib boring!</b>"
-    )
-
     conn = None
     cur = None
 
     try:
+        await query.edit_message_reply_markup(reply_markup=None)
+
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # Har bir yangi kampaniya barcha foydalanuvchilarga yuboriladi.
+        # Oldingi channel_promo_sent qiymati bu yerda ishlatilmaydi.
         cur.execute("""
             SELECT user_id
             FROM users
-            WHERE COALESCE(channel_promo_sent, FALSE) = FALSE
             ORDER BY user_id
         """)
 
         users = cur.fetchall()
-
         total = len(users)
         sent = 0
         failed = 0
 
-        await update.message.reply_text(
-            f"⏳ Kanal reklamasi yuborilmoqda...\n"
-            f"👥 Navbatdagi foydalanuvchilar: {total}"
+        await query.message.reply_text(
+            f"⏳ Channel Promo yuborilmoqda...\n"
+            f"👥 Jami foydalanuvchilar: {total}"
         )
 
         for (user_id,) in users:
             try:
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text=promo_text,
-                    parse_mode="HTML",
-                    reply_markup=keyboard
-                )
-
-                cur.execute("""
-                    UPDATE users
-                    SET channel_promo_sent = TRUE
-                    WHERE user_id = %s
-                """, (user_id,))
-                conn.commit()
+                if promo_photo:
+                    await context.bot.send_photo(
+                        chat_id=user_id,
+                        photo=promo_photo,
+                        caption=promo_text if promo_text else None,
+                        reply_markup=keyboard
+                    )
+                else:
+                    await context.bot.send_message(
+                        chat_id=user_id,
+                        text=promo_text,
+                        reply_markup=keyboard
+                    )
 
                 sent += 1
 
@@ -8267,17 +8401,11 @@ async def channel_promo(update, context):
                 failed += 1
                 print(f"Channel promo yuborilmadi {user_id}: {e}")
 
-                try:
-                    conn.rollback()
-                except Exception:
-                    pass
-
-        await update.message.reply_text(
-            "✅ <b>Sara Match Community reklamasi tugadi!</b>\n\n"
+        await query.message.reply_text(
+            "✅ <b>Channel Promo tugadi!</b>\n\n"
             f"📨 Yuborildi: {sent}\n"
             f"❌ Yuborilmadi: {failed}\n"
-            f"👥 Jami navbatda: {total}\n\n"
-            "ℹ️ Muvaffaqiyatli yuborilganlar qayta yuborilmaydi.",
+            f"👥 Jami: {total}",
             parse_mode="HTML"
         )
 
@@ -8285,7 +8413,7 @@ async def channel_promo(update, context):
         print(f"Channel promo umumiy xato: {e}")
 
         try:
-            await update.message.reply_text(
+            await query.message.reply_text(
                 f"❌ Xatolik yuz berdi:\n{e}"
             )
         except Exception:
@@ -8303,7 +8431,6 @@ async def channel_promo(update, context):
                 conn.close()
         except Exception:
             pass
-
 
 def main():
     from flask import Flask
@@ -8405,6 +8532,27 @@ def main():
     )
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("channelpromo", channel_promo))
+    app.add_handler(
+        MessageHandler(
+            filters.PHOTO,
+            channel_promo_photo
+        ),
+        group=-3
+    )
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            channel_promo_text
+        ),
+        group=-3
+    )
+    app.add_handler(
+        CallbackQueryHandler(
+            channel_promo_confirm_callback,
+            pattern=r"^(confirm_channel_promo|cancel_channel_promo)$"
+        ),
+        group=-2
+    )
     app.add_handler(CommandHandler("find", find))
     app.add_handler(CommandHandler("profile", profile))
     app.add_handler(CommandHandler("matches", matches))
