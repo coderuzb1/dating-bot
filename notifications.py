@@ -1051,9 +1051,11 @@ async def notify_news(bot, text):
 
     cur.execute(
         """
-        SELECT user_id
-        FROM users
-        WHERE is_blocked = FALSE
+        SELECT su.user_id
+        FROM start_users su
+        LEFT JOIN users u ON u.user_id = su.user_id
+        WHERE COALESCE(u.is_blocked, FALSE) = FALSE
+        ORDER BY su.user_id
         """
     )
 

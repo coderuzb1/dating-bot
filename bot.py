@@ -360,6 +360,53 @@ async def get_main_keyboard(language="uz"):
 async def start(update, context):
     user = update.effective_user
 
+    # /start bosgan HAR BIR Telegram foydalanuvchini saqlab boramiz.
+    # Bu jadval to'liq registratsiyadan o'tmagan foydalanuvchilar uchun ham ishlaydi.
+    try:
+        start_conn = get_db_connection()
+        start_cur = start_conn.cursor()
+
+        start_cur.execute("""
+            CREATE TABLE IF NOT EXISTS start_users (
+                user_id BIGINT PRIMARY KEY,
+                first_started_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        """)
+
+        start_cur.execute("""
+            INSERT INTO start_users (user_id)
+            VALUES (%s)
+            ON CONFLICT (user_id) DO NOTHING
+        """, (user.id,))
+
+        start_conn.commit()
+        start_cur.close()
+        start_conn.close()
+
+    except Exception as e:
+        print(f"Start user save error: {e}")
+
+    # Eski foydalanuvchilarni start_users jadvaliga qo'shish.
+    # Mavjud ID'lar ON CONFLICT sabab takrorlanmaydi.
+    try:
+        migrate_conn = get_db_connection()
+        migrate_cur = migrate_conn.cursor()
+
+        migrate_cur.execute("""
+            INSERT INTO start_users (user_id)
+            SELECT user_id
+            FROM users
+            ON CONFLICT (user_id) DO NOTHING
+        """)
+
+        migrate_conn.commit()
+        migrate_cur.close()
+        migrate_conn.close()
+
+    except Exception as e:
+        print(f"Old users migration error: {e}")
+
+
     if context.args and context.args[0].startswith("ref_"):
         try:
             referrer_id = int(context.args[0].replace("ref_", ""))
@@ -8358,12 +8405,15 @@ async def channel_promo_confirm_callback(update, context):
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Har bir yangi kampaniya barcha foydalanuvchilarga yuboriladi.
-        # Oldingi channel_promo_sent qiymati bu yerda ishlatilmaydi.
+        # /start bosgan barcha foydalanuvchilarga yuboriladi.
+        # To'liq registratsiyadan o'tmaganlar ham shu ro'yxatda bo'ladi.
+        # Bloklangan users bundan chiqarib tashlanadi.
         cur.execute("""
-            SELECT user_id
-            FROM users
-            ORDER BY user_id
+            SELECT su.user_id
+            FROM start_users su
+            LEFT JOIN users u ON u.user_id = su.user_id
+            WHERE COALESCE(u.is_blocked, FALSE) = FALSE
+            ORDER BY su.user_id
         """)
 
         users = cur.fetchall()
