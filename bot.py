@@ -8499,6 +8499,37 @@ def main():
         return
     
     init_db()
+
+    # =========================================================
+    # START USERS TABLE + ESKI USERS MIGRATION
+    # =========================================================
+    try:
+        start_conn = get_db_connection()
+        start_cur = start_conn.cursor()
+
+        start_cur.execute("""
+            CREATE TABLE IF NOT EXISTS start_users (
+                user_id BIGINT PRIMARY KEY,
+                first_started_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        """)
+
+        start_cur.execute("""
+            INSERT INTO start_users (user_id)
+            SELECT user_id
+            FROM users
+            ON CONFLICT (user_id) DO NOTHING
+        """)
+
+        start_conn.commit()
+        start_cur.close()
+        start_conn.close()
+
+        print("start_users: jadval tayyor, eski users migratsiya qilindi")
+
+    except Exception as e:
+        print(f"Start users migration error: {e}")
+
     app = Application.builder().token(TOKEN).build()
     
     conv_handler = ConversationHandler(
