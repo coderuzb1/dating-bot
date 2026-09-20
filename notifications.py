@@ -1067,8 +1067,8 @@ async def notify_news(bot, text):
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "🎁 PREMIUM OLISH",
-                callback_data="premium"
+                "🤝 Quick Match",
+                url="https://t.me/QuickMachtTanishuvBot"
             )
         ]
     ])
