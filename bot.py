@@ -1164,7 +1164,6 @@ async def find(update, context):
             photo, city, is_active, premium_until, created_at
         FROM users
         WHERE user_id != %s
-          AND is_active = TRUE
           AND gender != %s
           AND user_id NOT IN (
               SELECT to_user FROM likes WHERE from_user = %s
@@ -1186,6 +1185,41 @@ async def find(update, context):
     )
 
     target = cur.fetchone()
+
+    # Barcha ko‘rilmagan profillar tugaganda boshidan qayta aylantiramiz.
+    if not target:
+        cur.execute(
+            """
+            DELETE FROM profile_views
+            WHERE user_id = %s
+            """,
+            (user.id,),
+        )
+        conn.commit()
+
+        cur.execute(
+            """
+            SELECT
+                user_id, username, first_name, age, gender, bio,
+                photo, city, is_active, premium_until, created_at
+            FROM users
+            WHERE user_id != %s
+              AND gender != %s
+              AND user_id NOT IN (
+                  SELECT to_user FROM likes WHERE from_user = %s
+              )
+              AND user_id NOT IN (
+                  SELECT to_user FROM skips WHERE from_user = %s
+              )
+            ORDER BY
+                CASE WHEN city = %s THEN 0 ELSE 1 END,
+                created_at DESC
+            LIMIT 1
+            """,
+            (user.id, my_gender, user.id, user.id, my_city),
+        )
+
+        target = cur.fetchone()
 
     if not target:
         cur.close()
