@@ -6726,10 +6726,12 @@ async def handle_message(update, context):
         except Exception as e:
             print(f"❌ Xabar yuborishda xatolik: {type(e).__name__}: {e}")
 
-            if "Forbidden" in type(e).__name__ or "bot was blocked" in str(e).lower():
+            error_text = str(e).lower()
+
+            if "bot was blocked by the user" in error_text:
                 await update.message.reply_text(
                     "⚠️ Xabarni yetkazib bo'lmadi. "
-                    "Foydalanuvchi botni bloklagan bo'lishi mumkin."
+                    "Foydalanuvchi botni bloklagan."
                 )
             else:
                 await update.message.reply_text(
