@@ -372,23 +372,31 @@ async def notify_like(
             from_user_id
         )
 
-    except Forbidden:
-        print(f"🚫 Like recipient blocked bot: {to_user_id}")
+    except Forbidden as e:
+        error_text = str(e).lower()
 
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            cur.execute(
-                "UPDATE users SET is_active = FALSE WHERE user_id = %s",
-                (to_user_id,)
-            )
-            conn.commit()
-            cur.close()
-            conn.close()
-        except Exception as db_error:
+        if "bot was blocked by the user" in error_text:
+            print(f"🚫 Like recipient blocked bot: {to_user_id}")
+
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    "UPDATE users SET is_active = FALSE WHERE user_id = %s",
+                    (to_user_id,)
+                )
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as db_error:
+                print(
+                    f"❌ Could not deactivate blocked like recipient "
+                    f"{to_user_id}: {db_error}"
+                )
+        else:
             print(
-                f"❌ Could not deactivate blocked like recipient "
-                f"{to_user_id}: {db_error}"
+                f"⚠️ Like notification Forbidden for {to_user_id}: "
+                f"{e!r}"
             )
 
     except Exception as e:
