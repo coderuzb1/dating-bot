@@ -6730,13 +6730,11 @@ async def handle_message(update, context):
 
             if "bot was blocked by the user" in error_text:
                 await update.message.reply_text(
-                    "⚠️ Xabarni yetkazib bo'lmadi. "
-                    "Foydalanuvchi botni bloklagan."
+                    "⚠️ Xabarni yetkazib bo'lmadi."
                 )
             else:
                 await update.message.reply_text(
-                    "⚠️ Xabarni yetkazib bo'lmadi. "
-                    "Texnik xatolik yuz berdi."
+                    "⚠️ Xabarni yetkazib bo'lmadi."
                 )
 
         return
