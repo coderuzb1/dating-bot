@@ -6665,7 +6665,11 @@ async def handle_message(update, context):
         )
 
         cur.execute(
-            "SELECT first_name FROM users WHERE user_id = %s",
+            """
+            SELECT first_name, COALESCE(is_blocked, FALSE)
+            FROM users
+            WHERE user_id = %s
+            """,
             (target_id,)
         )
 
@@ -6680,6 +6684,12 @@ async def handle_message(update, context):
 
             await update.message.reply_text(
                 "❌ Foydalanuvchi topilmadi."
+            )
+            return
+
+        if target[1]:
+            await update.message.reply_text(
+                "⚠️ Bu foydalanuvchiga xabar yuborib bo'lmaydi."
             )
             return
 
@@ -6731,12 +6741,37 @@ async def handle_message(update, context):
             error_text = str(e).lower()
 
             if "bot was blocked by the user" in error_text:
+                try:
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+
+                    cur.execute(
+                        """
+                        UPDATE users
+                        SET is_active = FALSE
+                        WHERE user_id = %s
+                        """,
+                        (target_id,)
+                    )
+
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+
+                    print(f"🚫 User blocked bot, deactivated: {target_id}")
+
+                except Exception as db_error:
+                    print(
+                        f"❌ Blocklangan userni deactivatsiya qilishda xato: "
+                        f"{db_error}"
+                    )
+
                 await update.message.reply_text(
-                    "⚠️ Xabarni yetkazib bo'lmadi."
+                    "⚠️ Xabarni yetkazib bo‘lmadi."
                 )
             else:
                 await update.message.reply_text(
-                    "⚠️ Xabarni yetkazib bo'lmadi."
+                    "⚠️ Xabarni yetkazib bo‘lmadi."
                 )
 
         return
