@@ -64,12 +64,14 @@ async def scheduled_notifications(context):
     print("🔔 Notification scheduler tekshiruvi...")
 
     try:
-        await notify_inactive_users_3_days(context.bot)
+        # await notify_inactive_users_3_days(context.bot)
+        pass
     except Exception as e:
         print(f"3-day notification error: {e}")
 
     try:
-        await notify_inactive_users_7_days(context.bot)
+        # await notify_inactive_users_7_days(context.bot)
+        pass
     except Exception as e:
         print(f"7-day notification error: {e}")
 

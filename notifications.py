@@ -262,23 +262,31 @@ async def safe_send_message(
         )
         return True
 
-    except Forbidden:
-        print(f"🚫 User blocked bot, deactivating: {user_id}")
+    except Forbidden as e:
+        error_text = str(e).lower()
 
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            cur.execute(
-                "UPDATE users SET is_active = FALSE WHERE user_id = %s",
-                (user_id,)
-            )
-            conn.commit()
-            cur.close()
-            conn.close()
-        except Exception as db_error:
+        if "bot was blocked by the user" in error_text:
+            print(f"🚫 User blocked bot, deactivating: {user_id}")
+
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    "UPDATE users SET is_active = FALSE WHERE user_id = %s",
+                    (user_id,)
+                )
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as db_error:
+                print(
+                    f"❌ Could not deactivate blocked user "
+                    f"{user_id}: {db_error}"
+                )
+        else:
             print(
-                f"❌ Could not deactivate blocked user "
-                f"{user_id}: {db_error}"
+                f"⚠️ Forbidden, but not confirmed bot block: "
+                f"user={user_id}, error={e}"
             )
 
         return False
@@ -1120,6 +1128,7 @@ async def notify_news(bot, text):
 # 6) Foydalanuvchi qaytib kirsa notification siklini to'xtatish
 #
 
+RETENTION_ENABLED = False
 RETENTION_FIRST_DAYS = 2
 RETENTION_REPEAT_DAYS = 2
 
@@ -1446,31 +1455,39 @@ async def notify_retention_user(bot, user_id, first_name, last_active):
 
         return True
 
-    except Forbidden:
-        print(
-            f"🚫 Retention paytida bot bloklangan: {user_id}"
-        )
+    except Forbidden as e:
+        error_text = str(e).lower()
 
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-
-            cur.execute(
-                """
-                UPDATE users
-                SET is_active = FALSE
-                WHERE user_id = %s
-                """,
-                (user_id,)
+        if "bot was blocked by the user" in error_text:
+            print(
+                f"🚫 Retention paytida bot bloklangan: {user_id}"
             )
 
-            conn.commit()
-            cur.close()
-            conn.close()
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
 
-        except Exception as e:
+                cur.execute(
+                    """
+                    UPDATE users
+                    SET is_active = FALSE
+                    WHERE user_id = %s
+                    """,
+                    (user_id,)
+                )
+
+                conn.commit()
+                cur.close()
+                conn.close()
+
+            except Exception as e:
+                print(
+                    f"❌ Blocklangan userni o‘chirishda xato: {e}"
+                )
+        else:
             print(
-                f"❌ Blocklangan userni o‘chirishda xato: {e}"
+                f"⚠️ Retention Forbidden, lekin bot bloklangani tasdiqlanmadi: "
+                f"user={user_id}, error={e}"
             )
 
         return False
@@ -1485,6 +1502,9 @@ async def notify_retention_user(bot, user_id, first_name, last_active):
 
 
 async def run_retention_notifications(bot):
+    if not RETENTION_ENABLED:
+        print("⛔ Smart Retention vaqtincha OFF")
+        return
     """
     Barcha mos foydalanuvchilarni tekshiradi.
     """
