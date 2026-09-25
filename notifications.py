@@ -846,6 +846,119 @@ async def notify_new_user_in_city(
             )
 
 
+async def notify_daily_city_profiles(bot):
+    """
+    Har 24 soatda barcha foydalanuvchilarga
+    shahar bo'yicha yangi profillar notificationini yuboradi.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT user_id, city, language
+        FROM users
+        """
+    )
+
+    users = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    if not users:
+        return
+
+    sent_count = 0
+
+    for user_id, city, language in users:
+
+        if notification_already_sent(
+            user_id,
+            "new_city_profiles",
+            None,
+            hours=24
+        ):
+            continue
+
+        if language not in ("uz", "ru", "uz_cyr"):
+            language = "uz"
+
+        city_name = city.strip() if city else ""
+
+        if language == "ru":
+            if city_name:
+                text = (
+                    "🔥 В вашем городе появились новые профили!\n\n"
+                    f"💕 В городе {city_name} вас ждёт новое знакомство.\n\n"
+                    "🔍 Посмотреть новые профили"
+                )
+            else:
+                text = (
+                    "🔥 Появились новые профили!\n\n"
+                    "💕 Возможно, вас уже ждёт новое знакомство.\n\n"
+                    "🔍 Посмотреть новые профили"
+                )
+            button_text = "🔍 Посмотреть новые профили"
+
+        elif language == "uz_cyr":
+            if city_name:
+                text = (
+                    "🔥 Шаҳрингизда янги профиллар пайдо бўлди!\n\n"
+                    f"💕 {city_name} шаҳрида янги танишув сизни кутмоқда.\n\n"
+                    "🔍 Янги профилларни кўриш"
+                )
+            else:
+                text = (
+                    "🔥 Янги профиллар пайдо бўлди!\n\n"
+                    "💕 Балки сизни янги танишув кутмоқдадир.\n\n"
+                    "🔍 Янги профилларни кўриш"
+                )
+            button_text = "🔍 Янги профилларни кўриш"
+
+        else:
+            if city_name:
+                text = (
+                    "🔥 Shaharingizda yangi profillar paydo bo‘ldi!\n\n"
+                    f"💕 {city_name} shahrida yangi tanishuv sizni kutmoqda.\n\n"
+                    "🔍 Yangi profillarni ko‘rish"
+                )
+            else:
+                text = (
+                    "🔥 Yangi profillar paydo bo‘ldi!\n\n"
+                    "💕 Balki sizni yangi tanishuv kutayotgandir.\n\n"
+                    "🔍 Yangi profillarni ko‘rish"
+                )
+            button_text = "🔍 Yangi profillarni ko‘rish"
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    button_text,
+                    callback_data="new_city_profiles"
+                )
+            ]
+        ])
+
+        sent = await safe_send_message(
+            bot,
+            user_id,
+            text,
+            keyboard
+        )
+
+        if sent:
+            save_notification(
+                user_id,
+                "new_city_profiles"
+            )
+            sent_count += 1
+
+    print(
+        f"📍 Kundalik shahar notificationi tugadi. "
+        f"Yuborildi: {sent_count} ta"
+    )
+
+
 # Eski API bilan moslik
 async def notify_new_user(
     bot,
@@ -1548,10 +1661,14 @@ async def retention_job(context):
     """
     JobQueue uchun wrapper.
     Har 24 soatda ishga tushadi.
-    Ichida retention notification va 7 kunlik match cleanup ishlaydi.
+    Ichida retention notification va kundalik shahar notificationi ishlaydi.
     """
 
     await run_retention_notifications(
+        context.bot
+    )
+
+    await notify_daily_city_profiles(
         context.bot
     )
 
