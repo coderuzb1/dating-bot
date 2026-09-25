@@ -1672,6 +1672,10 @@ async def retention_job(context):
         context.bot
     )
 
+    await notify_premium_expiring_1_day(
+        context.bot
+    )
+
 # =========================================================
 # PREMIUM TUGASHIGA 1 KUN QOLGANDA
 # FAQAT OXIRGI KUN — 20% CHEGIRMA
@@ -1699,7 +1703,7 @@ async def notify_premium_expiring_1_day(bot):
 
     texts = {
         "uz": (
-            "🚨 Premiumingiz ertaga tugaydi!\n\n"
+            "🚨 Premiumingiz tugashiga 1 kun qoldi!\n\n"
             "👑 Premium imkoniyatlaringizni yo‘qotib qo‘ymang.\n\n"
             "🔥 Faqat BUGUN — 20% CHEGIRMA!\n\n"
             "♾️ Cheksiz profil ko‘rish\n"
@@ -1712,7 +1716,7 @@ async def notify_premium_expiring_1_day(bot):
             "⏰ Chegirma faqat bugun amal qiladi!"
         ),
         "ru": (
-            "🚨 Ваш Premium заканчивается завтра!\n\n"
+            "🚨 Ваш Premium закончится через 1 день!\n\n"
             "👑 Не теряйте возможности Premium.\n\n"
             "🔥 ТОЛЬКО СЕГОДНЯ — СКИДКА 20%!\n\n"
             "♾️ Безлимитный просмотр профилей\n"
@@ -1725,7 +1729,7 @@ async def notify_premium_expiring_1_day(bot):
             "⏰ Скидка действует только сегодня!"
         ),
         "uz_cyr": (
-            "🚨 Premium’ингиз эртага тугайди!\n\n"
+            "🚨 Premium’ингиз тугашига 1 кун қолди!\n\n"
             "👑 Premium имкониятларингизни йўқотиб қўйманг.\n\n"
             "🔥 ФАҚАТ БУГУН — 20% ЧЕГИРМА!\n\n"
             "♾️ Чексиз профил кўриш\n"
