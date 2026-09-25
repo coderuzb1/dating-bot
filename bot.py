@@ -6766,13 +6766,9 @@ async def handle_message(update, context):
                         f"{db_error}"
                     )
 
-                await update.message.reply_text(
-                    "⚠️ Xabarni yetkazib bo‘lmadi."
-                )
+                pass
             else:
-                await update.message.reply_text(
-                    "⚠️ Xabarni yetkazib bo‘lmadi."
-                )
+                pass
 
         return
 
