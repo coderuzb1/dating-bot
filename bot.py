@@ -3605,8 +3605,11 @@ async def handle_callback(update, context):
     if data.startswith("skip_"):
         target_id = int(data.split("_")[1])
         context.user_data["_find_exclude_id"] = target_id
-        await query.message.delete()
         await find(update, context)
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         return
     
     # =====================================================
@@ -4235,12 +4238,15 @@ async def handle_callback(update, context):
                 show_alert=False
             )
 
+        context.user_data["_find_exclude_id"] = target_id
+
+        await find(update, context)
+
         try:
             await query.message.delete()
         except Exception:
             pass
 
-        await find(update, context)
         return
 
     if data.startswith("like_"):
@@ -4496,15 +4502,16 @@ async def handle_callback(update, context):
                 show_alert=False
             )
 
+        context.user_data["_find_exclude_id"] = target_id
+
+        # Keyingi profilni ko'rsatish
+        await find(update, context)
+
         try:
             await query.message.delete()
         except Exception:
             pass
 
-        context.user_data["_find_exclude_id"] = target_id
-
-        # Keyingi profilni ko'rsatish
-        await find(update, context)
         return
 
         await find(
