@@ -1168,22 +1168,23 @@ async def find(update, context):
         WHERE user_id != %s
           AND gender != %s
           AND user_id NOT IN (
-              SELECT to_user FROM likes WHERE from_user = %s
-          )
-          AND user_id NOT IN (
               SELECT to_user FROM skips WHERE from_user = %s
           )
           AND user_id NOT IN (
-              SELECT viewed_user_id
-              FROM profile_views
-              WHERE user_id = %s
+              SELECT
+                  CASE
+                      WHEN user1 = %s THEN user2
+                      WHEN user2 = %s THEN user1
+                  END
+              FROM matches
+              WHERE user1 = %s OR user2 = %s
           )
         ORDER BY
             CASE WHEN city = %s THEN 0 ELSE 1 END,
             created_at DESC
         LIMIT 1
         """,
-        (user.id, my_gender, user.id, user.id, user.id, my_city),
+        (user.id, my_gender, user.id, user.id, user.id, user.id, user.id, my_city),
     )
 
     target = cur.fetchone()
@@ -1208,17 +1209,23 @@ async def find(update, context):
             WHERE user_id != %s
               AND gender != %s
               AND user_id NOT IN (
-                  SELECT to_user FROM likes WHERE from_user = %s
+                  SELECT to_user FROM skips WHERE from_user = %s
               )
               AND user_id NOT IN (
-                  SELECT to_user FROM skips WHERE from_user = %s
+                  SELECT
+                      CASE
+                          WHEN user1 = %s THEN user2
+                          WHEN user2 = %s THEN user1
+                      END
+                  FROM matches
+                  WHERE user1 = %s OR user2 = %s
               )
             ORDER BY
                 CASE WHEN city = %s THEN 0 ELSE 1 END,
                 created_at DESC
             LIMIT 1
             """,
-            (user.id, my_gender, user.id, user.id, my_city),
+            (user.id, my_gender, user.id, user.id, user.id, user.id, user.id, my_city),
         )
 
         target = cur.fetchone()
