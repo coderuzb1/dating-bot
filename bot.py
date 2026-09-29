@@ -1124,6 +1124,9 @@ async def find(update, context):
 
     my_gender, my_city, premium_until = user_data
 
+    # Keyingi profilga o'tishda hozirgi profilni faqat bir marta o'tkazib yuborish
+    exclude_id = context.user_data.pop("_find_exclude_id", None)
+
     cur.execute(
         """
         SELECT EXISTS(
@@ -1179,12 +1182,19 @@ async def find(update, context):
               FROM matches
               WHERE user1 = %s OR user2 = %s
           )
+          AND (%s IS NULL OR user_id != %s)
         ORDER BY
             CASE WHEN city = %s THEN 0 ELSE 1 END,
             created_at DESC
         LIMIT 1
         """,
-        (user.id, my_gender, user.id, user.id, user.id, user.id, user.id, my_city),
+        (
+            user.id, my_gender,
+            user.id,
+            user.id, user.id, user.id, user.id,
+            exclude_id, exclude_id,
+            my_city,
+        ),
     )
 
     target = cur.fetchone()
@@ -1220,12 +1230,19 @@ async def find(update, context):
                   FROM matches
                   WHERE user1 = %s OR user2 = %s
               )
+              AND (%s IS NULL OR user_id != %s)
             ORDER BY
                 CASE WHEN city = %s THEN 0 ELSE 1 END,
                 created_at DESC
             LIMIT 1
             """,
-            (user.id, my_gender, user.id, user.id, user.id, user.id, user.id, my_city),
+            (
+                user.id, my_gender,
+                user.id,
+                user.id, user.id, user.id, user.id,
+                exclude_id, exclude_id,
+                my_city,
+            ),
         )
 
         target = cur.fetchone()
@@ -1843,6 +1860,8 @@ async def handle_callback(update, context):
             await query.message.delete()
         except Exception:
             pass
+
+        context.user_data["_find_exclude_id"] = target_id
 
         await find(update, context)
         return
@@ -3584,6 +3603,8 @@ async def handle_callback(update, context):
         return
 
     if data.startswith("skip_"):
+        target_id = int(data.split("_")[1])
+        context.user_data["_find_exclude_id"] = target_id
         await query.message.delete()
         await find(update, context)
         return
@@ -4479,6 +4500,8 @@ async def handle_callback(update, context):
             await query.message.delete()
         except Exception:
             pass
+
+        context.user_data["_find_exclude_id"] = target_id
 
         # Keyingi profilni ko'rsatish
         await find(update, context)
