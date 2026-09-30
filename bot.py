@@ -1191,7 +1191,7 @@ async def find(update, context):
             created_at DESC
         LIMIT 1
         """,
-        (user.id, my_gender, user.id, user.id, user.id, my_city),
+        (user.id, my_gender, user.id, user.id, user.id, user.id, my_city),
     )
 
     target = cur.fetchone()
