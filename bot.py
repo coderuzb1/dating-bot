@@ -1167,8 +1167,13 @@ async def find(update, context):
         FROM users
         WHERE user_id != %s
           AND gender != %s
-          AND user_id NOT IN (
-              SELECT to_user FROM likes WHERE from_user = %s
+          AND NOT EXISTS (
+              SELECT 1
+              FROM matches
+              WHERE
+                  (matches.user1 = %s AND matches.user2 = users.user_id)
+                  OR
+                  (matches.user2 = %s AND matches.user1 = users.user_id)
           )
           AND NOT EXISTS (
               SELECT 1
@@ -1210,8 +1215,13 @@ async def find(update, context):
             FROM users
             WHERE user_id != %s
               AND gender != %s
-              AND user_id NOT IN (
-                  SELECT to_user FROM likes WHERE from_user = %s
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM matches
+                  WHERE
+                      (matches.user1 = %s AND matches.user2 = users.user_id)
+                      OR
+                      (matches.user2 = %s AND matches.user1 = users.user_id)
               )
               AND NOT EXISTS (
                   SELECT 1
@@ -1220,11 +1230,17 @@ async def find(update, context):
                     AND skips.to_user = users.user_id
               )
             ORDER BY
+                CASE WHEN EXISTS (
+                    SELECT 1
+                    FROM likes
+                    WHERE likes.from_user = %s
+                      AND likes.to_user = users.user_id
+                ) THEN 0 ELSE 1 END,
                 CASE WHEN city = %s THEN 0 ELSE 1 END,
                 created_at DESC
             LIMIT 1
             """,
-            (user.id, my_gender, user.id, user.id, my_city),
+            (user.id, user.id, my_gender, user.id, user.id, user.id, my_city),
         )
 
         target = cur.fetchone()
