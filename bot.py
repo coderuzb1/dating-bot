@@ -1170,8 +1170,11 @@ async def find(update, context):
           AND user_id NOT IN (
               SELECT to_user FROM likes WHERE from_user = %s
           )
-          AND user_id NOT IN (
-              SELECT to_user FROM skips WHERE from_user = %s
+          AND NOT EXISTS (
+              SELECT 1
+              FROM skips
+              WHERE skips.from_user = %s
+                AND skips.to_user = users.user_id
           )
           AND user_id NOT IN (
               SELECT viewed_user_id
@@ -1210,8 +1213,11 @@ async def find(update, context):
               AND user_id NOT IN (
                   SELECT to_user FROM likes WHERE from_user = %s
               )
-              AND user_id NOT IN (
-                  SELECT to_user FROM skips WHERE from_user = %s
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM skips
+                  WHERE skips.from_user = %s
+                    AND skips.to_user = users.user_id
               )
             ORDER BY
                 CASE WHEN city = %s THEN 0 ELSE 1 END,
