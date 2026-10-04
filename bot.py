@@ -8274,6 +8274,149 @@ async def approve_sl(update, context):
     except:
         await update.message.reply_text("❌ Format: /approvesl USER_ID MIQDOR")
 
+async def zmatch(update, context):
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("⛔ Siz admin emassiz!")
+        return
+
+    context.user_data["zmatch_waiting"] = True
+    context.user_data.pop("zmatch_text", None)
+
+    await update.message.reply_text(
+        "🤝 <b>Z Match reklama</b>\n\n"
+        "Yuboriladigan reklama matnini yuboring.\n\n"
+        "⚠️ Matn avval sizga preview sifatida ko‘rsatiladi. "
+        "Siz tasdiqlamaguningizcha hech kimga yuborilmaydi.",
+        parse_mode="HTML"
+    )
+
+
+async def zmatch_text(update, context):
+    user = update.effective_user
+
+    if user.id != ADMIN_ID:
+        return
+
+    if not context.user_data.get("zmatch_waiting"):
+        return
+
+    text = update.message.text
+
+    if not text or not text.strip():
+        return
+
+    context.user_data["zmatch_waiting"] = False
+    context.user_data["zmatch_text"] = text
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "🤝 Z Match bot",
+                url="https://t.me/zmachtbot"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "✅ Yuborish",
+                callback_data="confirm_zmatch"
+            ),
+            InlineKeyboardButton(
+                "❌ Bekor qilish",
+                callback_data="cancel_zmatch"
+            )
+        ]
+    ])
+
+    await update.message.reply_text(
+        "👀 <b>PREVIEW:</b>\n\n" + text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+
+async def zmatch_confirm_callback(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    if query.from_user.id != ADMIN_ID:
+        return
+
+    data = query.data
+
+    if data == "cancel_zmatch":
+        context.user_data.pop("zmatch_text", None)
+        context.user_data["zmatch_waiting"] = False
+
+        await query.edit_message_text(
+            "❌ Z Match reklamasi bekor qilindi."
+        )
+        return
+
+    if data == "confirm_zmatch":
+        text = context.user_data.get("zmatch_text")
+
+        if not text:
+            await query.edit_message_text(
+                "❌ Reklama matni topilmadi."
+            )
+            return
+
+        context.user_data.pop("zmatch_text", None)
+        context.user_data["zmatch_waiting"] = False
+
+        await query.edit_message_text(
+            "⏳ Z Match reklamasi yuborilmoqda..."
+        )
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT user_id
+            FROM start_users
+            ORDER BY user_id
+            """
+        )
+
+        users = cur.fetchall()
+
+        cur.close()
+        conn.close()
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "🤝 Z Match bot",
+                    url="https://t.me/zmachtbot"
+                )
+            ]
+        ])
+
+        sent_count = 0
+        failed_count = 0
+
+        for row in users:
+            try:
+                await context.bot.send_message(
+                    chat_id=row[0],
+                    text=text,
+                    reply_markup=keyboard,
+                    parse_mode="HTML"
+                )
+                sent_count += 1
+            except Exception:
+                failed_count += 1
+
+        await query.edit_message_text(
+            f"✅ Z Match reklamasi yuborildi!\n\n"
+            f"📨 Yuborildi: {sent_count}\n"
+            f"❌ Yuborilmadi: {failed_count}"
+        )
+
+
 async def broadcast(update, context):
     user = update.effective_user
 
@@ -8693,6 +8836,10 @@ def main():
     app.add_handler(CommandHandler("premiumstats", premiumstats))
     app.add_handler(CommandHandler("approve", approve))
     app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, zmatch_text),
+        group=-2
+    )
+    app.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, broadcast_text),
         group=-2
     )
@@ -8703,7 +8850,15 @@ def main():
         ),
         group=-2
     )
+    app.add_handler(
+        CallbackQueryHandler(
+            zmatch_confirm_callback,
+            pattern=r"^(confirm_zmatch|cancel_zmatch)$"
+        ),
+        group=-2
+    )
     app.add_handler(CommandHandler("broadcast", broadcast))
+    app.add_handler(CommandHandler("zmatch", zmatch))
     app.add_handler(CommandHandler("channelpromo", channel_promo))
     app.add_handler(
         MessageHandler(
