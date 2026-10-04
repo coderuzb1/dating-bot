@@ -8330,7 +8330,7 @@ async def zmatch_text(update, context):
     ])
 
     await update.message.reply_text(
-        "👀 <b>PREVIEW:</b>\n\n" + text,
+        text,
         reply_markup=keyboard,
         parse_mode="HTML"
     )
