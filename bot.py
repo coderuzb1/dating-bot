@@ -8840,8 +8840,11 @@ def main():
         group=-2
     )
     app.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, broadcast_text),
-        group=-2
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            broadcast_text
+        ),
+        group=-1
     )
     app.add_handler(
         CallbackQueryHandler(
