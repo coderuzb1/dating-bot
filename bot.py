@@ -6516,7 +6516,32 @@ async def handle_message(update, context):
     # Premium -> Matchsiz ham yozish mumkin
     # Username majburiy emas
     # =========================================================
-    if "writing_to" in context.user_data:
+    if "writing_to" in context.user_data and text not in {
+        tr("uz", "search"),
+        tr("ru", "search"),
+        tr("uz_cyr", "search"),
+        tr("uz", "profile"),
+        tr("ru", "profile"),
+        tr("uz_cyr", "profile"),
+        tr("uz", "likes"),
+        tr("ru", "likes"),
+        tr("uz_cyr", "likes"),
+        tr("uz", "matches"),
+        tr("ru", "matches"),
+        tr("uz_cyr", "matches"),
+        tr("uz", "settings"),
+        tr("ru", "settings"),
+        tr("uz_cyr", "settings"),
+        tr("uz", "referral"),
+        tr("ru", "referral"),
+        tr("uz_cyr", "referral"),
+        tr("uz", "superlike"),
+        tr("ru", "superlike"),
+        tr("uz_cyr", "superlike"),
+        tr("uz", "premium"),
+        tr("ru", "premium"),
+        tr("uz_cyr", "premium"),
+    }:
         target_id = context.user_data["writing_to"]
         sender = update.effective_user
 
