@@ -8442,6 +8442,93 @@ async def zmatch_confirm_callback(update, context):
         )
 
 
+
+async def premiumpromo(update, context):
+    if not update.effective_user or update.effective_user.id != ADMIN_ID:
+        await update.effective_message.reply_text("⛔ Siz admin emassiz!")
+        return
+    context.user_data["premiumpromo_waiting"] = True
+    context.user_data.pop("premiumpromo_text", None)
+    await update.effective_message.reply_text(
+        "👑 Premium reklama\\n\\nReklama matnini yuboring. "
+        "Yuborishdan oldin tasdiqlash so‘raladi."
+    )
+
+
+async def premiumpromo_text(update, context):
+    if not update.effective_user or update.effective_user.id != ADMIN_ID:
+        return
+    if not context.user_data.get("premiumpromo_waiting"):
+        return
+    text = update.effective_message.text
+    if not text or not text.strip():
+        await update.effective_message.reply_text("❌ Matn bo‘sh.")
+        return
+    context.user_data["premiumpromo_waiting"] = False
+    context.user_data["premiumpromo_text"] = text
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("👑 Premium tariflarini ko‘rish", callback_data="premium")],
+        [
+            InlineKeyboardButton("✅ Yuborish", callback_data="confirm_premiumpromo"),
+            InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_premiumpromo")
+        ]
+    ])
+    await update.effective_message.reply_text(
+        text, reply_markup=keyboard, parse_mode="HTML"
+    )
+
+
+async def premiumpromo_confirm_callback(update, context):
+    query = update.callback_query
+    await query.answer()
+    if query.from_user.id != ADMIN_ID:
+        return
+    data = query.data
+    if data == "cancel_premiumpromo":
+        context.user_data.pop("premiumpromo_text", None)
+        context.user_data["premiumpromo_waiting"] = False
+        await query.edit_message_text("❌ Premium reklamasi bekor qilindi.")
+        return
+    if data != "confirm_premiumpromo":
+        return
+    text = context.user_data.pop("premiumpromo_text", None)
+    if not text:
+        await query.edit_message_text("❌ Reklama matni topilmadi. /premiumpromo ni qayta boshlang.")
+        return
+    context.user_data["premiumpromo_waiting"] = False
+    await query.edit_message_text("⏳ Premium reklamasi yuborilmoqda...")
+    conn = None
+    cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT user_id FROM start_users ORDER BY user_id")
+        users = cur.fetchall()
+    except Exception:
+        await query.edit_message_text("❌ Foydalanuvchilar ro‘yxatini olishda xatolik yuz berdi.")
+        return
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("👑 Premium tariflarini ko‘rish", callback_data="premium")]
+    ])
+    sent = failed = 0
+    for row in users:
+        try:
+            await context.bot.send_message(
+                chat_id=row[0], text=text, reply_markup=keyboard, parse_mode="HTML"
+            )
+            sent += 1
+        except Exception:
+            failed += 1
+    await query.edit_message_text(
+        f"✅ Premium reklama yuborish yakunlandi!\\n\\n📨 Yuborildi: {sent}\\n❌ Yuborilmadi: {failed}"
+    )
+
+
 async def broadcast(update, context):
     user = update.effective_user
 
@@ -8882,6 +8969,18 @@ def main():
         CallbackQueryHandler(
             zmatch_confirm_callback,
             pattern=r"^(confirm_zmatch|cancel_zmatch)$"
+        ),
+        group=-2
+    )
+    app.add_handler(CommandHandler("premiumpromo", premiumpromo))
+    app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, premiumpromo_text),
+        group=-4
+    )
+    app.add_handler(
+        CallbackQueryHandler(
+            premiumpromo_confirm_callback,
+            pattern=r"^(confirm_premiumpromo|cancel_premiumpromo)$"
         ),
         group=-2
     )
