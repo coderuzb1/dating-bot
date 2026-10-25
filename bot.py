@@ -8618,6 +8618,70 @@ async def broadcast_confirm_callback(update, context):
 
 
 
+
+async def olamatch(update, context):
+    if not update.effective_user or update.effective_user.id != ADMIN_ID:
+        return
+    context.user_data["olamatch_waiting"] = True
+    context.user_data.pop("olamatch_text", None)
+    await update.effective_message.reply_text("📢 Ola Match reklamasi matnini yuboring.")
+
+async def olamatch_text(update, context):
+    if not update.effective_user or update.effective_user.id != ADMIN_ID or not context.user_data.get("olamatch_waiting"):
+        return
+    text = update.effective_message.text
+    if not text or not text.strip():
+        await update.effective_message.reply_text("Reklama matnini yuboring.")
+        return
+    context.user_data["olamatch_waiting"] = False
+    context.user_data["olamatch_text"] = text
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔵 Ola Match Bot", url="https://t.me/olamachtbot")],
+        [InlineKeyboardButton("✅ Yuborish", callback_data="confirm_olamatch"),
+         InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_olamatch")]
+    ])
+    await update.effective_message.reply_text(text, reply_markup=kb)
+
+async def olamatch_confirm_callback(update, context):
+    q = update.callback_query
+    await q.answer()
+    if not q.from_user or q.from_user.id != ADMIN_ID:
+        return
+    if q.data == "cancel_olamatch":
+        context.user_data.pop("olamatch_text", None)
+        await q.edit_message_text("❌ Reklama bekor qilindi.")
+        return
+    text = context.user_data.pop("olamatch_text", None)
+    if not text:
+        await q.edit_message_text("Matn topilmadi. /olamatch ni qayta boshlang.")
+        return
+    await q.edit_message_text("⏳ Reklama yuborilmoqda...")
+    conn = cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT user_id FROM start_users ORDER BY user_id")
+        users = cur.fetchall()
+    except Exception as e:
+        print(f"Ola Match DB xatosi: {e}")
+        await q.edit_message_text("❌ Foydalanuvchilar ro'yxatini olishda xato.")
+        return
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔵 Ola Match Bot", url="https://t.me/olamachtbot")]])
+    sent = failed = 0
+    for row in users:
+        try:
+            await context.bot.send_message(chat_id=row[0], text=text, reply_markup=kb)
+            sent += 1
+        except Exception as e:
+            failed += 1
+            print(f"Ola Match yuborilmadi {row[0]}: {e}")
+    await q.edit_message_text(f"✅ Reklama yakunlandi!\n👥 Jami: {len(users)}\n📨 Yuborildi: {sent}\n❌ Yuborilmadi: {failed}")
+
 async def channel_promo(update, context):
     """Sara Match Community uchun yangi reklama kampaniyasini boshlash."""
     user = update.effective_user
@@ -8986,6 +9050,9 @@ def main():
     )
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("zmatch", zmatch))
+    app.add_handler(CommandHandler("olamatch", olamatch))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, olamatch_text), group=-5)
+    app.add_handler(CallbackQueryHandler(olamatch_confirm_callback, pattern=r"^(confirm_olamatch|cancel_olamatch)$"), group=-2)
     app.add_handler(CommandHandler("channelpromo", channel_promo))
     app.add_handler(
         MessageHandler(
