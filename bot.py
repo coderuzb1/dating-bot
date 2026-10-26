@@ -1,6 +1,6 @@
 import os
 import asyncio
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler, Defaults
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from database import init_db, get_db_connection
 from notifications import (
@@ -8941,7 +8941,7 @@ def main():
         return
     
     init_db()
-    app = Application.builder().token(TOKEN).build()
+    app = Application.builder().token(TOKEN).defaults(Defaults(protect_content=True)).build()
     
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
