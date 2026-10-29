@@ -4291,15 +4291,8 @@ async def handle_callback(update, context):
 
         already_liked = bool(cur.fetchone()[0])
 
-        if already_liked:
-            cur.close()
-            conn.close()
-
-            await query.answer(
-                "❤️ Siz allaqachon yoqtirgansiz!",
-                show_alert=True
-            )
-            return
+        # Oldin Like yuborilgan bo'lsa ham jarayon davom etadi.
+        # Mavjud Like qayta INSERT qilinmaydi.
 
         # =========================
         # DAILY LIKE LIMIT
@@ -4322,20 +4315,21 @@ async def handle_callback(update, context):
             and premium_result[0] > datetime.now()
         )
 
-        cur.execute(
-            """
-            INSERT INTO likes
-            (
-                from_user,
-                to_user
+        if not already_liked:
+            cur.execute(
+                """
+                INSERT INTO likes
+                (
+                    from_user,
+                    to_user
+                )
+                VALUES (%s, %s)
+                """,
+                (
+                    user.id,
+                    target_id
+                )
             )
-            VALUES (%s, %s)
-            """,
-            (
-                user.id,
-                target_id
-            )
-        )
 
         cur.execute(
             """
