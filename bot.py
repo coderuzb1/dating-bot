@@ -20,7 +20,7 @@ from zoneinfo import ZoneInfo
 
 LANGUAGE, NAME, AGE, GENDER, CITY, BIO, PHOTO = range(7)
 ADMIN_ID = 6310532367
-HUMO_CARD = "9860086601480972"
+HUMO_CARD = "9860606759941705"
 VISA_CARD = "4916990302424491"
 BAD_WORDS = ["ahmoq", "jinni", "sotqin", "firibgar", "scam", "aldamoq", "pul", "karta", "parol"]
 
