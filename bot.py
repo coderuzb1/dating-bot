@@ -8613,6 +8613,93 @@ async def broadcast_confirm_callback(update, context):
 
 
 
+async def sosmatch(update, context):
+    user = update.effective_user
+    if not user or user.id != ADMIN_ID:
+        return
+
+    context.user_data["sosmatch_waiting"] = True
+    context.user_data.pop("sosmatch_text", None)
+    await update.message.reply_text(
+        "📢 SOS Match: barcha /start bosgan foydalanuvchilarga yuboriladigan xabarni yuboring."
+    )
+
+
+async def sosmatch_text(update, context):
+    user = update.effective_user
+    if not user or user.id != ADMIN_ID:
+        return
+    if not context.user_data.get("sosmatch_waiting"):
+        return
+    if not update.message or not update.message.text:
+        await update.message.reply_text("❌ Matnli xabar yuboring.")
+        return
+
+    text = update.message.text
+    context.user_data["sosmatch_waiting"] = False
+    context.user_data["sosmatch_text"] = text
+
+    keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton("✅ Barchaga yuborish", callback_data="confirm_sosmatch"),
+        InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_sosmatch")
+    ]])
+    await update.message.reply_text(text, reply_markup=keyboard, parse_mode="HTML")
+
+
+async def sosmatch_confirm_callback(update, context):
+    query = update.callback_query
+    await query.answer()
+    if query.from_user.id != ADMIN_ID:
+        return
+
+    if query.data == "cancel_sosmatch":
+        context.user_data.pop("sosmatch_text", None)
+        context.user_data["sosmatch_waiting"] = False
+        await query.edit_message_text("❌ SOS Match bekor qilindi.")
+        return
+
+    text = context.user_data.pop("sosmatch_text", None)
+    context.user_data["sosmatch_waiting"] = False
+    if not text:
+        await query.edit_message_text("❌ Xabar topilmadi. /sosmatch ni qayta boshlang.")
+        return
+
+    await query.edit_message_text("⏳ Barcha foydalanuvchilarga yuborilmoqda...")
+
+    conn = None
+    cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT DISTINCT user_id FROM start_users ORDER BY user_id")
+        users = cur.fetchall()
+    except Exception as e:
+        print(f"SOS Match DB xatosi: {e}")
+        await query.message.reply_text("❌ Foydalanuvchilar ro‘yxatini olishda xatolik.")
+        return
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
+
+    sent = failed = 0
+    for row in users:
+        try:
+            await context.bot.send_message(
+                chat_id=row[0], text=text, parse_mode="HTML"
+            )
+            sent += 1
+        except Exception as e:
+            failed += 1
+            print(f"SOS Match yuborish xatosi ({row[0]}): {e}")
+
+    await query.message.reply_text(
+        "✅ SOS Match yuborish yakunlandi!\\n\\n"
+        f"👥 Jami: {len(users)}\\n📨 Yuborildi: {sent}\\n❌ Yuborilmadi: {failed}"
+    )
+
+
 async def olamatch(update, context):
     if not update.effective_user or update.effective_user.id != ADMIN_ID:
         return
@@ -9010,6 +9097,10 @@ def main():
         group=-2
     )
     app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, sosmatch_text),
+        group=-6
+    )
+    app.add_handler(
         MessageHandler(
             filters.TEXT & ~filters.COMMAND,
             broadcast_text
@@ -9020,6 +9111,13 @@ def main():
         CallbackQueryHandler(
             broadcast_confirm_callback,
             pattern=r"^(confirm_broadcast|cancel_broadcast)$"
+        ),
+        group=-2
+    )
+    app.add_handler(
+        CallbackQueryHandler(
+            sosmatch_confirm_callback,
+            pattern=r"^(confirm_sosmatch|cancel_sosmatch)$"
         ),
         group=-2
     )
@@ -9042,6 +9140,7 @@ def main():
         ),
         group=-2
     )
+    app.add_handler(CommandHandler("sosmatch", sosmatch))
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CommandHandler("zmatch", zmatch))
     app.add_handler(CommandHandler("olamatch", olamatch))
