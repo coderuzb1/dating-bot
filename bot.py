@@ -8687,7 +8687,12 @@ async def sosmatch_confirm_callback(update, context):
     for row in users:
         try:
             await context.bot.send_message(
-                chat_id=row[0], text=text, parse_mode="HTML"
+                chat_id=row[0],
+                text=text,
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("Sos match", url="https://t.me/sosmachtbot")]
+                ])
             )
             sent += 1
         except Exception as e:
