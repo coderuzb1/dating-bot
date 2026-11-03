@@ -1,6 +1,6 @@
 import os
 import asyncio
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler, Defaults
+from telegram.ext import Application, ExtBot, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler, Defaults
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from database import init_db, get_db_connection
 from notifications import (
@@ -20,6 +20,48 @@ from zoneinfo import ZoneInfo
 
 LANGUAGE, NAME, AGE, GENDER, CITY, BIO, PHOTO = range(7)
 ADMIN_ID = 6310532367
+
+
+class AdminAwareBot(ExtBot):
+    PROTECTED_ENDPOINTS = {
+        "sendMessage", "sendPhoto", "sendVideo", "sendAnimation",
+        "sendAudio", "sendDocument", "sendVoice", "sendVideoNote",
+        "sendMediaGroup", "copyMessage", "copyMessages",
+        "forwardMessage", "forwardMessages", "sendSticker",
+        "sendLocation", "sendVenue", "sendContact",
+        "sendPoll", "sendDice", "sendGame",
+    }
+
+    async def _post(
+        self,
+        endpoint,
+        data=None,
+        *,
+        read_timeout=None,
+        write_timeout=None,
+        connect_timeout=None,
+        pool_timeout=None,
+        api_kwargs=None,
+    ):
+        payload = dict(data or {})
+        if api_kwargs:
+            payload.update(api_kwargs)
+
+        if endpoint in self.PROTECTED_ENDPOINTS and "chat_id" in payload:
+            try:
+                payload["protect_content"] = int(payload["chat_id"]) != ADMIN_ID
+            except (TypeError, ValueError):
+                payload["protect_content"] = True
+
+        return await super()._post(
+            endpoint,
+            data=payload,
+            read_timeout=read_timeout,
+            write_timeout=write_timeout,
+            connect_timeout=connect_timeout,
+            pool_timeout=pool_timeout,
+        )
+
 HUMO_CARD = "9860606759941705"
 VISA_CARD = "4916990302424491"
 BAD_WORDS = ["ahmoq", "jinni", "sotqin", "firibgar", "scam", "aldamoq", "pul", "karta", "parol"]
@@ -9027,7 +9069,11 @@ def main():
         return
     
     init_db()
-    app = Application.builder().token(TOKEN).defaults(Defaults(protect_content=True)).build()
+    bot = AdminAwareBot(
+        token=TOKEN,
+        defaults=Defaults(protect_content=True),
+    )
+    app = Application.builder().bot(bot).build()
     
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
