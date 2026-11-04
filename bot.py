@@ -8643,14 +8643,17 @@ async def broadcast_confirm_callback(update, context):
             "⏳ Broadcast yuborilmoqda..."
         )
 
-        await notify_news(context.bot, text)
+        total, sent, failed = await notify_news(context.bot, text)
 
         try:
             await query.message.reply_text(
-                "✅ Broadcast barcha aktiv foydalanuvchilarga yuborildi."
+                "📢 Broadcast yakunlandi!\n\n"
+                f"👥 Jami foydalanuvchilar: {total}\n"
+                f"✅ Muvaffaqiyatli yuborildi: {sent}\n"
+                f"❌ Yuborilmadi: {failed}"
             )
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Broadcast natijasini yuborish xatosi: {e}")
 
 
 

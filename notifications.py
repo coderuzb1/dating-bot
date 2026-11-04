@@ -1178,20 +1178,21 @@ async def notify_news(bot, text):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    cur.execute(
-        """
-        SELECT su.user_id
-        FROM start_users su
-        LEFT JOIN users u ON u.user_id = su.user_id
-        WHERE COALESCE(u.is_blocked, FALSE) = FALSE
-        ORDER BY su.user_id
-        """
-    )
-
-    users = cur.fetchall()
-
-    cur.close()
-    conn.close()
+    try:
+        cur.execute(
+            """
+            SELECT user_id FROM users
+            WHERE user_id IS NOT NULL
+            UNION
+            SELECT user_id FROM start_users
+            WHERE user_id IS NOT NULL
+            ORDER BY user_id
+            """
+        )
+        users = cur.fetchall()
+    finally:
+        cur.close()
+        conn.close()
 
     keyboard = InlineKeyboardMarkup([
         [
@@ -1202,6 +1203,7 @@ async def notify_news(bot, text):
         ]
     ])
 
+    total_count = len(users)
     sent_count = 0
     failed_count = 0
 
@@ -1220,9 +1222,11 @@ async def notify_news(bot, text):
             failed_count += 1
 
     print(
-        f"📢 Premium broadcast: "
+        f"📢 Broadcast: jami={total_count}, "
         f"yuborildi={sent_count}, xato={failed_count}"
     )
+
+    return total_count, sent_count, failed_count
 
 
 
