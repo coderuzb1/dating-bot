@@ -63,7 +63,6 @@ class AdminAwareBot(ExtBot):
         )
 
 HUMO_CARD = "9860606759941705"
-VISA_CARD = "4916990302424491"
 BAD_WORDS = ["ahmoq", "jinni", "sotqin", "firibgar", "scam", "aldamoq", "pul", "karta", "parol"]
 
 
@@ -2124,7 +2123,6 @@ async def handle_callback(update, context):
             "premium_2w": 15,
             "premium_1m": 30,
         }
-
         prices = {
             "premium_1w": "23 200",
             "premium_2w": "39 200",
@@ -2132,6 +2130,7 @@ async def handle_callback(update, context):
         }
 
         if plan not in durations:
+            await query.answer("❌ Tarif topilmadi.", show_alert=True)
             return
 
         conn = get_db_connection()
@@ -2147,182 +2146,6 @@ async def handle_callback(update, context):
             """,
             (user.id,)
         )
-        valid = cur.fetchone()
-        cur.close()
-        conn.close()
-
-        if not valid:
-            texts = {
-                "uz": "❌ 20% chegirma faqat Premiumning oxirgi kunida amal qiladi.",
-                "ru": "❌ Скидка 20% действует только в последний день Premium.",
-                "uz_cyr": "❌ 20% чегирма фақат Premiumнинг охирги куни амал қилади."
-            }
-            await query.message.reply_text(
-                texts.get(language, texts["uz"])
-            )
-            return
-
-        days = durations[plan]
-        price = prices[plan]
-
-        payment_texts = {
-            "uz": ("💳 TO‘LOV USULINI TANLANG", "📅 Muddat", "💰 Chegirmali summa",
-                   "Quyidagi to‘lov usullaridan birini tanlang:", "❌ Bekor qilish"),
-            "ru": ("💳 ВЫБЕРИТЕ СПОСОБ ОПЛАТЫ", "📅 Срок", "💰 Сумма со скидкой",
-                   "Выберите способ оплаты:", "❌ Отмена"),
-            "uz_cyr": ("💳 ТЎЛОВ УСУЛИНИ ТАНЛАНГ", "📅 Муддат", "💰 Чегирмали сумма",
-                       "Қуйидаги тўлов усулларидан бирини танланг:", "❌ Бекор қилиш")
-        }
-
-        title, duration_text, price_text, choose_text, cancel_text = payment_texts.get(
-            language, payment_texts["uz"]
-        )
-
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    "💳 HUMO",
-                    callback_data=f"discount_pay_humo_{plan}"
-                ),
-                InlineKeyboardButton(
-                    "💳 VISA",
-                    callback_data=f"discount_pay_visa_{plan}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    cancel_text,
-                    callback_data="cancel_premium"
-                )
-            ]
-        ])
-
-        await query.message.reply_text(
-            f"{title}\n\n"
-            f"{duration_text}: {days} kun\n"
-            f"{price_text}: {price} so'm\n\n"
-            f"{choose_text}",
-            reply_markup=keyboard
-        )
-        return
-
-    # =========================================================
-    # WEEKEND PREMIUM — 30% CHEGIRMA
-    # =========================================================
-    if data.startswith("premium_"):
-        durations = {
-            "premium_1w": 7,
-            "premium_2w": 15,
-            "premium_1m": 30,
-        }
-
-        prices = {
-            "premium_1w": "29 000",
-            "premium_2w": "49 000",
-            "premium_1m": "79 000",
-        }
-
-        if data not in durations:
-            return
-
-        days = durations[data]
-        price = prices[data]
-
-        payment_texts = {
-            "ru": {
-                "title": "💳 ВЫБЕРИТЕ СПОСОБ ОПЛАТЫ",
-                "duration": "📅 Срок",
-                "price": "💰 Сумма",
-                "choose": "Выберите способ оплаты:",
-                "cancel": "❌ Отмена",
-            },
-            "uz_cyr": {
-                "title": "💳 ТЎЛОВ УСУЛИНИ ТАНЛАНГ",
-                "duration": "📅 Муддат",
-                "price": "💰 Сумма",
-                "choose": "Қуйидаги тўлов усулларидан бирини танланг:",
-                "cancel": "❌ Бекор қилиш",
-            },
-            "uz": {
-                "title": "💳 TO'LOV USULINI TANLANG",
-                "duration": "📅 Muddat",
-                "price": "💰 Summa",
-                "choose": "Quyidagi to'lov usullaridan birini tanlang:",
-                "cancel": "❌ Bekor qilish",
-            },
-            }
-
-        pt = payment_texts.get(language, payment_texts["uz"])
-
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    "💳 HUMO",
-                    callback_data=f"pay_humo_{data}"
-                ),
-                InlineKeyboardButton(
-                    "💳 VISA",
-                    callback_data=f"pay_visa_{data}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    pt["cancel"],
-                    callback_data="cancel_premium"
-                )
-            ]
-        ])
-
-        await query.message.reply_text(
-            f'{pt["title"]}\n\n'
-            f'{pt["duration"]}: {days} kun\n'
-            f'{pt["price"]}: {price} so\'m\n\n'
-            f'{pt["choose"]}',
-            reply_markup=keyboard
-        )
-        return
-
-    if data.startswith("discount_pay_humo_") or data.startswith("discount_pay_visa_"):
-        parts = data.split("_", 3)
-
-        if len(parts) != 4:
-            await query.message.reply_text("❌ To‘lov ma’lumotlari xato.")
-            return
-
-        payment_method = parts[2].upper()
-        plan = parts[3]
-
-        durations = {
-            "premium_1w": 7,
-            "premium_2w": 15,
-            "premium_1m": 30,
-        }
-
-        prices = {
-            "premium_1w": "23 200",
-            "premium_2w": "39 200",
-            "premium_1m": "63 200",
-        }
-
-        if plan not in durations:
-            await query.message.reply_text("❌ Tarif topilmadi.")
-            return
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        cur.execute(
-            """
-            SELECT premium_until
-            FROM users
-            WHERE user_id = %s
-              AND premium_until IS NOT NULL
-              AND premium_until > NOW()
-              AND premium_until <= NOW() + INTERVAL '24 hours'
-            """,
-            (user.id,)
-        )
-
         valid = cur.fetchone()
         cur.close()
         conn.close()
@@ -2333,257 +2156,82 @@ async def handle_callback(update, context):
                 "ru": "❌ Скидка 20% действует только в последние 24 часа Premium.",
                 "uz_cyr": "❌ 20% чегирма фақат Premium тугашига 1 кун қолганда амал қилади."
             }
-
+            await query.answer()
             await query.message.reply_text(
                 texts.get(language, texts["uz"])
             )
             return
 
+        if not HUMO_CARD:
+            await query.answer("❌ HUMO karta sozlanmagan.", show_alert=True)
+            return
+
         days = durations[plan]
         price = prices[plan]
-
-        card = HUMO_CARD if payment_method == "HUMO" else VISA_CARD
-
-        if not card:
-            await query.message.reply_text(
-                "❌ Ushbu to‘lov usuli hozircha sozlanmagan."
-            )
-            return
 
         context.user_data["pending_payment"] = {
             "type": "premium",
             "days": days,
             "plan": plan,
             "price": price,
-            "payment_method": payment_method,
+            "payment_method": "HUMO",
             "user_id": user.id,
             "discount": 20,
             "discounted": True,
         }
 
-        receipt_texts = {
-            "uz": (
-                "🔥 20% CHEGIRMALI PREMIUM\n\n"
-                f"👑 Premium: {days} kun\n"
-                f"💰 Chegirmali summa: {price} so'm\n"
-                f"💳 To‘lov usuli: {payment_method}\n\n"
-                f"💳 Karta: {card}\n\n"
-                "📸📄 To‘lov chekini yuboring.\n\n"
-                "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
-                "⚠️ Faqat haqiqiy to‘lov chekini yuboring!\n"
-                "⏳ Chek yuborilgach admin tekshiradi."
-            ),
-            "ru": (
-                "🔥 PREMIUM СО СКИДКОЙ 20%\n\n"
-                f"👑 Premium: {days} дней\n"
-                f"💰 Сумма со скидкой: {price} сум\n"
-                f"💳 Способ оплаты: {payment_method}\n\n"
-                f"💳 Карта: {card}\n\n"
-                "📸📄 Отправьте чек об оплате.\n\n"
-                "🖼 Можно отправить изображение или 📄 PDF/файл.\n\n"
-                "⚠️ Отправляйте только настоящий чек!\n"
-                "⏳ После отправки чек проверит администратор."
-            ),
-            "uz_cyr": (
-                "🔥 20% ЧЕГИРМАЛИ PREMIUM\n\n"
-                f"👑 Premium: {days} кун\n"
-                f"💰 Чегирмали сумма: {price} сўм\n"
-                f"💳 Тўлов усули: {payment_method}\n\n"
-                f"💳 Карта: {card}\n\n"
-                "📸📄 Тўлов чекини юборинг.\n\n"
-                "🖼 Расм ёки 📄 PDF/файл юборишингиз мумкин.\n\n"
-                "⚠️ Фақат ҳақиқий тўлов чекини юборинг!\n"
-                "⏳ Чек юборилгандан сўнг администратор текширади."
-            )
-        }
-
+        await query.answer()
         await query.message.reply_text(
-            receipt_texts.get(language, receipt_texts["uz"])
+            "🔥 <b>20% CHEGIRMALI PREMIUM</b>\n\n"
+            f"👑 Premium: <b>{days} kun</b>\n"
+            f"💰 Chegirmali summa: <b>{price} so'm</b>\n"
+            f"💳 HUMO karta:\n<code>{HUMO_CARD}</code>\n\n"
+            "📸📄 To'lov chekini rasm yoki PDF/fayl ko'rinishida yuboring.\n"
+            "⏳ Chekni admin tekshiradi va tasdiqlaydi.",
+            parse_mode="HTML"
         )
         return
 
-    if data.startswith("pay_humo_") or data.startswith("pay_visa_"):
-        parts = data.split("_", 2)
-
-        if len(parts) != 3:
-            await query.message.reply_text("❌ To'lov ma'lumotlari xato.")
-            return
-
-        payment_method = parts[1].upper()
-        plan = parts[2]
-
+    if data.startswith("premium_"):
         durations = {
             "premium_1w": 7,
             "premium_2w": 15,
             "premium_1m": 30,
         }
-
         prices = {
             "premium_1w": "29 000",
             "premium_2w": "49 000",
             "premium_1m": "79 000",
         }
 
-        if plan not in durations:
-            await query.message.reply_text("❌ Tarif topilmadi.")
+        if data not in durations:
             return
 
-        days = durations[plan]
-        price = prices[plan]
-
-        if payment_method == "HUMO":
-            card = HUMO_CARD
-        else:
-            card = VISA_CARD
-
-        if not card:
-            await query.message.reply_text(
-                "❌ Ushbu to'lov usuli hozircha sozlanmagan."
-            )
+        if not HUMO_CARD:
+            await query.answer("❌ HUMO karta sozlanmagan.", show_alert=True)
             return
 
-        payment_texts = {
-            "ru": {
-                "title": "💳 ОПЛАТА",
-                "method": "💳 Способ",
-                "duration": "📅 Срок",
-                "price": "💰 Сумма",
-                "card": "💳 Карта",
-                "done": "После оплаты нажмите «✅ Я оплатил».",
-                "paid": "✅ Я оплатил",
-                "cancel": "❌ Отмена",
-            },
-            "uz_cyr": {
-                "title": "💳 ТЎЛОВ",
-                "method": "💳 Усул",
-                "duration": "📅 Муддат",
-                "price": "💰 Сумма",
-                "card": "💳 Карта",
-                "done": "Тўловни амалга оширгач, «✅ Тўлов қилдим» тугмасини босинг.",
-                "paid": "✅ Тўлов қилдим",
-                "cancel": "❌ Бекор қилиш",
-            },
-            "uz": {
-                "title": "💳 TO'LOV",
-                "method": "💳 Usul",
-                "duration": "📅 Muddat",
-                "price": "💰 Summa",
-                "card": "💳 Karta",
-                "done": "To'lovni amalga oshirgach, «✅ To'lov qildim» tugmasini bosing.",
-                "paid": "✅ To'lov qildim",
-                "cancel": "❌ Bekor qilish",
-            },
-            }
+        days = durations[data]
+        price = prices[data]
 
-        pt = payment_texts.get(language, payment_texts["uz"])
-
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    pt["paid"],
-                    callback_data=f"confirm_{payment_method}_{plan}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    pt["cancel"],
-                    callback_data="cancel_premium"
-                )
-            ]
-        ])
-
-        await query.message.reply_text(
-            f'{pt["title"]}\n\n'
-            f'{pt["method"]}: {payment_method}\n'
-            f'{pt["duration"]}: {days} kun\n'
-            f'{pt["price"]}: {price} so\'m\n\n'
-            f'{pt["card"]}: {card}\n\n'
-            f'{pt["done"]}',
-            reply_markup=keyboard
-        )
-        return
-
-    if data.startswith("confirm_") and data != "confirm_broadcast":
-        parts = data.split("_", 2)
-
-        if len(parts) != 3:
-            await query.message.reply_text(
-                "❌ To'lov ma'lumotlari xato."
-            )
-            return
-
-        payment_method = parts[1].upper()
-        plan = parts[2]
-
-        durations = {
-            "premium_1w": 7,
-            "premium_2w": 15,
-            "premium_1m": 30,
-        }
-
-        prices = {
-            "premium_1w": "29 000",
-            "premium_2w": "49 000",
-            "premium_1m": "79 000",
-        }
-
-        if plan not in durations:
-            await query.message.reply_text(
-                "❌ Tarif topilmadi."
-            )
-            return
-
-        days = durations[plan]
-        price = prices[plan]
-
-        # Chek yuborilgunga qadar foydalanuvchining
-        # tanlagan Premium tarifini saqlab qo'yamiz.
-        # Chek yuborilgunga qadar to'lov ma'lumotlarini saqlaymiz.
-        # handle_payment_check aynan pending_payment ni kutadi.
         context.user_data["pending_payment"] = {
             "type": "premium",
             "days": days,
-            "plan": plan,
+            "plan": data,
             "price": price,
-            "payment_method": payment_method,
+            "payment_method": "HUMO",
             "user_id": user.id,
         }
 
-        receipt_texts = {
-            "uz": (
-                "📸📄 TO'LOV CHEKINI YUBORING\n\n"
-                f"👑 Premium: {days} kun\n"
-                f"💰 Summa: {price} so'm\n"
-                f"💳 To'lov usuli: {payment_method}\n\n"
-                "🖼 Rasm yoki 📄 PDF/fayl yuborishingiz mumkin.\n\n"
-                "⚠️ Faqat haqiqiy to'lov chekini yuboring!\n"
-                "🚫 Soxta chek yuborsangiz, darhol botdan bloklanasiz va Premium berilmaydi.\n\n"
-                "⏳ Chek yuborilgach admin tekshiradi."
-            ),
-            "ru": (
-                "📸📄 ОТПРАВЬТЕ ЧЕК ОБ ОПЛАТЕ\n\n"
-                f"👑 Premium: {days} дней\n"
-                f"💰 Сумма: {price} сум\n"
-                f"💳 Способ оплаты: {payment_method}\n\n"
-                "🖼 Можно отправить изображение или 📄 PDF/файл.\n\n"
-                "⚠️ Отправляйте только настоящий чек об оплате!\n"
-                "🚫 За поддельный чек вы будете заблокированы, а Premium не будет выдан.\n\n"
-                "⏳ После отправки чека его проверит администратор."
-            ),
-            "uz_cyr": (
-                "📸📄 ТЎЛОВ ЧЕКИНИ ЮБОРИНГ\n\n"
-                f"👑 Premium: {days} кун\n"
-                f"💰 Сумма: {price} сўм\n"
-                f"💳 Тўлов усули: {payment_method}\n\n"
-                "🖼 Расм ёки 📄 PDF/файл юборишингиз мумкин.\n\n"
-                "⚠️ Фақат ҳақиқий тўлов чекини юборинг!\n"
-                "🚫 Сохта чек юборсангиз, дарҳол блокланасиз ва Premium берилмайди.\n\n"
-                "⏳ Чек юборилгандан сўнг администратор текширади."
-            ),
-        }
-
+        await query.answer()
         await query.message.reply_text(
-            receipt_texts.get(language, receipt_texts["uz"])
+            "👑 <b>PREMIUM TO'LOVI</b>\n\n"
+            f"📅 Muddat: <b>{days} kun</b>\n"
+            f"💰 Summa: <b>{price} so'm</b>\n"
+            f"💳 HUMO karta:\n<code>{HUMO_CARD}</code>\n\n"
+            "📸📄 To'lov chekini rasm yoki PDF/fayl ko'rinishida yuboring.\n"
+            "⏳ Chekni admin tekshiradi va tasdiqlaydi.",
+            parse_mode="HTML"
         )
         return
 
@@ -3776,7 +3424,6 @@ async def handle_callback(update, context):
             "sl_5": 5,
             "sl_10": 10,
         }
-
         prices = {
             1: 1000,
             5: 4000,
@@ -3786,112 +3433,30 @@ async def handle_callback(update, context):
         amount = amounts[data]
         price = prices[amount]
 
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    "💳 HUMO",
-                    callback_data=f"sl_pay_humo_{amount}"
-                ),
-                InlineKeyboardButton(
-                    "💳 VISA",
-                    callback_data=f"sl_pay_visa_{amount}"
-                )
-            ]
-        ])
-
-        await query.answer()
-
-        await query.message.reply_text(
-            "⭐ <b>SUPERLIKE SOTIB OLISH</b>\n\n"
-            f"⭐ Miqdor: <b>{amount} ta</b>\n"
-            f"💰 Summa: <b>{price:,} so'm</b>\n\n"
-            "To'lov usulini tanlang:",
-            reply_markup=keyboard,
-            parse_mode="HTML"
-        )
-        return
-
-    if data.startswith("sl_pay_humo_") or data.startswith("sl_pay_visa_"):
-        parts = data.split("_")
-
-        payment_method = parts[2].upper()
-        amount = int(parts[3])
-
-        prices = {
-            1: 1000,
-            5: 4000,
-            10: 7000,
-        }
-
-        price = prices.get(amount)
-
-        if price is None:
-            await query.answer(
-                "❌ Paket topilmadi.",
-                show_alert=True
-            )
+        if not HUMO_CARD:
+            await query.answer("❌ HUMO karta sozlanmagan.", show_alert=True)
             return
 
         context.user_data["pending_payment"] = {
             "type": "superlike",
             "amount": amount,
             "price": price,
-            "payment_method": payment_method,
+            "payment_method": "HUMO",
             "user_id": user.id,
         }
 
-        card = HUMO_CARD if payment_method == "HUMO" else VISA_CARD
-
         await query.answer()
-
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    "✅ To'lov qildim — chek yuboraman",
-                    callback_data=f"sl_paid_{amount}"
-                )
-            ]
-        ])
-
         await query.message.reply_text(
             "⭐ <b>SUPERLIKE TO'LOVI</b>\n\n"
             f"⭐ Paket: <b>{amount} ta</b>\n"
             f"💰 Summa: <b>{price:,} so'm</b>\n"
-            f"💳 Usul: <b>{payment_method}</b>\n\n"
-            f"💳 Karta raqami:\n"
-            f"<code>{card}</code>\n\n"
-            "To'lovni amalga oshiring.\n"
-            "Keyin quyidagi tugmani bosing va to'lov chekini "
-            "rasm yoki fayl ko'rinishida yuboring.",
-            reply_markup=keyboard,
+            f"💳 HUMO karta:\n<code>{HUMO_CARD}</code>\n\n"
+            "📸📄 To'lov chekini rasm yoki PDF/fayl ko'rinishida yuboring.\n"
+            "⏳ Chekni admin tekshiradi va tasdiqlaydi.",
             parse_mode="HTML"
         )
         return
 
-    if data.startswith("sl_paid_"):
-        amount = int(data.split("_")[2])
-
-        pending = context.user_data.get("pending_payment")
-
-        if not pending or pending.get("type") != "superlike":
-            await query.answer(
-                "❌ Faol Superlike to'lovi topilmadi.",
-                show_alert=True
-            )
-            return
-
-        await query.answer()
-
-        await query.message.reply_text(
-            "📸 <b>Endi to'lov chekini yuboring.</b>\n\n"
-            "Chekni rasm yoki fayl ko'rinishida shu yerga yuboring.\n\n"
-            "Admin tekshiradi va tasdiqlagandan so'ng "
-            "Superlike hisobingizga qo'shiladi.",
-            parse_mode="HTML"
-        )
-        return
-
-    # ========================================================
     # SUPERLIKE ADMIN TASDIQLASH / RAD ETISH
     # ========================================================
 
