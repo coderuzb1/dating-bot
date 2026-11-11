@@ -1,7 +1,7 @@
 import os
 import asyncio
 from telegram.ext import Application, ExtBot, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler, Defaults
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, CopyTextButton
 from database import init_db, get_db_connection
 from notifications import (
     notify_new_user,
@@ -2185,9 +2185,14 @@ async def handle_callback(update, context):
             "🔥 <b>20% CHEGIRMALI PREMIUM</b>\n\n"
             f"👑 Premium: <b>{days} kun</b>\n"
             f"💰 Chegirmali summa: <b>{price} so'm</b>\n"
-            f"💳 HUMO karta:\n<code>{HUMO_CARD}</code>\n\n"
             "📸📄 To'lov chekini rasm yoki PDF/fayl ko'rinishida yuboring.\n"
             "⏳ Chekni admin tekshiradi va tasdiqlaydi.",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    text=HUMO_CARD,
+                    copy_text=CopyTextButton(text=HUMO_CARD),
+                )
+            ]]),
             parse_mode="HTML"
         )
         return
@@ -2228,9 +2233,14 @@ async def handle_callback(update, context):
             "👑 <b>PREMIUM TO'LOVI</b>\n\n"
             f"📅 Muddat: <b>{days} kun</b>\n"
             f"💰 Summa: <b>{price} so'm</b>\n"
-            f"💳 HUMO karta:\n<code>{HUMO_CARD}</code>\n\n"
             "📸📄 To'lov chekini rasm yoki PDF/fayl ko'rinishida yuboring.\n"
             "⏳ Chekni admin tekshiradi va tasdiqlaydi.",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    text=HUMO_CARD,
+                    copy_text=CopyTextButton(text=HUMO_CARD),
+                )
+            ]]),
             parse_mode="HTML"
         )
         return
@@ -3450,9 +3460,14 @@ async def handle_callback(update, context):
             "⭐ <b>SUPERLIKE TO'LOVI</b>\n\n"
             f"⭐ Paket: <b>{amount} ta</b>\n"
             f"💰 Summa: <b>{price:,} so'm</b>\n"
-            f"💳 HUMO karta:\n<code>{HUMO_CARD}</code>\n\n"
             "📸📄 To'lov chekini rasm yoki PDF/fayl ko'rinishida yuboring.\n"
             "⏳ Chekni admin tekshiradi va tasdiqlaydi.",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    text=HUMO_CARD,
+                    copy_text=CopyTextButton(text=HUMO_CARD),
+                )
+            ]]),
             parse_mode="HTML"
         )
         return
