@@ -63,7 +63,6 @@ class AdminAwareBot(ExtBot):
         )
 
 HUMO_CARD = "9860606759941705"
-VISA_CARD = "4916990302424491"
 BAD_WORDS = ["ahmoq", "jinni", "sotqin", "firibgar", "scam", "aldamoq", "pul", "karta", "parol"]
 
 
@@ -2184,10 +2183,6 @@ async def handle_callback(update, context):
                     "💳 HUMO",
                     callback_data=f"discount_pay_humo_{plan}"
                 ),
-                InlineKeyboardButton(
-                    "💳 VISA",
-                    callback_data=f"discount_pay_visa_{plan}"
-                )
             ],
             [
                 InlineKeyboardButton(
@@ -2260,10 +2255,6 @@ async def handle_callback(update, context):
                     "💳 HUMO",
                     callback_data=f"pay_humo_{data}"
                 ),
-                InlineKeyboardButton(
-                    "💳 VISA",
-                    callback_data=f"pay_visa_{data}"
-                )
             ],
             [
                 InlineKeyboardButton(
@@ -2282,7 +2273,7 @@ async def handle_callback(update, context):
         )
         return
 
-    if data.startswith("discount_pay_humo_") or data.startswith("discount_pay_visa_"):
+    if data.startswith("discount_pay_humo_"):
         parts = data.split("_", 3)
 
         if len(parts) != 4:
@@ -2342,7 +2333,7 @@ async def handle_callback(update, context):
         days = durations[plan]
         price = prices[plan]
 
-        card = HUMO_CARD if payment_method == "HUMO" else VISA_CARD
+        card = HUMO_CARD
 
         if not card:
             await query.message.reply_text(
@@ -2402,7 +2393,7 @@ async def handle_callback(update, context):
         )
         return
 
-    if data.startswith("pay_humo_") or data.startswith("pay_visa_"):
+    if data.startswith("pay_humo_"):
         parts = data.split("_", 2)
 
         if len(parts) != 3:
@@ -2431,10 +2422,7 @@ async def handle_callback(update, context):
         days = durations[plan]
         price = prices[plan]
 
-        if payment_method == "HUMO":
-            card = HUMO_CARD
-        else:
-            card = VISA_CARD
+        card = HUMO_CARD
 
         if not card:
             await query.message.reply_text(
@@ -3792,10 +3780,6 @@ async def handle_callback(update, context):
                     "💳 HUMO",
                     callback_data=f"sl_pay_humo_{amount}"
                 ),
-                InlineKeyboardButton(
-                    "💳 VISA",
-                    callback_data=f"sl_pay_visa_{amount}"
-                )
             ]
         ])
 
@@ -3811,7 +3795,7 @@ async def handle_callback(update, context):
         )
         return
 
-    if data.startswith("sl_pay_humo_") or data.startswith("sl_pay_visa_"):
+    if data.startswith("sl_pay_humo_"):
         parts = data.split("_")
 
         payment_method = parts[2].upper()
@@ -3840,7 +3824,7 @@ async def handle_callback(update, context):
             "user_id": user.id,
         }
 
-        card = HUMO_CARD if payment_method == "HUMO" else VISA_CARD
+        card = HUMO_CARD
 
         await query.answer()
 
