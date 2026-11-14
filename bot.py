@@ -1,7 +1,7 @@
 import os
 import asyncio
 from telegram.ext import Application, ExtBot, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler, Defaults
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, CopyTextButton
 from database import init_db, get_db_connection
 from notifications import (
     notify_new_user,
@@ -3776,6 +3776,12 @@ async def handle_callback(update, context):
         await query.answer()
 
         keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "📋 Karta raqamini nusxalash",
+                    copy_text=CopyTextButton(text=str(card))
+                )
+            ],
             [
                 InlineKeyboardButton(
                     "✅ To'lov qildim — chek yuboraman",
