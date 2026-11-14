@@ -2205,73 +2205,20 @@ async def handle_callback(update, context):
     # WEEKEND PREMIUM — 30% CHEGIRMA
     # =========================================================
     if data.startswith("premium_"):
-        durations = {
-            "premium_1w": 7,
-            "premium_2w": 15,
-            "premium_1m": 30,
+        valid_plans = {
+            "premium_1w",
+            "premium_2w",
+            "premium_1m",
         }
 
-        prices = {
-            "premium_1w": "29 000",
-            "premium_2w": "49 000",
-            "premium_1m": "79 000",
-        }
-
-        if data not in durations:
+        if data not in valid_plans:
             return
 
-        days = durations[data]
-        price = prices[data]
+        await query.answer()
 
-        payment_texts = {
-            "ru": {
-                "title": "💳 ВЫБЕРИТЕ СПОСОБ ОПЛАТЫ",
-                "duration": "📅 Срок",
-                "price": "💰 Сумма",
-                "choose": "Выберите способ оплаты:",
-                "cancel": "❌ Отмена",
-            },
-            "uz_cyr": {
-                "title": "💳 ТЎЛОВ УСУЛИНИ ТАНЛАНГ",
-                "duration": "📅 Муддат",
-                "price": "💰 Сумма",
-                "choose": "Қуйидаги тўлов усулларидан бирини танланг:",
-                "cancel": "❌ Бекор қилиш",
-            },
-            "uz": {
-                "title": "💳 TO'LOV USULINI TANLANG",
-                "duration": "📅 Muddat",
-                "price": "💰 Summa",
-                "choose": "Quyidagi to'lov usullaridan birini tanlang:",
-                "cancel": "❌ Bekor qilish",
-            },
-            }
-
-        pt = payment_texts.get(language, payment_texts["uz"])
-
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    "💳 HUMO",
-                    callback_data=f"pay_humo_{data}"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    pt["cancel"],
-                    callback_data="cancel_premium"
-                )
-            ]
-        ])
-
-        await query.message.reply_text(
-            f'{pt["title"]}\n\n'
-            f'{pt["duration"]}: {days} kun\n'
-            f'{pt["price"]}: {price} so\'m\n\n'
-            f'{pt["choose"]}',
-            reply_markup=keyboard
-        )
-        return
+        # Oraliq to‘lov usulini tanlash oynasini o‘tkazib yuborish.
+        # Mavjud HUMO karta to‘lovi oynasiga yo‘naltirish.
+        data = f"pay_humo_{data}"
 
     if data.startswith("discount_pay_humo_"):
         parts = data.split("_", 3)
