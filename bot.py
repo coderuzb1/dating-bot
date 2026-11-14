@@ -3790,7 +3790,7 @@ async def handle_callback(update, context):
             f"💰 Summa: <b>{price:,} so'm</b>\n"
             f"💳 Usul: <b>{payment_method}</b>\n\n"
             f"💳 Karta raqami:\n"
-            f"<code>{card}</code>\n\n"
+            f"<pre>{card}</pre>\n\n"
             "To'lovni amalga oshiring.\n"
             "Keyin quyidagi tugmani bosing va to'lov chekini "
             "rasm yoki fayl ko'rinishida yuboring.",
