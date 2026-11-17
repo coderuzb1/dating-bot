@@ -7337,27 +7337,29 @@ async def removepremium(update, context):
 
 
 async def userinfo(update, context):
-    user = update.effective_user
+    admin_user = update.effective_user
 
-    if not user or user.id != ADMIN_ID:
+    # Faqat admin va faqat shaxsiy chat. Boshqalarga javob bermaydi.
+    if not admin_user or admin_user.id != ADMIN_ID:
         return
 
-    if not context.args:
-        await update.message.reply_text(
-            "Foydalanish: /userinfo USER_ID\n"
-            "Masalan: /userinfo 5634936318"
-        )
+    if not update.effective_chat or update.effective_chat.type != "private":
         return
 
-    try:
-        target_id = int(context.args[0])
-    except ValueError:
-        await update.message.reply_text("❌ USER_ID son bo‘lishi kerak.")
+    if not update.message:
+        return
+
+    if len(context.args) != 1 or not context.args[0].isdigit():
+        await update.message.reply_text("Foydalanish: /userinfo USER_ID")
+        return
+
+    target_id = int(context.args[0])
+    if target_id <= 0:
+        await update.message.reply_text("❌ Noto'g'ri ID.")
         return
 
     conn = None
     cur = None
-    photos = []
 
     try:
         conn = get_db_connection()
@@ -7365,8 +7367,9 @@ async def userinfo(update, context):
 
         cur.execute("""
             SELECT user_id, username, first_name, age, gender,
-                   bio, city, is_active, is_blocked, premium_until,
-                   created_at, language, last_active, photo
+                   bio, photo, photo2, photo3, city,
+                   is_active, is_blocked, premium_until,
+                   created_at, language, referred_by, last_active
             FROM users
             WHERE user_id = %s
         """, (target_id,))
@@ -7374,66 +7377,103 @@ async def userinfo(update, context):
 
         if not row:
             await update.message.reply_text(
-                f"❌ {target_id} ID bo‘yicha foydalanuvchi bazada topilmadi."
+                "❌ Bu ID bo'yicha foydalanuvchi topilmadi."
             )
             return
 
-        (
-            uid, username, first_name, age, gender, bio, city,
-            is_active, is_blocked, premium_until, created_at,
-            language, last_active, main_photo
-        ) = row
+        columns = [d[0] for d in cur.description]
+        user_data = dict(zip(columns, row))
 
-        def val(value):
-            return str(value) if value not in (None, "") else "Mavjud emas"
+        # Like statistikasi
+        cur.execute(
+            "SELECT COUNT(*) FROM likes WHERE from_user = %s",
+            (target_id,)
+        )
+        likes_sent = cur.fetchone()[0]
 
-        def dateval(value):
-            return value.strftime("%d.%m.%Y %H:%M") if value else "Mavjud emas"
-
-        cur.execute("""
-            SELECT COUNT(*) FROM likes WHERE from_user = %s
-        """, (target_id,))
-        sent_likes = cur.fetchone()[0]
-
-        cur.execute("""
-            SELECT COUNT(*) FROM likes WHERE to_user = %s
-        """, (target_id,))
-        received_likes = cur.fetchone()[0]
+        cur.execute(
+            "SELECT COUNT(*) FROM likes WHERE to_user = %s",
+            (target_id,)
+        )
+        likes_received = cur.fetchone()[0]
 
         cur.execute("""
             SELECT COUNT(*) FROM likes
             WHERE from_user = %s AND is_superlike = TRUE
         """, (target_id,))
-        sent_superlikes = cur.fetchone()[0]
+        superlikes_sent = cur.fetchone()[0]
 
         cur.execute("""
             SELECT COUNT(*) FROM likes
             WHERE to_user = %s AND is_superlike = TRUE
         """, (target_id,))
-        received_superlikes = cur.fetchone()[0]
+        superlikes_received = cur.fetchone()[0]
 
+        # Match statistikasi
         cur.execute("""
             SELECT COUNT(*) FROM matches
             WHERE user1 = %s OR user2 = %s
         """, (target_id, target_id))
-        match_count = cur.fetchone()[0]
+        matches_count = cur.fetchone()[0]
 
+        # Profil ko'rish statistikasi
         cur.execute("""
             SELECT COUNT(*) FROM profile_views WHERE user_id = %s
         """, (target_id,))
-        viewed_profiles = cur.fetchone()[0]
+        profiles_viewed = cur.fetchone()[0]
 
         cur.execute("""
             SELECT COUNT(*) FROM profile_views WHERE viewed_user_id = %s
         """, (target_id,))
-        viewed_by_others = cur.fetchone()[0]
+        profile_views = cur.fetchone()[0]
 
+        # Xabarlar statistikasi
         cur.execute("""
             SELECT COUNT(*) FROM messages
             WHERE from_user = %s OR to_user = %s
         """, (target_id, target_id))
-        message_count = cur.fetchone()[0]
+        messages_count = cur.fetchone()[0]
 
+        # Oxirgi 25 ta match va sherik ma'lumotlari
+        cur.execute("""
+            SELECT m.user1, m.user2, m.created_at,
+                   u.first_name, u.username
+            FROM matches m
+            LEFT JOIN users u
+              ON u.user_id = CASE
+                  WHEN m.user1 = %s THEN m.user2
+                  ELSE m.user1
+              END
+            WHERE m.user1 = %s OR m.user2 = %s
+            ORDER BY m.created_at DESC
+            LIMIT 25
+        """, (target_id, target_id, target_id))
+        match_history = cur.fetchall()
+
+        # Har bir match bo'yicha barcha saqlangan yozishmalar
+        match_messages = {}
+        for match in match_history:
+            other_id = match[1] if match[0] == target_id else match[0]
+
+            cur.execute("""
+                SELECT from_user, to_user, text, created_at
+                FROM messages
+                WHERE (from_user = %s AND to_user = %s)
+                   OR (from_user = %s AND to_user = %s)
+                ORDER BY created_at DESC
+            """, (target_id, other_id, other_id, target_id))
+
+            match_messages[other_id] = cur.fetchall()
+
+        # Sara Match profil rasmlari
+        cur.execute("""
+            SELECT photo FROM user_photos
+            WHERE user_id = %s
+            ORDER BY position
+        """, (target_id,))
+        extra_photos = [r[0] for r in cur.fetchall()]
+
+        # Oxirgi to'lovlar
         cur.execute("""
             SELECT amount, status, created_at
             FROM payments
@@ -7443,131 +7483,230 @@ async def userinfo(update, context):
         """, (target_id,))
         payments = cur.fetchall()
 
-        cur.execute("""
-            SELECT from_user, to_user, text, created_at
-            FROM messages
-            WHERE from_user = %s OR to_user = %s
-            ORDER BY created_at DESC
-            LIMIT 5
-        """, (target_id, target_id))
-        messages = cur.fetchall()
+        cur.close()
+        cur = None
+        conn.close()
+        conn = None
 
-        cur.execute("""
-            SELECT photo FROM user_photos
-            WHERE user_id = %s
-            ORDER BY position
-        """, (target_id,))
-        photos = [r[0] for r in cur.fetchall() if r and r[0]]
+        def val(value):
+            if value is None or value == "":
+                return "Mavjud emas"
+            return str(value)
 
-        if main_photo and main_photo not in photos:
-            photos.insert(0, main_photo)
+        def date_value(value):
+            if not value:
+                return "Mavjud emas"
+            return str(value)
 
-        premium_active = bool(premium_until and premium_until > datetime.now())
+        # Telegramdagi joriy ochiq ma'lumotlar
+        telegram_name = "Mavjud emas"
+        telegram_username = user_data.get("username")
+        telegram_photo = None
 
-        report = (
-            "👤 FOYDALANUVCHI MA’LUMOTLARI\n"
-            "━━━━━━━━━━━━━━━━━━\n"
-            f"🆔 ID: {uid}\n"
-            f"👤 Ism: {val(first_name)}\n"
-            f"🔗 Username: @{username.lstrip('@') if username else 'Mavjud emas'}\n"
-            f"🎂 Yosh: {val(age)}\n"
-            f"⚧ Jins: {val(gender)}\n"
-            f"📍 Shahar: {val(city)}\n"
-            f"📝 Bio: {val(bio)}\n"
-            f"🌐 Til: {val(language)}\n"
-            "━━━━━━━━━━━━━━━━━━\n"
-            f"📌 Faol: {'Ha' if is_active else 'Yo‘q'}\n"
-            f"🚫 Bloklangan: {'Ha' if is_blocked else 'Yo‘q'}\n"
-            f"👑 Premium: {'Faol' if premium_active else 'Faol emas'}\n"
-            f"📅 Premium muddati: {dateval(premium_until)}\n"
-            f"🗓 Ro‘yxatdan o‘tgan: {dateval(created_at)}\n"
-            f"🟢 Oxirgi faollik: {dateval(last_active)}\n"
-            "━━━━━━━━━━━━━━━━━━\n"
-            f"❤️ Yuborgan like: {sent_likes}\n"
-            f"💚 Qabul qilgan like: {received_likes}\n"
-            f"⭐ Yuborgan superlike: {sent_superlikes}\n"
-            f"🌟 Qabul qilgan superlike: {received_superlikes}\n"
-            f"🤝 Matchlar: {match_count}\n"
-            f"👀 Ko‘rgan profillari: {viewed_profiles}\n"
-            f"👁 Profilini ko‘rishgan: {viewed_by_others}\n"
-            f"💬 Xabarlar soni: {message_count}\n"
-            "━━━━━━━━━━━━━━━━━━\n"
-            "💳 OXIRGI TO‘LOVLAR:\n"
-        )
-
-        if payments:
-            for amount, status, created in payments:
-                report += (
-                    f"• {val(amount)} so‘m | {val(status)}"
-                    f" | {dateval(created)}\n"
-                )
-        else:
-            report += "To‘lovlar mavjud emas.\n"
-
-        report += "\n💬 OXIRGI YOZISHMALAR:\n"
-        if messages:
-            for sender, receiver, msg, created in messages:
-                direction = "Yuborgan" if sender == target_id else "Qabul qilgan"
-                short_msg = str(msg or "").replace("\n", " ")[:120]
-                report += (
-                    f"• {direction}: {short_msg}\n"
-                    f"  Sana: {dateval(created)}\n"
-                )
-        else:
-            report += "Yozishmalar mavjud emas.\n"
-
-        report += "━━━━━━━━━━━━━━━━━━"
-
-        # Telegramdagi ochiq profil ma’lumotlari
         try:
             tg = await context.bot.get_chat(target_id)
-            tg_name = " ".join(
+            telegram_name = " ".join(
                 x for x in [
                     getattr(tg, "first_name", None),
                     getattr(tg, "last_name", None)
                 ] if x
+            ) or "Mavjud emas"
+
+            telegram_username = (
+                getattr(tg, "username", None) or telegram_username
             )
-            if tg_name:
-                report += f"\n\n📱 Telegram ismi: {tg_name}"
-            if getattr(tg, "username", None):
-                report += f"\n📱 Telegram username: @{tg.username}"
         except Exception as e:
-            print(f"userinfo get_chat error: {e}")
+            print(f"Telegram get_chat error: {e}")
 
-        # Uzun xabarlarni bo‘lib yuborish
-        for i in range(0, len(report), 3500):
-            await update.message.reply_text(report[i:i + 3500])
-
-        # Profil rasmlarini yuborish
-        for index, photo in enumerate(photos[:10], start=1):
-            try:
-                await context.bot.send_photo(
-                    chat_id=update.effective_chat.id,
-                    photo=photo,
-                    caption=f"🖼 Profil rasmi {index} | ID: {target_id}"
-                )
-            except Exception as e:
-                print(f"userinfo photo send error: {e}")
-
-        # Telegram profilidagi oxirgi rasm
+        # Telegram profil rasmi
         try:
             tg_photos = await context.bot.get_user_profile_photos(
-                target_id, limit=1
+                user_id=target_id, limit=1
             )
-            if tg_photos.total_count:
-                await context.bot.send_photo(
-                    chat_id=update.effective_chat.id,
-                    photo=tg_photos.photos[0][-1].file_id,
-                    caption="📱 Telegram profil rasmi"
-                )
+            if tg_photos.total_count and tg_photos.photos:
+                telegram_photo = tg_photos.photos[0][-1].file_id
         except Exception as e:
-            print(f"userinfo telegram photo error: {e}")
+            print(f"Telegram profile photo error: {e}")
+
+        # Premium holati
+        premium_until = user_data.get("premium_until")
+        if premium_until:
+            try:
+                premium_status = (
+                    "Faol" if premium_until > datetime.now()
+                    else "Muddati tugagan"
+                )
+            except Exception:
+                premium_status = str(premium_until)
+        else:
+            premium_status = "Mavjud emas"
+
+        # Asosiy hisobot
+        report = (
+            "🔎 FOYDALANUVCHI MA'LUMOTLARI\n\n"
+            "📱 TELEGRAM MA'LUMOTLARI\n"
+            f"🆔 ID: {target_id}\n"
+            f"👤 Telegram ismi: {val(telegram_name)}\n"
+            f"🔗 Username: @{telegram_username or 'Mavjud emas'}\n"
+            "📞 Telefon: Bazada saqlanmagan\n\n"
+            "👤 SARA MATCH PROFILI\n"
+            f"Ism: {val(user_data.get('first_name'))}\n"
+            f"Yosh: {val(user_data.get('age'))}\n"
+            f"Jins: {val(user_data.get('gender'))}\n"
+            f"Shahar: {val(user_data.get('city'))}\n"
+            f"Bio: {val(user_data.get('bio'))}\n"
+            f"Til: {val(user_data.get('language'))}\n"
+            f"Faol: {val(user_data.get('is_active'))}\n"
+            f"Bloklangan: {val(user_data.get('is_blocked'))}\n\n"
+            "👑 PREMIUM\n"
+            f"Holati: {val(premium_status)}\n"
+            f"Amal qilish muddati: {date_value(premium_until)}\n\n"
+            "📊 FAOLLIK VA STATISTIKA\n"
+            f"Ro'yxatdan o'tgan: {date_value(user_data.get('created_at'))}\n"
+            f"Oxirgi faollik: {date_value(user_data.get('last_active'))}\n"
+            f"Yuborgan Like: {likes_sent}\n"
+            f"Olgan Like: {likes_received}\n"
+            f"Yuborgan Superlike: {superlikes_sent}\n"
+            f"Olgan Superlike: {superlikes_received}\n"
+            f"Ko'rgan profillari: {profiles_viewed}\n"
+            f"Profilini ko'rishgan: {profile_views}\n"
+            f"Jami Match: {matches_count}\n"
+            f"Jami xabarlar: {messages_count}\n\n"
+            "💞 OXIRGI MATCHLAR (25 TAGACHA)\n"
+        )
+
+        if match_history:
+            for match in match_history:
+                other_id = match[1] if match[0] == target_id else match[0]
+                other_name = match[3] or "Noma'lum"
+                other_username = f" (@{match[4]})" if match[4] else ""
+
+                report += (
+                    f"\n• {val(other_name)}{other_username}\n"
+                    f"  ID: {other_id}\n"
+                    f"  Sana: {date_value(match[2])}\n"
+                )
+        else:
+            report += "\nMatch mavjud emas.\n"
+
+        report += (
+            "\n💳 OXIRGI TO'LOVLAR\n"
+        )
+        if payments:
+            for payment in payments:
+                report += (
+                    f"Summa: {val(payment[0])}\n"
+                    f"Holati: {val(payment[1])}\n"
+                    f"Sana: {date_value(payment[2])}\n\n"
+                )
+        else:
+            report += "To'lov topilmadi.\n"
+
+        report += (
+            "📌 QO'SHIMCHA\n"
+            f"Taklif qilgan ID: {val(user_data.get('referred_by'))}\n"
+        )
+
+        # Hisobotni Telegram limitiga mos bo'lib yuborish
+        for start_index in range(0, len(report), 3500):
+            await update.message.reply_text(
+                report[start_index:start_index + 3500]
+            )
+
+        # Har bir match sherigining Telegram va Sara Match ismi
+        for match in match_history:
+            other_id = match[1] if match[0] == target_id else match[0]
+            other_bot_name = match[3] or "Noma'lum"
+            other_tg_name = "Mavjud emas"
+
+            try:
+                other_tg = await context.bot.get_chat(other_id)
+                other_tg_name = " ".join(
+                    x for x in [
+                        getattr(other_tg, "first_name", None),
+                        getattr(other_tg, "last_name", None)
+                    ] if x
+                ) or "Mavjud emas"
+            except Exception as e:
+                print(f"Match Telegram name error {other_id}: {e}")
+
+            chat_text = (
+                "💞 MATCH YOZISHMALARI\n"
+                f"🆔 ID: {other_id}\n"
+                f"📱 Telegram ismi: {val(other_tg_name)}\n"
+                f"👤 Sara Match profili: {val(other_bot_name)}\n\n"
+            )
+
+            saved_messages = match_messages.get(other_id, [])
+
+            if saved_messages:
+                for msg in reversed(saved_messages):
+                    sender_id, receiver_id, message_text, sent_at = msg
+
+                    if sender_id == target_id:
+                        sender_tg = telegram_name
+                        sender_bot = user_data.get("first_name") or "Noma'lum"
+                    else:
+                        sender_tg = other_tg_name
+                        sender_bot = other_bot_name
+
+                    chat_text += (
+                        f"📱 Telegram ismi: {val(sender_tg)}\n"
+                        f"👤 Botdagi ismi: {val(sender_bot)}\n"
+                        f"🕒 {date_value(sent_at)}\n"
+                        f"💬 {message_text or '[Matn yo\'q]'}\n\n"
+                    )
+            else:
+                chat_text += (
+                    "Bu juftlik orasida saqlangan yozishma topilmadi."
+                )
+
+            for start_index in range(0, len(chat_text), 3500):
+                await context.bot.send_message(
+                    chat_id=ADMIN_ID,
+                    text=chat_text[start_index:start_index + 3500]
+                )
+
+        # Telegram profil rasmi
+        if telegram_photo:
+            await context.bot.send_photo(
+                chat_id=ADMIN_ID,
+                photo=telegram_photo,
+                caption="📱 Telegram profil rasmi"
+            )
+
+        # Sara Match profil rasmlari: photo, photo2, photo3 va user_photos
+        photo_ids = []
+        current_photos = [
+            user_data.get("photo"),
+            user_data.get("photo2"),
+            user_data.get("photo3")
+        ] + extra_photos
+
+        for photo in current_photos:
+            if photo and photo not in photo_ids:
+                photo_ids.append(photo)
+
+        for index, photo in enumerate(photo_ids, 1):
+            await context.bot.send_photo(
+                chat_id=ADMIN_ID,
+                photo=photo,
+                caption=f"👤 Sara Match profil rasmi {index}"
+            )
+
+        if not photo_ids:
+            await update.message.reply_text(
+                "📸 Sara Match profil rasmi topilmadi."
+            )
 
     except Exception as e:
-        print(f"Userinfo error: {e}")
-        await update.message.reply_text(
-            f"❌ Ma’lumotlarni olishda xatolik: {e}"
-        )
+        print(f"userinfo error: {e}")
+        try:
+            await update.message.reply_text(
+                "❌ Ma'lumotlarni olishda xatolik yuz berdi."
+            )
+        except Exception:
+            pass
     finally:
         if cur:
             cur.close()
