@@ -7654,7 +7654,7 @@ async def userinfo(update, context):
                         f"📱 Telegram ismi: {val(sender_tg)}\n"
                         f"👤 Botdagi ismi: {val(sender_bot)}\n"
                         f"🕒 {date_value(sent_at)}\n"
-                        f"💬 {message_text or '[Matn yo\'q]'}\n\n"
+                        f"💬 {message_text or '[Matn mavjud emas]'}\n\n"
                     )
             else:
                 chat_text += (
