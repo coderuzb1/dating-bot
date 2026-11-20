@@ -2,6 +2,7 @@ import os
 import asyncio
 from telegram.ext import Application, ExtBot, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler, Defaults
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, CopyTextButton
+from telegram.request import HTTPXRequest
 from database import init_db, get_db_connection
 from notifications import (
     notify_new_user,
@@ -9388,8 +9389,15 @@ def main():
         return
     
     init_db()
+    request = HTTPXRequest(
+        connect_timeout=30,
+        read_timeout=60,
+        write_timeout=30,
+        pool_timeout=30,
+    )
     bot = AdminAwareBot(
         token=TOKEN,
+        request=request,
         defaults=Defaults(protect_content=True),
     )
     app = Application.builder().bot(bot).build()
